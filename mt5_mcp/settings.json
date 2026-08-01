@@ -1,0 +1,70 @@
+{
+  "server": {
+    "name": "mt5-mcp",
+    "version": "1.0.0",
+    "transport": "stdio",
+    "host": "127.0.0.1",
+    "port": 9000
+  },
+  "mt5": {
+    "terminal_path": "C:\\Program Files\\MetaTrader 5 Terminal\\terminal64.exe",
+    "login": null,
+    "password": "",
+    "server": "",
+    "connect_timeout_seconds": 30,
+    "reconnect_attempts": 5,
+    "reconnect_delay_seconds": 5,
+    "health_check_interval_seconds": 30
+  },
+  "risk": {
+    "default_risk_percent": 0.5,
+    "max_risk_percent": 0.5,
+    "conservative_risk_percent": 0.25,
+    "max_daily_loss_percent": 3.0,
+    "max_weekly_loss_percent": 6.0,
+    "max_open_risk_percent": 1.0,
+    "max_drawdown_percent": 8.0,
+    "daily_conservative_ratio": 0.8,
+    "drawdown_conservative_ratio": 0.8,
+    "drawdown_halt_ratio": 0.95,
+    "min_risk_reward": 3.0,
+    "target_tp_min_pips": 80,
+    "target_tp_max_pips": 100,
+    "sl_min_pips": 20,
+    "sl_max_pips": 30,
+    "max_spread_points": 40,
+    "max_positions": 5,
+    "max_trades_per_day": 3,
+    "max_consecutive_losses": 3,
+    "revenge_cooldown_minutes": 60,
+    "news_blackout_minutes": 30,
+    "liquidity_blackout_start": "00:00",
+    "liquidity_blackout_end": "00:15",
+    "confidence_floor_percent": 90,
+    "min_volume": null,
+    "max_volume": null
+  },
+  "strategy": {
+    "trend_timeframe": "H4",
+    "zone_timeframes": ["H1", "H4"],
+    "confirmation_timeframe": "H1",
+    "trend_fast_ema": 50,
+    "trend_slow_ema": 200,
+    "min_zone_score": 70,
+    "min_trade_score": 70,
+    "min_confidence_percent": 60,
+    "lookback_candles": 400
+  },
+  "memory": {
+    "db_path": "memory/journal.db",
+    "auto_sync_history_days": 30,
+    "screenshot_dir": "memory/screenshots",
+    "report_dir": "memory/reports"
+  },
+  "logging": {
+    "level": "INFO",
+    "log_dir": "logs",
+    "max_bytes": 5242880,
+    "backup_count": 5
+  }
+}

@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  # MCP Server - stdio transport for MCP clients (Claude Desktop, OpenCode, etc.)
+  mcp-server:
+    build: .
+    container_name: mt5-mcp-server
+    environment:
+      # MT5 connection - use host.docker.internal to reach Windows host MT5 terminal
+      - MT5_MCP_MT5_LOGIN=${MT5_LOGIN}
+      - MT5_MCP_MT5_PASSWORD=${MT5_PASSWORD}
+      - MT5_MCP_MT5_SERVER=${MT5_SERVER}
+      - MT5_MCP_MT5_TERMINAL_PATH=
+      # MCP transport
+      - MCP_TRANSPORT=stdio
+      # Logging
+      - MT5_MCP_LOG_LEVEL=INFO
+    volumes:
+      # Persist journal, logs, backtest results
+      - mt5-data:/app/mt5_mcp/memory
+      - mt5-logs:/app/mt5_mcp/logs
+      - mt5-backtests:/app/backtest
+      - mt5-reports:/app/mt5_mcp/memory/reports
+    restart: unless-stopped
+    # For MCP stdio transport, the container runs the server directly
+    # MCP clients connect via docker exec or named pipe
+
+  # Web Dashboard - HTTP server on port 8050
+  web-dashboard:
+    build: .
+    container_name: mt5-web-dashboard
+    command: python web_dashboard.py
+    environment:
+      - MT5_MCP_MT5_LOGIN=${MT5_LOGIN}
+      - MT5_MCP_MT5_PASSWORD=${MT5_PASSWORD}
+      - MT5_MCP_MT5_SERVER=${MT5_SERVER}
+      - MT5_MCP_MT5_TERMINAL_PATH=
+      - WEB_PORT=8050
+      - WEB_HOST=0.0.0.0
+      - MT5_MCP_LOG_LEVEL=INFO
+    ports:
+      - "8050:8050"
+    volumes:
+      - mt5-data:/app/mt5_mcp/memory
+      - mt5-logs:/app/mt5_mcp/logs
+      - mt5-backtests:/app/backtest
+      - mt5-reports:/app/mt5_mcp/memory/reports
+      - ./static:/app/static
+    restart: unless-stopped
+    depends_on:
+      - mcp-server
+
+volumes:
+  mt5-data:
+  mt5-logs:
+  mt5-backtests:
+  mt5-reports:

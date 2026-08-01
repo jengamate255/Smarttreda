@@ -1,0 +1,16 @@
+{
+  "name": "mt5-ea",
+  "version": "1.0.0",
+  "description": "A production-ready **Model Context Protocol (MCP) server** + **Web Dashboard** connecting AI agents to MetaTrader 5. Implements a complete institutional trading desk:",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "playwright": "^1.62.1"
+  }
+}

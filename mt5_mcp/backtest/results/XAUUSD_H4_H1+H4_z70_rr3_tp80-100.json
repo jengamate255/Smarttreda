@@ -1,0 +1,63 @@
+{
+  "params": {
+    "symbol": "XAUUSD",
+    "trend_timeframe": "H4",
+    "zone_timeframes": [
+      "H1",
+      "H4"
+    ],
+    "confirmation_timeframe": "H1",
+    "trend_fast_ema": 50,
+    "trend_slow_ema": 200,
+    "min_zone_score": 70.0,
+    "min_trade_score": 70.0,
+    "min_confidence_percent": 60.0,
+    "lookback": 400,
+    "risk_percent": 0.5,
+    "tp_min": 80.0,
+    "tp_max": 100.0,
+    "sl_min": 20.0,
+    "sl_max": 30.0,
+    "min_rr": 3.0,
+    "spread_points": 15.0,
+    "start_balance": 10000.0,
+    "bars": 3000,
+    "timeout_bars": 200
+  },
+  "n_trades": 1,
+  "wins": 0,
+  "losses": 1,
+  "gross_profit": 0,
+  "gross_loss": 49.78,
+  "net_pnl": -49.78,
+  "profit_factor": 0.0,
+  "win_rate": 0.0,
+  "expectancy": -49.78,
+  "total_return_pct": -0.5,
+  "max_drawdown_pct": 0.5,
+  "avg_rr": 3.0,
+  "start": "2026-02-26T04:00:00",
+  "end": "2026-07-31T23:00:00",
+  "trades": [
+    {
+      "entry_time": "2026-03-03T08:00:00",
+      "exit_time": "2026-03-03T13:00:00",
+      "action": "BUY",
+      "entry": 5325.53,
+      "sl": 5209.757017,
+      "tp": 5672.848948,
+      "lots": 0.43,
+      "sl_pips": 115.8,
+      "tp_pips": 347.3,
+      "rr": 3.0,
+      "exit_price": 5209.757017,
+      "pnl": -49.78,
+      "reason": "SL",
+      "trend_confidence": 0.909,
+      "zone_strength": 93.0,
+      "confirmation": "pin_bar (bullish)",
+      "ml_score": 0.248
+    }
+  ],
+  "errors": []
+}

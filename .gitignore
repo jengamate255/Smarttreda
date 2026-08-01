@@ -1,0 +1,48 @@
+# Secrets / environment
+.env
+.env.local
+*.env
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Logs
+logs/
+*.log
+
+# Vendored libraries (use pip install instead)
+libs/
+
+# Backtest results (regenerated)
+backtest/results/
+
+# MT5 MCP runtime artifacts
+mt5_mcp/logs/
+mt5_mcp/memory/*.db
+mt5_mcp/memory/*.db-journal
+mt5_mcp/memory/screenshots/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

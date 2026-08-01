@@ -1,0 +1,63 @@
+{
+  "params": {
+    "symbol": "EURAUD",
+    "trend_timeframe": "H4",
+    "zone_timeframes": [
+      "H1",
+      "H4"
+    ],
+    "confirmation_timeframe": "H1",
+    "trend_fast_ema": 50,
+    "trend_slow_ema": 200,
+    "min_zone_score": 40.0,
+    "min_trade_score": 70.0,
+    "min_confidence_percent": 60.0,
+    "lookback": 400,
+    "risk_percent": 0.5,
+    "tp_min": 80.0,
+    "tp_max": 100.0,
+    "sl_min": 20.0,
+    "sl_max": 30.0,
+    "min_rr": 3.0,
+    "spread_points": 15.0,
+    "start_balance": 10000.0,
+    "bars": 3000,
+    "timeout_bars": 200
+  },
+  "n_trades": 1,
+  "wins": 0,
+  "losses": 1,
+  "gross_profit": 0,
+  "gross_loss": 21.15,
+  "net_pnl": -21.15,
+  "profit_factor": 0.0,
+  "win_rate": 0.0,
+  "expectancy": -21.15,
+  "total_return_pct": -0.21,
+  "max_drawdown_pct": 0.21,
+  "avg_rr": 3.5,
+  "start": "2026-03-05T20:00:00",
+  "end": "2026-07-31T15:00:00",
+  "trades": [
+    {
+      "entry_time": "2026-03-17T06:00:00",
+      "exit_time": "2026-03-18T15:00:00",
+      "action": "SELL",
+      "entry": 1.62631,
+      "sl": 1.628883,
+      "tp": 1.61731,
+      "lots": 0.28,
+      "sl_pips": 25.7,
+      "tp_pips": 90.0,
+      "rr": 3.5,
+      "exit_price": 1.628883,
+      "pnl": -21.15,
+      "reason": "SL",
+      "trend_confidence": 1.0,
+      "zone_strength": 93.8,
+      "confirmation": "liquidity_sweep (bearish)",
+      "ml_score": 0.236
+    }
+  ],
+  "errors": []
+}

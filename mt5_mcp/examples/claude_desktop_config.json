@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "mt5": {
+      "command": "python",
+      "args": ["E:\\Project\\Mt5 Ea\\mt5_mcp\\server.py"],
+      "env": {
+        "MT5_MCP_MT5_LOGIN": "12345678",
+        "MT5_MCP_MT5_PASSWORD": "your_password",
+        "MT5_MCP_MT5_SERVER": "YourBroker-Server",
+        "MT5_MCP_TRANSPORT": "stdio"
+      }
+    }
+  }
+}

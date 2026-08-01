@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MT5 Dashboard</title>
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<header>
+  <div class="brand">MT5 <span>Dashboard</span></div>
+  <div class="status">
+    <span id="status-dot" class="dot off"></span>
+    <span id="status-text">Connecting...</span>
+    <div class="status-dropdown">
+      <button id="status-btn" class="status-btn" aria-expanded="false" aria-haspopup="true" title="Connection details">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      </button>
+      <div id="status-menu" class="status-menu hidden" role="menu">
+        <div class="status-menu-item">
+          <span class="status-menu-label">Terminal</span>
+          <span id="status-term" class="status-menu-value">--</span>
+        </div>
+        <div class="status-menu-item">
+          <span class="status-menu-label">Build</span>
+          <span id="status-build" class="status-menu-value">--</span>
+        </div>
+        <div class="status-menu-item">
+          <span class="status-menu-label">Latency</span>
+          <span id="status-latency" class="status-menu-value">--</span>
+        </div>
+        <div class="status-menu-item">
+          <span class="status-menu-label">Last heartbeat</span>
+          <span id="status-heartbeat" class="status-menu-value">--</span>
+        </div>
+        <div class="status-menu-divider"></div>
+        <button id="status-reconnect" class="status-menu-btn" role="menuitem">Reconnect MT5</button>
+        <button id="status-ws-reconnect" class="status-menu-btn" role="menuitem">Reconnect WebSocket</button>
+      </div>
+    </div>
+    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" title="Theme (dark/light/auto)">
+      <svg class="theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      <svg class="theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="theme-icon-auto" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+    </button>
+  </div>
+  <div class="header-right">
+    <span id="h-risk-badge" class="risk-badge hidden" title="Risk warning"></span>
+    <span>Account <b id="h-login">--</b></span>
+    <span class="sep">|</span>
+    <span id="h-server-time">--:--:--</span>
+    <span class="sep">|</span>
+    <span id="h-pos-count">0 positions</span>
+    <span class="sep">|</span>
+    <span id="h-terminal" class="dim">--</span>
+  </div>
+</header>
+
+<div id="news-banner" class="news-banner hidden">
+  <b>HIGH-IMPACT NEWS</b> <span id="news-banner-text"></span>
+</div>
+
+<div class="watchlist-wrap">
+  <span class="wl-label">Watchlist</span>
+  <div id="watchlist" class="watchlist"></div>
+  <input id="wl-add" class="wl-add" placeholder="+ add symbol" maxlength="12" spellcheck="false">
+</div>
+
+<section class="cards">
+  <div class="card"><div class="card-label">Balance</div><div class="card-value" id="c-balance">--</div></div>
+  <div class="card"><div class="card-label">Equity</div><div class="card-value" id="c-equity">--</div></div>
+  <div class="card"><div class="card-label">Free Margin</div><div class="card-value" id="c-margin">--</div></div>
+  <div class="card"><div class="card-label">Margin Level</div><div class="card-value" id="c-margin-level">--</div></div>
+  <div class="card">
+    <div class="card-label">Daily P&amp;L <span class="sub" id="c-daily-sub"></span></div>
+    <div class="card-value" id="c-daily">--</div>
+  </div>
+  <div class="card"><div class="card-label">Floating P&amp;L</div><div class="card-value" id="c-floating">--</div></div>
+</section>
+
+<main class="grid">
+  <section class="panel chart-panel">
+    <div class="panel-head">
+      <input id="symbol-input" class="symbol-input" list="symbol-list" value="EURUSD" spellcheck="false">
+      <datalist id="symbol-list"></datalist>
+      <div class="tf-group" id="tf-group"></div>
+      <label class="check"><input type="checkbox" id="chk-ema" checked>EMA</label>
+      <label class="check"><input type="checkbox" id="chk-rsi" checked>RSI</label>
+      <label class="check"><input type="checkbox" id="chk-macd" checked>MACD</label>
+      <label class="check"><input type="checkbox" id="chk-bot" checked>Bot</label>
+      <select id="count-select">
+        <option value="150">150 bars</option>
+        <option value="300" selected>300 bars</option>
+        <option value="500">500 bars</option>
+      </select>
+      <span id="bot-badge" class="bot-badge hidden"></span>
+      <span class="tick-info" id="chart-tick">--</span>
+    </div>
+    <div class="chart-wrap">
+      <div id="price-chart" class="lc-pane price-pane"></div>
+      <div id="rsi-chart" class="lc-pane rsi-pane hidden"></div>
+      <div id="macd-chart" class="lc-pane macd-pane hidden"></div>
+      <div id="tooltip" class="tooltip hidden"></div>
+    </div>
+  </section>
+
+  <aside class="col" id="sidebar">
+    <button id="sidebar-toggle" class="sidebar-toggle hidden" aria-label="Toggle sidebar">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <section class="panel plan-panel">
+      <div class="panel-title">Bot Trade Plan
+        <span class="plan-badge hidden" id="plan-badge"></span>
+        <span class="sub" id="plan-tf"></span>
+      </div>
+      <div id="plan-body" class="plan-body">
+        <div class="plan-empty">Evaluating...</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title">Open Positions <span class="badge" id="pos-badge">0</span></div>
+      <div class="table-wrap">
+        <table class="data-table" id="positions-table">
+          <thead>
+            <tr>
+              <th>Symbol</th><th>Type</th><th>Lots</th><th>Open</th>
+              <th>Current</th><th>SL</th><th>TP</th><th>P&L</th><th class="col-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="positions-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title">Risk <span class="badge" id="risk-badge">--</span></div>
+      <div id="risk-body">
+        <div class="plan-empty">Loading...</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title">Journal Insights <span class="sub">from your trading history</span></div>
+      <div id="sessions-body">
+        <div class="plan-empty">Loading...</div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-title">Trade Stats <span class="sub" id="stat-period"></span></div>
+      <div class="stats-grid">
+        <div class="stat"><div class="stat-label">Net Profit</div><div class="stat-value" id="s-net">--</div></div>
+        <div class="stat"><div class="stat-label">Win Rate</div><div class="stat-value" id="s-winrate">--</div></div>
+        <div class="stat"><div class="stat-label">Profit Factor</div><div class="stat-value" id="s-pf">--</div></div>
+        <div class="stat"><div class="stat-label">Trades</div><div class="stat-value" id="s-trades">--</div></div>
+        <div class="stat"><div class="stat-label">Avg Win</div><div class="stat-value" id="s-avgwin">--</div></div>
+        <div class="stat"><div class="stat-label">Avg Loss</div><div class="stat-value" id="s-avgloss">--</div></div>
+      </div>
+    </section>
+  </aside>
+</main>
+
+<button id="sidebar-backdrop" class="sidebar-backdrop hidden" aria-hidden="true"></button>
+
+<section class="panel trades-panel">
+  <div class="panel-title">Recent Trades <span class="sub">last 30 closed deals</span></div>
+  <div class="table-wrap">
+    <table class="data-table" id="trades-table">
+      <thead>
+        <tr>
+          <th>Time</th><th>Symbol</th><th>Type</th><th>Lots</th>
+          <th>Price</th><th>Profit</th><th>Swap</th><th>Total</th>
+        </tr>
+      </thead>
+      <tbody id="trades-body"></tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel equity-panel">
+  <div class="panel-title">Equity Curve <span class="sub" id="equity-period">last 30 days</span>
+    <span class="eq-toggles">
+      <label class="check"><input type="checkbox" id="eq-balance" checked>Balance</label>
+      <label class="check"><input type="checkbox" id="eq-floating">Equity</label>
+      <label class="check"><input type="checkbox" id="eq-ma5">MA5</label>
+      <label class="check"><input type="checkbox" id="eq-dd">Drawdown</label>
+    </span>
+  </div>
+  <div class="equity-wrap">
+    <canvas id="equity-chart"></canvas>
+    <div id="equity-stats" class="equity-stats"></div>
+  </div>
+</section>
+
+<section class="panel journal-panel">
+  <div class="panel-title">Trade Journal <span class="sub">mt5_mcp memory</span>
+    <span class="journal-tools">
+      <select id="jf-symbol"><option value="">All symbols</option></select>
+      <select id="jf-setup"><option value="">All setups</option></select>
+      <select id="jf-outcome"><option value="">All outcomes</option></select>
+      <button id="jf-sync" class="btn small" title="Sync closed MT5 positions">Sync</button>
+      <button id="jf-csv" class="btn small">Export CSV</button>
+    </span>
+  </div>
+  <div class="table-wrap">
+    <table class="data-table" id="journal-table">
+      <thead>
+        <tr>
+          <th>Closed</th><th>Symbol</th><th>Side</th><th>Setup</th>
+          <th>Entry</th><th>Exit</th><th>Lots</th><th>P&amp;L</th><th>Outcome</th><th>Notes</th>
+        </tr>
+      </thead>
+      <tbody id="journal-body"></tbody>
+    </table>
+  </div>
+  <div id="journal-editor" class="journal-editor hidden">
+    <div class="je-title">Edit journal entry <b id="je-ticket"></b> <button id="je-cancel" class="btn small">✕</button></div>
+    <label>Reason <input id="je-reason" type="text" placeholder="why this trade"></label>
+    <label>Mistakes <input id="je-mistakes" type="text" placeholder="separate with ;"></label>
+    <label>Lessons <input id="je-lessons" type="text" placeholder="what to do differently"></label>
+    <button id="je-save" class="btn">Save notes</button>
+  </div>
+</section>
+
+<section class="panel news-panel">
+  <div class="panel-title">Economic Calendar <span class="sub" id="news-provider"></span></div>
+  <div class="table-wrap">
+    <table class="data-table" id="news-table">
+      <thead>
+        <tr>
+          <th>Time (UTC)</th><th>Cur</th><th>Impact</th><th>Event</th><th>Forecast</th><th>Previous</th>
+        </tr>
+      </thead>
+      <tbody id="news-body"></tbody>
+    </table>
+  </div>
+</section>
+
+<section class="panel backtest-panel">
+  <div class="panel-title">Backtesting <span class="sub" id="bt-sub"></span>
+    <span class="bt-actions">
+      <button id="bt-refresh" class="btn small" title="Refresh saved results">Refresh</button>
+    </span>
+  </div>
+  <div id="bt-body">
+    <div class="plan-empty">Loading...</div>
+  </div>
+</section>
+
+<section class="panel market-intel-panel">
+  <div class="panel-title">Market Intelligence <span class="sub">Market Health Score & regime scan</span>
+    <span class="mi-actions">
+      <input id="mi-symbols" class="mi-symbols" placeholder="EURUSD,GBPUSD,XAUUSD (empty = majors)" spellcheck="false">
+      <select id="mi-tf"><option value="H1">H1</option><option value="H4">H4</option><option value="D1">D1</option></select>
+      <button id="mi-scan" class="btn small">Scan</button>
+    </span>
+  </div>
+  <div id="mi-body">
+    <div class="plan-empty">Loading...</div>
+  </div>
+</section>
+
+<section class="panel research-panel">
+  <div class="panel-title">Research Agent <span class="sub">Weekly performance review & data-driven suggestions</span>
+    <span class="rch-actions">
+      <input id="rch-days" type="number" min="1" max="90" value="7" style="width:60px" title="Lookback days">
+      <button id="rch-run" class="btn small">Generate</button>
+      <button id="rch-weekly" class="btn small">Weekly</button>
+    </span>
+  </div>
+  <div id="rch-body">
+    <div class="plan-empty">Loading...</div>
+  </div>
+</section>
+
+<section class="panel coach-panel">
+  <div class="panel-title">AI Coach <span class="sub">Post-trade reviews & similar trade lookup</span>
+    <span class="ch-actions">
+      <input id="ch-ticket" type="number" placeholder="Ticket (empty = latest)" style="width:120px">
+      <button id="ch-review" class="btn small">Review</button>
+      <button id="ch-latest" class="btn small">Latest</button>
+    </span>
+  </div>
+  <div id="ch-body">
+    <div class="plan-empty">Loading...</div>
+  </div>
+</section>
+
+<div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+<script src="/static/vendor/lightweight-charts.js"></script>
+<script src="/static/app.js"></script>
+</body>
+</html>

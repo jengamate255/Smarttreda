@@ -1,0 +1,6 @@
+MetaTrader5>=5.0.45
+fastmcp>=2.4,<3.0
+pandas>=2.1
+numpy>=1.26
+pydantic>=2.7
+python-dotenv>=1.0
