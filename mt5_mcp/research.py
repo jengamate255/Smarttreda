@@ -23,8 +23,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-from memory.statistics import max_drawdown
-from memory.trade_journal import Journal, get_journal
+from mt5_mcp.memory.statistics import max_drawdown
+from mt5_mcp.memory.trade_journal import Journal, get_journal
 
 logger = logging.getLogger("mt5_mcp.research")
 

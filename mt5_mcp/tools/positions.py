@@ -5,8 +5,8 @@ from __future__ import annotations
 import time
 from datetime import datetime, timezone
 
-from client import get_client
-from common import ORDER_TYPE_BUY, PositionView, pip_size, pip_value_per_lot
+from mt5_mcp.client import get_client
+from mt5_mcp.common import ORDER_TYPE_BUY, PositionView, pip_size, pip_value_per_lot
 
 
 def _health(progress: float, risk_used: float) -> tuple[float, str]:

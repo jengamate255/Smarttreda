@@ -1,0 +1,80 @@
+{
+  "last_updated": "2026-08-17",
+  "notes": "Institutional memory of the Edge Agent. Every concept ever tested with its verdict. Never re-test a concept present here without a fundamentally new data source. Evidence files under backtest/edge_lab/ and backtest/results/.",
+  "edges": [
+    {
+      "id": "2026-08-17-liquidity-sweep-v1",
+      "date": "2026-08-17",
+      "concept": "Liquidity sweep detection (stop-hunt reversal AND breakout continuation) as a directional entry signal",
+      "components": ["swing pivots", "ATR wick penetration"],
+      "symbols_tfs": "Boom/Crash 500,100 M1/M5; EURUSD,GBPUSD,XAUUSD M15/H1",
+      "n_events": 46000,
+      "metrics": {
+        "drift3_atr_range": "-0.072..+0.065",
+        "touch_winrate_vs_baseline": "46.6-51.5% vs 46.8-50.9%",
+        "verdict_p": "best 0.014 (negative direction)"
+      },
+      "verdict": "NO EDGE",
+      "evidence_file": "backtest/sweep_validation.py, backtest/results/sweep_*.json",
+      "notes": "Sweep events systematically UNDERPERFORM same-direction random entries by 0.05-0.2 ATR. Only nominally-significant positives were overlapping-event artifacts (failed non-overlap test). Sweep timing systematically misses underlying drift."
+    },
+    {
+      "id": "2026-08-17-tick-volume-flow-v1",
+      "date": "2026-08-17",
+      "concept": "Tick-volume flow scoring (volume z-score quintiles, spikes z>1/z>2, strong-close bars in top 10% range) predicting continuation or exhaustion",
+      "components": ["tick_volume", "bar range"],
+      "symbols_tfs": "Boom/Crash M1/M5; EURUSD,GBPUSD,XAUUSD M15/H1",
+      "n_events": "14000+ bars across 14 datasets",
+      "metrics": {
+        "quintile_drifts": "all within +/-0.05 ATR of baseline",
+        "xau_m15_strong_close": "+0.14/+0.18 ATR (p<=0.003) but 2nd-half decayed to +0.03/+0.05"
+      },
+      "verdict": "NO EDGE (XAUUSD M15 strong-close MARGINAL -> under evaluation)",
+      "evidence_file": "backtest/sweep_validation.py, backtest/results/sweep_*.json",
+      "notes": "No monotone/exploitable structure anywhere. XAUUSD M15 strong-close showed gross +0.14-0.18 ATR (cost 0.018 ATR) but collapsed in 2nd half and no cross-market replication. Promoted to paper monitor only."
+    },
+    {
+      "id": "2026-08-17-cot-positioning-v1",
+      "date": "2026-08-17",
+      "concept": "CFTC COT money-manager positioning extremes (percentile fade) and weekly delta continuation as FX bias filter",
+      "components": ["COT data", "weekly FX returns"],
+      "symbols_tfs": "EURUSD, GBPUSD, XAUUSD, USOIL weekly 2010-2026",
+      "n_events": "737-765 per market (extreme buckets N>=51)",
+      "metrics": {
+        "fade_1wk_p": "EUR 0.81, GBP 0.70, GOLD 0.64, WTI 0.67",
+        "delta_hitrate": "47.4-51.4% (none significant)"
+      },
+      "verdict": "NO EDGE",
+      "evidence_file": "tmp/cot_research/ (temp workspace)",
+      "notes": "No bucket differs from baseline (Welch t + 10k bootstrap CI include 0). Legacy cross-check confirms flatness except EUR where fade LOSES (2005-2015 artifact, recent half N=15)."
+    },
+    {
+      "id": "2026-08-17-cross-asset-leadlag-v1",
+      "date": "2026-08-17",
+      "concept": "Cross-asset lead-lag ('follow the money'): DXY->EUR/GBP, Oil->USDJPY, NDX->XAU/USDJPY, EURUSD->GBPUSD",
+      "components": ["multi-asset correlation"],
+      "symbols_tfs": "H1 (884 bars), M15, H4 (7.5 months), D1 (2.7y), London/NY session gates",
+      "n_events": "432 cells first pass; 1014 cells total incl. H4/D1/sessions",
+      "metrics": {
+        "cells_beating_baseline": "0 of 432; 0 of 1014",
+        "median_net_pips": "-0.65..-3.50",
+        "best_pDiff": 0.577
+      },
+      "verdict": "NO EDGE",
+      "evidence_file": "tmp/leadlag/ (temp workspace)",
+      "notes": "Leader info is already priced into the follower's own past bar. DXY apparent lead is mechanical self-contamination (EURUSD 52.6% of basket). Session gating made it worse. Zero cells beat own-momentum baseline even at p<0.10."
+    },
+    {
+      "id": "2026-08-17-xau-m15-strongclose-paper",
+      "date": "2026-08-17",
+      "concept": "XAUUSD M15 strong-close continuation (top-10% range close + volume z>1) - paper trade monitor",
+      "components": ["tick_volume", "bar range", "XAUUSD M15"],
+      "symbols_tfs": "XAUUSD M15",
+      "n_events": "monitoring (started 2026-08-17, 2-4 week window)",
+      "metrics": {},
+      "verdict": "UNDER EVALUATION",
+      "evidence_file": "backtest/xau_paper_monitor.py, backtest/results/xau_paper_state.json",
+      "notes": "Warmup 20 events (in-sample overlap) showed 55% WR / +0.48 ATR drift3 - NOT evidence. Only events from 2026-08-17 onward count. Daily scheduled task 'XAU Paper Monitor' runs at 18:00. Promote only if out-of-sample stays positive."
+    }
+  ]
+}

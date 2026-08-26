@@ -1,0 +1,138 @@
+=== VOLATILITY ANALYSIS SUMMARY ===
+Data: H1 timeframe, 200 bars (~8+ days), MetaTrader 5 Prop terminal
+Indicators: ATR%, RSI, MACD, Bollinger Band Width, Annualized Vol, ATR/Ratio, 20-day Price Change
+
+------------------------------------------------------------
+RANKED BY VOLATILITY (ATR % - Higher = More Volatile)
+------------------------------------------------------------
+1. UKOIL   - 0.65% ATR, RSI 58.9, MACD 0.172, BB 2.85%
+   Annual Vol: 6.8%, ATR/Avg: 0.93, 20d Chg: +2.01%
+   → Highest volatility - ideal for spike/breakout strategies
+
+2. USOIL   - 0.64% ATR, RSI 56.9, MACD 0.087, BB 2.55%
+   Annual Vol: 6.7%, ATR/Avg: 0.93, 20d Chg: +1.66%
+   → Very high volatility - similar to UKOIL
+
+3. XAGUSD  - 0.55% ATR, RSI 47.5, MACD 0.034, BB 2.82%
+   Annual Vol: 4.8%, ATR/Avg: 0.85, 20d Chg: +1.35%
+   → High volatility - silver, good for mean reversion
+
+4. XAUUSD  - 0.34% ATR, RSI 54.3, MACD 4.538, BB 2.29%
+   Annual Vol: 3.3%, ATR/Avg: 0.88, 20d Chg: +1.33%
+   → Moderate volatility - gold, strongest MACD of all
+
+5. JP225   - 0.30% ATR, RSI 49.8, MACD -31.55, BB 0.75%
+   Annual Vol: 3.6%, ATR/Avg: 0.82, 20d Chg: -0.14%
+   → Moderate - trending (strong negative MACD)
+
+6. GER40   - 0.15% ATR, RSI 53.1, MACD 12.43, BB 0.56%
+   Annual Vol: 1.6%, ATR/Avg: 1.02*, 20d Chg: +0.21%
+   *ATR/Avg > 1 = elevated vol vs average
+
+7. DJI30   - 0.14% ATR, RSI 41.5, MACD -28.36, BB 0.51%
+   Annual Vol: 1.1%, ATR/Avg: 1.13*, 20d Chg: -0.37%
+   *ATR/Avg > 1 = elevated vol
+
+8. SPX500  - 0.10% ATR, RSI 40.5, MACD -0.99, BB 0.57%
+   Annual Vol: 0.9%, ATR/Avg: 1.01*, 20d Chg: -0.27%
+   *ATR/Avg > 1 = elevated vol
+
+9. USDJPY  - 0.09% ATR, RSI 52.8, MACD -0.007, BB 0.39%
+   Annual Vol: 0.8%, ATR/Avg: 1.02*, 20d Chg: -0.08%
+
+10. AUDUSD - 0.09% ATR, RSI 60.2, MACD 0.0006, BB 0.61%
+    Annual Vol: 0.8%, ATR/Avg: 0.97, 20d Chg: +0.36%
+
+11. GBPUSD - 0.08% ATR, RSI 59.2, MACD 0.001, BB 0.61%
+    Annual Vol: 0.8%, ATR/Avg: 1.07*, 20d Chg: +0.33%
+
+12. EURUSD - 0.07% ATR, RSI 63.0, MACD 0.0009, BB 0.54%
+    Annual Vol: 0.7%, ATR/Avg: 1.04*, 20d Chg: +0.30%
+    *ATR/Avg > 1 = elevated vol
+
+------------------------------------------------------------
+STRATEGY RECOMMENDATIONS BY INSTRUMENT
+------------------------------------------------------------
+
+HIGH VOLATILITY (ATR% > 0.5%) - Spike/Breakout Strategies:
+  • UKOIL, USOIL - Trade spike-drift (BOOM/Crash style)
+    - Use: MIN_SPIKE_ATR=5.0 from live strategy
+    - Expect: Large moves, wider stops
+    - Best: Trend following after initial spike
+
+  • XAGUSD - Mean reversion on pullbacks
+    - RSI 47.5 = near neutral
+    - BB 2.82% = moderate bands
+    - Good for: Fibonacci retracement entries
+
+  • XAUUSD - Trend following
+    - RSI 54.3 = neutral
+    - MACD 4.538 = strongly positive
+    - BB 2.29% = moderate
+    - Best: Directional trades with trailing stop
+
+MEDIUM VOLATILITY (ATR% 0.15-0.30%) - Trend Following:
+  • JP225 - Strong trend (MACD -31.55 = strong bearish)
+    - Currently downtrend, consider shorts or avoid
+    - ADX not calculated but low RSI 49.8 = mixed
+
+  • GER40, DJI30, SPX500 - Moderate trend
+    - All have negative MACD (bearish bias)
+    - GER40 has highest ATR/Avg = 1.02 = elevated vol
+    - Good for: Trend-following with tight stops
+
+LOW VOLATILITY (ATR% < 0.15%) - Range/Reversion Strategies:
+  • Major Forex: EURUSD, GBPUSD, USDJPY
+    - ATR < 0.1% = very quiet
+    - RSI 59-63 = approaching overbought
+    - Best: Range trading, sell at resistance, buy at support
+    - Wait for BB contraction then trade the breakout
+
+  • AUDUSD - Slightly stronger (RSI 60.2 = overbought territory)
+    - Consider selling on pullback or waiting for reversal
+
+------------------------------------------------------------
+TRADING RECOMMENDATIONS FOR THIS WEEK
+------------------------------------------------------------
+
+BEST INSTRUMENTS (based on current volatility + technicals):
+
+1. **UKOIL** - Highest volatility (0.65% ATR)
+   - Ideal for: Spike-drift strategies, breakout trades
+   - Current: RSI 58.9, BB 2.85%, +2.01% 20d momentum
+   - Action: Watch for spike patterns, trade direction after validation
+
+2. **USOIL** - Very high volatility (0.64% ATR)
+   - Similar to UKOIL, correlated energy markets
+   - Current: RSI 56.9, BB 2.55%, +1.66% 20d momentum
+   - Action: Same as UKOIL
+
+3. **XAUUSD** - Best risk/reward (0.34% ATR, strong MACD)
+   - Moderate volatility with strong positive momentum
+   - Current: RSI 54.3 (neutral), MACD +4.538 (strong bullish)
+   - Action: Buy on dips, trail stop, target 1R+ moves
+
+4. **JP225** - Trend play (0.30% ATR)
+   - Currently in downtrend (strong negative MACD)
+   - Caution: Avoid going long until trend reverses
+   - Action: Short if trend continues, or wait for reversal
+
+5. **XAGUSD** - Mean reversion opportunity (0.55% ATR)
+   - RSI 47.5 = near neutral, not overbought/oversold
+   - Good for: Fibonacci entries, range-bound trades
+   - Action: Buy near support, sell at resistance
+
+AVOID or BE CAREFUL:
+- **EURUSD/GBPUSD/USDJPY**: Too quiet (<0.1% ATR), require large moves to be profitable
+- **GER40/DJI30/SPX500**: Bearish MACD bias, consider shorts only if trend continues
+
+OPTIMAL PARAMETERS BASED ON VOLATILITY:
+- HIGH ATR instruments (UKOIL, USOIL): Use larger stops, smaller position sizes
+- MEDIUM ATR (XAUUSD, JP225): Standard risk management
+- LOW ATR (Forex): Tight stops, wider targets, or avoid entirely
+
+NEXT STEPS:
+1. Run spike detection on UKOIL/USOIL using the boom_crash_strategy
+2. Set up daily volatility monitoring (ATR% threshold alerts)
+3. Adjust position sizes based on ATR% (higher ATR = smaller size)
+4. Consider correlation: UKOIL/USOIL are correlated, avoid doubling up

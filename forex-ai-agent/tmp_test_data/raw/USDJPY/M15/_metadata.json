@@ -1,0 +1,22 @@
+{
+  "symbol": "USDJPY",
+  "timeframe": "M15",
+  "kind": "raw",
+  "rows": 300,
+  "columns": [
+    "time",
+    "open",
+    "high",
+    "low",
+    "close",
+    "tick_volume",
+    "spread",
+    "real_volume"
+  ],
+  "start": "2023-01-01 00:00:00+00:00",
+  "end": "2023-01-04 02:45:00+00:00",
+  "years": [
+    2023
+  ],
+  "written_utc": "2026-08-13T05:52:24.902142+00:00"
+}

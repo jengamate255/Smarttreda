@@ -66,8 +66,10 @@ class RiskConfig(BaseModel):
     sl_min_pips: float = 20.0
     sl_max_pips: float = 30.0
     max_spread_points: float = 40.0
+    max_spread_relative: float = 0.0
     max_positions: int = 5
     max_trades_per_day: int = 3
+    max_trades_per_day_green_bonus: int = 2
     max_consecutive_losses: int = 3
     revenge_cooldown_minutes: float = 60.0
     news_blackout_minutes: float = 30.0
@@ -90,6 +92,18 @@ class StrategyConfig(BaseModel):
     lookback_candles: int = 400
 
 
+class DerivConfig(BaseModel):
+    enabled: bool = False
+    ws_url: str = "wss://ws.derivws.com/websockets/v3"
+    app_id: int = 1089
+    api_token: str = ""
+    request_timeout_seconds: float = 15.0
+    connect_timeout_seconds: float = 20.0
+    reconnect_attempts: int = 5
+    reconnect_delay_seconds: float = 5.0
+    ping_interval_seconds: float = 30.0
+
+
 class MemoryConfig(BaseModel):
     db_path: str = "memory/journal.db"
     auto_sync_history_days: int = 30
@@ -104,6 +118,16 @@ class LoggingConfig(BaseModel):
     backup_count: int = 5
 
 
+class BoomCrashConfig(BaseModel):
+    trail_arm_r: float = 1.0
+    trail_atr_distance: float = 1.0
+    trail_atr_min: float = 1.0
+    trail_atr_max: float = 1.5
+    partial_exit_fraction: float = 0.5
+    partial_exit_enabled: bool = True
+    watchlist: list[str] = Field(default_factory=list)
+
+
 class Settings(BaseModel):
     server: ServerConfig = Field(default_factory=ServerConfig)
     mt5: MT5Config = Field(default_factory=MT5Config)
@@ -111,6 +135,9 @@ class Settings(BaseModel):
     strategy: StrategyConfig = Field(default_factory=StrategyConfig)
     memory: MemoryConfig = Field(default_factory=MemoryConfig)
     logging: LoggingConfig = Field(default_factory=LoggingConfig)
+    deriv: DerivConfig = Field(default_factory=DerivConfig)
+    deriv_mt5: MT5Config = Field(default_factory=MT5Config)
+    boom_crash: BoomCrashConfig = Field(default_factory=BoomCrashConfig)
 
     def resolve_paths(self, base: Path = BASE_DIR) -> Settings:
         data = self.model_dump()
@@ -180,6 +207,9 @@ def get_settings() -> Settings:
         "strategy": {},
         "memory": {},
         "logging": {},
+        "boom_crash": {},
+        "deriv": {},
+        "deriv_mt5": {},
     }
     if settings_path.exists():
         try:

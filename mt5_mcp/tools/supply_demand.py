@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from client import get_client
-from common import Timeframe, Zone
-from supply_demand import detect_zones
+from mt5_mcp.client import get_client
+from mt5_mcp.common import Timeframe, Zone
+from mt5_mcp.supply_demand import detect_zones
 
 
 def zones(

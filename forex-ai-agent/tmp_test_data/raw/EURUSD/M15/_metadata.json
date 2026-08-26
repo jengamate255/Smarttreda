@@ -1,0 +1,22 @@
+{
+  "symbol": "EURUSD",
+  "timeframe": "M15",
+  "kind": "raw",
+  "rows": 1000,
+  "columns": [
+    "time",
+    "open",
+    "high",
+    "low",
+    "close",
+    "tick_volume",
+    "spread",
+    "real_volume"
+  ],
+  "start": "2023-01-01 00:00:00+00:00",
+  "end": "2023-01-11 09:45:00+00:00",
+  "years": [
+    2023
+  ],
+  "written_utc": "2026-08-13T05:52:24.877108+00:00"
+}

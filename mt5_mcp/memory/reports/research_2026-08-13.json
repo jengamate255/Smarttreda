@@ -1,0 +1,161 @@
+{
+  "generated_at": "2026-08-13T16:31:23.228101+00:00",
+  "window_days": 7,
+  "window_start": "2026-08-10T11:40:55+00:00",
+  "window_end": "2026-08-13T14:46:13.681106+00:00",
+  "trades": 8,
+  "win_rate": 50.0,
+  "expectancy": 4.4,
+  "profit_factor": 1.41,
+  "average_rr": 1.5,
+  "average_win": 30.15,
+  "average_loss": -28.46,
+  "net_pnl": 35.22,
+  "max_drawdown": {
+    "max_drawdown": 84.39,
+    "max_drawdown_percent": 0.84,
+    "peak_time": "2026-08-10T15:09:11+00:00",
+    "trough_time": "2026-08-11T15:10:08+00:00"
+  },
+  "best_symbols": [
+    {
+      "name": "CRASH 600 INDEX",
+      "trades": 1,
+      "win_rate": 100.0,
+      "net_pnl": 59.76,
+      "avg_pnl": 59.76
+    },
+    {
+      "name": "BOOM 900 INDEX",
+      "trades": 1,
+      "win_rate": 100.0,
+      "net_pnl": 59.74,
+      "avg_pnl": 59.74
+    },
+    {
+      "name": "CRASH 500 INDEX",
+      "trades": 2,
+      "win_rate": 100.0,
+      "net_pnl": 1.09,
+      "avg_pnl": 0.55
+    },
+    {
+      "name": "EURUSD",
+      "trades": 2,
+      "win_rate": 0.0,
+      "net_pnl": -0.98,
+      "avg_pnl": -0.49
+    },
+    {
+      "name": "BOOM 150 INDEX",
+      "trades": 1,
+      "win_rate": 0.0,
+      "net_pnl": -41.3,
+      "avg_pnl": -41.3
+    }
+  ],
+  "worst_symbols": [
+    {
+      "name": "CRASH 900 INDEX",
+      "trades": 1,
+      "win_rate": 0.0,
+      "net_pnl": -43.09,
+      "avg_pnl": -43.09
+    },
+    {
+      "name": "BOOM 150 INDEX",
+      "trades": 1,
+      "win_rate": 0.0,
+      "net_pnl": -41.3,
+      "avg_pnl": -41.3
+    },
+    {
+      "name": "EURUSD",
+      "trades": 2,
+      "win_rate": 0.0,
+      "net_pnl": -0.98,
+      "avg_pnl": -0.49
+    }
+  ],
+  "setups": [
+    {
+      "name": "boom_crash_spike_drift",
+      "trades": 3,
+      "win_rate": 66.7,
+      "net_pnl": 78.2,
+      "avg_pnl": 26.07
+    },
+    {
+      "name": "BOS-demand",
+      "trades": 1,
+      "win_rate": 0.0,
+      "net_pnl": 0.0,
+      "avg_pnl": 0.0
+    },
+    {
+      "name": "manual",
+      "trades": 4,
+      "win_rate": 50.0,
+      "net_pnl": -42.98,
+      "avg_pnl": -10.74
+    }
+  ],
+  "sessions": [
+    {
+      "name": "11:00 UTC",
+      "trades": 1,
+      "win_rate": 100.0,
+      "net_pnl": 0.2,
+      "avg_pnl": 0.2
+    },
+    {
+      "name": "14:00 UTC",
+      "trades": 2,
+      "win_rate": 50.0,
+      "net_pnl": -0.09,
+      "avg_pnl": -0.04
+    },
+    {
+      "name": "15:00 UTC",
+      "trades": 1,
+      "win_rate": 0.0,
+      "net_pnl": -43.09,
+      "avg_pnl": -43.09
+    }
+  ],
+  "mistakes": [
+    {
+      "mistake": "entered_before_confirmation",
+      "occurrences": 2
+    },
+    {
+      "mistake": "stale_spike_age",
+      "occurrences": 1
+    },
+    {
+      "mistake": "ignored_spike_clustering",
+      "occurrences": 1
+    }
+  ],
+  "suggestions": [
+    {
+      "severity": "medium",
+      "suggestion": "review or drop the 'manual' setup",
+      "support": "4 trades, -42.98 net, 50% win rate",
+      "action": "stop taking it as-is; add a stronger confirmation filter or remove it from the setup list"
+    },
+    {
+      "severity": "medium",
+      "suggestion": "stop repeating 'entered_before_confirmation'",
+      "support": "2 occurrences in this window",
+      "action": "add it to the pre-trade checklist and journal the mistake every time it happens so the count is tracked"
+    },
+    {
+      "severity": "low",
+      "suggestion": "winners are being cut short",
+      "support": "average realised R multiple 1.50 (target 3.0)",
+      "action": "let winners reach the full TP or trail stops; do not close early"
+    }
+  ],
+  "markdown": "# Research Report - 2026-08-13\n\nWindow: 7 day(s) from 2026-08-10 to 2026-08-13\n\n- Trades: 8\n- Win rate: 50.0%\n- Expectancy: +4.40 per trade\n- Profit factor: 1.41\n- Average R multiple: 1.50\n- Net P&L: +35.22\n- Max drawdown: 0.84%\n\n## Best symbols\n- CRASH 600 INDEX: 1 trades, 100% win, +59.76\n- BOOM 900 INDEX: 1 trades, 100% win, +59.74\n- CRASH 500 INDEX: 2 trades, 100% win, +1.09\n- EURUSD: 2 trades, 0% win, -0.98\n- BOOM 150 INDEX: 1 trades, 0% win, -41.30\n\n## Worst symbols\n- CRASH 900 INDEX: 1 trades, 0% win, -43.09\n- BOOM 150 INDEX: 1 trades, 0% win, -41.30\n- EURUSD: 2 trades, 0% win, -0.98\n\n## Setups\n- boom_crash_spike_drift: 3 trades, +78.20\n- BOS-demand: 1 trades, +0.00\n- manual: 4 trades, -42.98\n\n## Mistakes\n- entered_before_confirmation x2\n- stale_spike_age x1\n- ignored_spike_clustering x1\n\n## Suggestions\n- [medium] review or drop the 'manual' setup - 4 trades, -42.98 net, 50% win rate (action: stop taking it as-is; add a stronger confirmation filter or remove it from the setup list)\n- [medium] stop repeating 'entered_before_confirmation' - 2 occurrences in this window (action: add it to the pre-trade checklist and journal the mistake every time it happens so the count is tracked)\n- [low] winners are being cut short - average realised R multiple 1.50 (target 3.0) (action: let winners reach the full TP or trail stops; do not close early)\n"
+}

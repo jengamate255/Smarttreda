@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from compliance import evaluate, gate
-from memory.trade_journal import get_journal
+from mt5_mcp.compliance import evaluate, gate
+from mt5_mcp.memory.trade_journal import get_journal
 
 
 def compliance_status() -> dict:

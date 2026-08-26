@@ -1,0 +1,175 @@
+project:
+  name: forex-ai-agent
+  feature_version: "v1"
+
+symbols:
+  - EURUSD
+  - GBPUSD
+  - USDJPY
+  - AUDUSD
+  - USDCAD
+  - USDCHF
+  - NZDUSD
+  - XAUUSD
+
+timeframes:
+  - M5
+  - M15
+  - H1
+  - H4
+
+# Seconds per bar per timeframe (used for gap detection and MTF alignment).
+bar_seconds:
+  M5: 300
+  M15: 900
+  H1: 3600
+  H4: 14400
+
+data:
+  # Years of history to request from MT5 (per timeframe).
+  history_years:
+    M5: 2
+    M15: 6
+    H1: 12
+    H4: 15
+  # MT5 terminal timezone offset relative to UTC (hours).
+  # copy_rates* returns timezone-naive timestamps in the terminal's timezone.
+  # Set to the broker offset so that normalization to UTC is correct.
+  broker_tz_offset_hours: 0
+  gap_tolerance_multiplier: 5.0
+
+mt5:
+  # Values come from MT5_LOGIN / MT5_PASSWORD / MT5_SERVER env vars or .env.
+  login_env: MT5_LOGIN
+  password_env: MT5_PASSWORD
+  server_env: MT5_SERVER
+  terminal_path_env: MT5_PATH
+  # Reduce bar request size to keep memory usage bounded (processes chunked).
+  max_bars_per_request: 1000000
+
+features:
+  ema_periods: [20, 50, 100, 200]
+  rsi_period: 14
+  atr_period: 14
+  roc_periods: [1, 5, 10, 20]
+  momentum_periods: [5, 10, 20]
+  vol_window: 20
+  vol_percentile_window: 100
+  swing_window: 3
+  # Multi-timeframe context: base TF -> {context TF: role}
+  htf_context:
+    M5: { H1: setup, H4: regime }
+    M15: { H1: setup, H4: regime }
+    H1: { H4: regime }
+    H4: {}
+
+supply_demand:
+  enabled: true
+  min_impulse_atr: 1.0
+  impulse_lookback_bars: 5
+  zone_depth_atr: 0.5
+  max_touch_distance_atr: 0.5
+
+labels:
+  # Stop configuration: "fixed_pips" or "atr_multiple"
+  stop_mode: atr_multiple
+  fixed_stop_pips: 20.0
+  atr_stop_multiple: 1.5
+  # Risk-reward ratios to label simultaneously.
+  rr_ratios: [2, 3, 4]
+  primary_rr: 3
+  # Maximum look-ahead bars considered per trade.
+  max_lookahead_bars: 96
+  # Costs applied inside label simulation (both entry and exit sides).
+  spread_pips: 0.8
+  commission_pips: 0.2
+  # If TP and SL are both touched within the same bar, assume SL first (conservative).
+  conservative_same_bar: true
+
+sessions:
+  asian: [0, 8]
+  london: [7, 16]
+  new_york: [12, 21]
+  # Session overlap that is commonly considered liquid for FX majors.
+  overlap_sessions: [london, new_york]
+
+risk:
+  default_percent: 0.5
+  supported_percents: [0.25, 0.5, 1.0]
+  max_daily_loss_percent: 2.0
+  max_drawdown_percent: 20.0
+  lot_step: 0.01
+  min_lots: 0.01
+  max_lots: 100.0
+
+model:
+  min_confidence: 0.65
+  min_tp_probability: 0.65
+  # Models trained: setup_classifier, direction, outcome_probability
+  tasks: [setup_classifier, direction, outcome_probability]
+  tree_backends: [lightgbm, xgboost]
+  torch:
+    enabled: false
+    hidden_sizes: [256, 128]
+    dropout: 0.3
+    epochs: 30
+    batch_size: 1024
+    learning_rate: 0.001
+  # Chronological splits (configurable; used by train/evaluate/backtest).
+  splits:
+    train_start: "2018-01-01"
+    train_end: "2022-12-31"
+    validation_start: "2023-01-01"
+    validation_end: "2023-12-31"
+    test_start: "2024-01-01"
+    test_end: "2024-12-31"
+    walk_forward_start: "2025-01-01"
+    walk_forward_end: "2099-12-31"
+
+models:
+  # Where versioned model artifacts live (see src/ml/model_registry.py).
+  root: models
+
+backtest:
+  spread_mode: historical
+  commission_pips: 0.2
+  slippage_pips: 0.1
+  max_simultaneous_trades: 1
+  # Bars of cooldown after a closed trade before a new entry is allowed.
+  cooldown_bars: 5
+  session_whitelist: [] # empty = trade any session; e.g. [london, new_york]
+
+agent:
+  min_confidence: 0.65
+  min_tp_probability: 0.65
+  max_spread_pips: 2.5
+  # Combined candidate score must be >= this to emit TRADE.
+  min_candidate_score: 0.4
+
+execution:
+  # BACKTEST | PAPER | DEMO | LIVE
+  mode: PAPER
+  # LIVE additionally requires env MT5_ALLOW_LIVE=1 and config execution.mode: LIVE
+  allow_live_env: MT5_ALLOW_LIVE
+
+paper:
+  poll_seconds: 300
+  journal_dir: data/paper
+  lookback_bars: 300
+  # Starting equity for the paper account; paper_equity() marks TP/SL close-outs
+  # each poll and equity = start + realized P&L (risk gates live against it).
+  start_equity: 10000.0
+  # P/L in account currency for a 1-pip move on 1.00 lot (EURUSD ~10 USD/lot/pip).
+  pip_value_per_lot: 10.0
+
+# Optional per-symbol trading parameters (agent path only: stops, TP ratio,
+# spread tolerance, risk budget). Any section/key overrides the global default
+# for that symbol via Config.get_symbol().
+symbols_overrides:
+  # EURUSD:
+  #   labels:
+  #     atr_stop_multiple: 2.0
+  #   agent:
+  #     max_spread_pips: 3.0
+  #   risk:
+  #     default_percent: 0.5

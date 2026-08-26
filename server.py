@@ -25,15 +25,25 @@ class MT5Config:
         self.password = os.getenv("MT5_PASSWORD", "")
         self.server = os.getenv("MT5_SERVER", "")
         self.path = os.getenv("MT5_PATH", "")
+        logger.debug("MT5Config: login=%s server=%s path=%s configured=%s",
+                     self.login, self.server, self.path, self.is_configured())
 
     def is_configured(self) -> bool:
         return all([self.login, self.password, self.server])
 
 
 class MT5Connection:
+    """Facade over the unified mt5_mcp client layer (item #5).
+
+    Historically this class held its own private MetaTrader5 session, which
+    meant a dashboard process could have TWO live connections pointing at
+    different terminals. All connection state now lives in
+    ``mt5_mcp.client.get_client()``; this facade keeps the old call surface
+    (connect / reconnect / disconnect / is_connected / ensure_connected)
+    so existing callers keep working against the SAME session.
+    """
+
     _instance: Optional["MT5Connection"] = None
-    _connected: bool = False
-    _config: MT5Config | None = None
     _lock = threading.Lock()
 
     def __new__(cls):
@@ -41,74 +51,53 @@ class MT5Connection:
             cls._instance = super().__new__(cls)
         return cls._instance
 
-    def connect(self, config: MT5Config, attempts: int = 3, delay: float = 2.0) -> bool:
-        if self._connected:
+    @staticmethod
+    def _client():
+        from client import get_client  # mt5_mcp.client via sys.path
+
+        return get_client()
+
+    def connect(self, config: Optional[MT5Config] = None,
+                attempts: int = 3, delay: float = 2.0) -> bool:
+        del config, attempts, delay  # config comes from settings + env overrides
+        try:
+            self._client().ensure_connected()
             return True
-        with self._lock:
-            if self._connected:
-                return True
-            self._config = config
-            for attempt in range(1, attempts + 1):
-                if self._try_connect():
-                    return True
-                if attempt < attempts:
-                    time.sleep(delay * attempt)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning("MT5 connect failed: %s", exc)
             return False
-
-    def _try_connect(self) -> bool:
-        if not mt5.initialize(path=self._config.path):
-            logger.warning("MT5 initialize failed: %s", mt5.last_error())
-            return False
-
-        if self._config.is_configured() and not mt5.login(
-            self._config.login, password=self._config.password, server=self._config.server
-        ):
-            logger.warning("MT5 login failed: %s", mt5.last_error())
-            mt5.shutdown()
-            return False
-
-        self._connected = True
-        logger.info("Connected to MT5 successfully")
-        return True
 
     def reconnect(self) -> bool:
-        """Re-attach after a dropped connection (e.g. terminal restart).
-
-        Never calls shutdown() on an already-dead session (that can hang);
-        a fresh initialize() re-attaches to the terminal."""
-        with self._lock:
-            if self._connected:
-                try:
-                    if mt5.account_info() is not None:
-                        return True  # session is actually healthy
-                except (Exception, SystemExit) as exc:  # noqa: BLE001
-                    logger.warning("MT5 liveness check failed: %s", exc)
-            self._connected = False
-            try:
-                if mt5.initialize(path=self._config.path):
-                    self._connected = True
-                    logger.info("Reconnected to MT5 successfully")
-                    return True
-            except (Exception, SystemExit) as exc:  # noqa: BLE001
-                logger.warning("MT5 reconnect failed: %s", exc)
-            return False
+        """Re-attach after a dropped connection."""
+        return self.connect()
 
     def disconnect(self):
-        with self._lock:
-            if self._connected:
-                mt5.shutdown()
-                self._connected = False
-                logger.info("Disconnected from MT5")
+        """No-op: the shared client layer owns the session lifecycle."""
 
     def is_connected(self) -> bool:
-        return self._connected
+        try:
+            info = self._client().account_info()
+            return bool(info and info.get("login"))
+        except Exception:  # noqa: BLE001
+            return False
 
     def ensure_connected(self):
-        if not self._connected and not self.reconnect():
-            raise RuntimeError("MT5 not connected. Call connect() first.")
+        self._client().ensure_connected()
 
 
 mt5_connection = MT5Connection()
+
+
+# Deriv client initialization
+_deriv_client = None
+
+
+def get_deriv_client():
+    global _deriv_client
+    if _deriv_client is None:
+        from mt5_mcp.deriv_client import DerivClient, get_deriv_client as _get_deriv_client
+        _deriv_client = _get_deriv_client()
+    return _deriv_client
 
 
 @asynccontextmanager
@@ -116,10 +105,32 @@ async def lifespan(app: FastMCP) -> AsyncIterator[None]:
     config = MT5Config()
     if config.is_configured():
         mt5_connection.connect(config)
+    
+    # Initialize Deriv client if configured
+    try:
+        from mt5_mcp.config import get_settings
+        settings = get_settings()
+        if settings.deriv.is_configured:
+            deriv_client = get_deriv_client()
+            deriv_client.connect()
+            logger.info("Connected to Deriv at startup")
+        else:
+            logger.info("Deriv not configured, skipping")
+    except Exception as exc:
+        logger.warning("Deriv not connected at startup: %s (tools will retry)", exc)
+    
     try:
         yield
     finally:
         mt5_connection.disconnect()
+        # Shutdown Deriv client
+        global _deriv_client
+        if _deriv_client is not None:
+            try:
+                _deriv_client.shutdown()
+                logger.info("Disconnected from Deriv")
+            except Exception as exc:
+                logger.warning("Deriv shutdown error: %s", exc)
 
 
 mcp = FastMCP("MT5 MCP Server", lifespan=lifespan)

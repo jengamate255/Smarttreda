@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from research import report, weekly_report
+from mt5_mcp.research import report, weekly_report
 
 
 def register(mcp) -> None:

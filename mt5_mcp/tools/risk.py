@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import time
 
-from client import get_client
-from common import pip_size, pip_value_per_lot
-from config import get_settings
+from mt5_mcp.client import get_client
+from mt5_mcp.common import pip_size, pip_value_per_lot
+from mt5_mcp.config import get_settings
 
 
 def _day_start_epoch() -> int:

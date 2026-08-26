@@ -37,6 +37,9 @@ mt5_mcp/logs/
 mt5_mcp/memory/*.db
 mt5_mcp/memory/*.db-journal
 mt5_mcp/memory/screenshots/
+mt5_mcp/memory/auto_trader_state.json
+mt5_mcp/memory/auto_trader.lock
+mt5_mcp/memory/AUTO_TRADER_KILL
 
 # OS / editor
 .DS_Store
@@ -46,3 +49,7 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# Frame cache (regenerated from MT5)
+mt5_mcp/backtest/frame_cache/
+

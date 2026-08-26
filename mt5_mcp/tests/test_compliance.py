@@ -9,7 +9,7 @@ import pytest
 
 from common import NewsEvent
 from compliance import evaluate, gate
-from tools.news import get_provider, set_provider
+from tools.news import StubNewsProvider, get_provider, set_provider
 
 MAGIC = 20260601
 
@@ -20,6 +20,10 @@ def _state(tmp_path, monkeypatch):
 
     monkeypatch.setattr(compliance, "STATE_PATH", tmp_path / "state.json")
     monkeypatch.setattr(compliance, "_record_event", lambda kind, message: None)
+    original_provider = get_provider()
+    set_provider(StubNewsProvider())
+    yield
+    set_provider(original_provider)
 
 
 @pytest.fixture
@@ -163,7 +167,7 @@ class TestModes:
         status = evaluate()
         assert status["mode"] == "halted"
         assert status["status"] == "RED"
-        assert any(r["action"] == 7 for r in com_client.requests)
+        assert any(r["action"] == 8 for r in com_client.requests)
         verdict = gate("EURUSD", "BUY", 0.05, sl_price=1.19500)
         assert verdict["allowed"] is False
         assert "halted" in " ".join(verdict["violations"])
@@ -254,6 +258,26 @@ class TestMarketFilters:
             verdict = gate("EURUSD", "BUY", 0.05, sl_price=1.19500)
             assert verdict["allowed"] is False
             assert any("high-impact news" in v for v in verdict["violations"])
+        finally:
+            set_provider(original)
+
+    def test_news_blackout_does_not_block_synthetic(self, com_client, monkeypatch):
+        class FakeNews:
+            def upcoming(self, hours=24, currency=""):
+                return [
+                    NewsEvent(
+                        time=datetime.now(timezone.utc) + timedelta(minutes=5),
+                        currency="USD",
+                        impact="high",
+                        title="FOMC",
+                    )
+                ]
+
+        original = get_provider()
+        try:
+            set_provider(FakeNews())
+            verdict = gate("Boom 500 Index", "SELL", 0.05, sl_price=1.20050)
+            assert verdict["allowed"] is True
         finally:
             set_provider(original)
 

@@ -1,0 +1,13 @@
+{
+  "name": "MT5 Dashboard",
+  "short_name": "MT5 Dash",
+  "description": "Live MT5 terminal dashboard: charts, positions, risk, strategy signals and trade events.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111216",
+  "theme_color": "#111216",
+  "icons": [
+    { "src": "/static/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/static/icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

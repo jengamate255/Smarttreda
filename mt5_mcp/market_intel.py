@@ -27,10 +27,10 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
-from client import get_client
-from config import get_settings
-from indicators import atr, bollinger, ema
-from strategy import analyze_trend
+from mt5_mcp.client import get_client
+from mt5_mcp.config import get_settings
+from mt5_mcp.indicators import atr, bollinger, ema
+from mt5_mcp.strategy import analyze_trend
 
 logger = logging.getLogger("mt5_mcp.market_intel")
 
@@ -75,7 +75,13 @@ def atr_percentile(df: pd.DataFrame, period: int = 14, lookback: int = 250) -> d
     """Where the current ATR sits in its own recent history (0-100) plus z-score."""
     series = atr(df, period)
     if len(series) < 30:
-        return {"atr_percentile": 50.0, "atr_z": 0.0}
+        current = float(series.iloc[-1]) if len(series) else 0.0
+        return {
+            "atr_percentile": 50.0,
+            "atr_z": 0.0,
+            "atr": round(current, 8),
+            "abnormal_volatility": False,
+        }
     window = series.iloc[-lookback:]
     current = float(series.iloc[-1])
     std = float(window.std() or 1e-12)
@@ -107,7 +113,17 @@ def market_regime(
 ) -> dict[str, Any]:
     """Classify the current market regime from one timeframe of candles."""
     if df is None or len(df) < max(fast, slow):
-        return {"regime": "unknown", "trend": "sideways", "evidence": "not enough data"}
+        return {
+            "regime": "unknown",
+            "trend": "sideways",
+            "evidence": "not enough data",
+            "ema_separation_atr": 0.0,
+            "bollinger_width_ratio": 1.0,
+            "atr_percentile": 50.0,
+            "atr_z": 0.0,
+            "atr": 0.0,
+            "abnormal_volatility": False,
+        }
     e_fast = float(ema(df["close"], fast).iloc[-1])
     e_slow = float(ema(df["close"], slow).iloc[-1])
     atr_val = float(atr(df).iloc[-1]) or 1e-9
@@ -437,6 +453,9 @@ def scan_markets(
             report = market_health(symbol, timeframe=timeframe, lookback=lookback)
         except Exception as exc:  # noqa: BLE001
             failed.append(f"{symbol}: {exc}")
+            continue
+        if report.get("verdict") == "unavailable":
+            failed.append(f"{symbol}: insufficient history")
             continue
         if report.get("health_score", 0.0) >= min_score:
             ranked.append(

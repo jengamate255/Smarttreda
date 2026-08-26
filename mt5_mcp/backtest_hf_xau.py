@@ -4,7 +4,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from backtest import Backtester, BacktestParams, load_frames
-from client import get_client
+from mt5_mcp.client import get_client
 
 client = get_client()
 client.ensure_connected()

@@ -6,7 +6,7 @@ import time
 
 from pydantic import BaseModel
 
-from client import get_client
+from mt5_mcp.client import get_client
 
 
 class AccountSnapshot(BaseModel):

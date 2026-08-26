@@ -1,0 +1,22 @@
+{
+  "symbol": "GBPUSD",
+  "timeframe": "H1",
+  "kind": "raw",
+  "rows": 5000,
+  "columns": [
+    "time",
+    "open",
+    "high",
+    "low",
+    "close",
+    "tick_volume",
+    "spread",
+    "real_volume"
+  ],
+  "start": "2022-01-01 00:00:00+00:00",
+  "end": "2022-07-28 07:00:00+00:00",
+  "years": [
+    2022
+  ],
+  "written_utc": "2026-08-13T05:52:24.844944+00:00"
+}

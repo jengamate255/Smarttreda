@@ -75,27 +75,30 @@ def vwap(df: pd.DataFrame, rolling: int | None = None) -> pd.Series:
     return cum_pv / cum_v.replace(0.0, np.nan)
 
 
+def _swings(values: np.ndarray, left: int, right: int, find_max: bool) -> list[int]:
+    """Indices of confirmed fractal pivots (identical result to the old loop)."""
+    n = len(values)
+    if n < left + right + 1:
+        return []
+    windows = np.lib.stride_tricks.sliding_window_view(values, left + right + 1)
+    extremes = windows.max(axis=1) if find_max else windows.min(axis=1)
+    centers = windows[:, left]
+    if find_max:
+        unique = np.equal(windows, extremes[:, None]).sum(axis=1) == 1
+        hit = (centers == extremes) & unique
+    else:
+        unique = np.equal(windows, extremes[:, None]).sum(axis=1) == 1
+        hit = (centers == extremes) & unique
+    return [int(i) for i in np.nonzero(hit)[0] + left]
+
+
 def swing_highs(df: pd.DataFrame, left: int = 5, right: int = 5) -> list[int]:
     """Indices of confirmed swing highs (fractal pivots)."""
-    highs = df["high"].to_numpy()
-    indices: list[int] = []
-    n = len(highs)
-    for i in range(left, n - right):
-        window = highs[i - left : i + right + 1]
-        if highs[i] == window.max() and np.count_nonzero(window == window.max()) == 1:
-            indices.append(int(i))
-    return indices
+    return _swings(df["high"].to_numpy(), int(left), int(right), True)
 
 
 def swing_lows(df: pd.DataFrame, left: int = 5, right: int = 5) -> list[int]:
-    lows = df["low"].to_numpy()
-    indices: list[int] = []
-    n = len(lows)
-    for i in range(left, n - right):
-        window = lows[i - left : i + right + 1]
-        if lows[i] == window.min() and np.count_nonzero(window == window.min()) == 1:
-            indices.append(int(i))
-    return indices
+    return _swings(df["low"].to_numpy(), int(left), int(right), False)
 
 
 def volume(df: pd.DataFrame, period: int = 20) -> pd.DataFrame:

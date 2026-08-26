@@ -2,12 +2,22 @@
 
 from __future__ import annotations
 
+from dataclasses import asdict
+
 import numpy as np
 import pandas as pd
 
-from backtest import Backtester, BacktestParams, default_variants
+from backtest import (
+    Backtester,
+    BacktestParams,
+    _cache_write,
+    _run_variant_job,
+    default_variants,
+)
+from indicators import atr
+from price_action import detect_patterns
 from strategy import DEMAND, SUPPLY
-from supply_demand import Zone
+from supply_demand import Zone, detect_zones
 
 
 def _info() -> dict:
@@ -174,3 +184,125 @@ class TestVariants:
         score, confidence = _trade_score_formulas(0.8, 90.0, 0.8, 3.0, 3.0)
         assert 70.0 < score < 100.0
         assert confidence > 60.0
+
+
+class TestDefaultVariants:
+    def test_carries_bars(self) -> None:
+        variants = default_variants(["EURUSD"], bars=1234)
+        assert len(variants) == 12
+        assert all(v.bars == 1234 for v in variants)
+
+    def test_carries_default_bars(self) -> None:
+        variants = default_variants(["EURUSD"])
+        assert all(v.bars == 5000 for v in variants)
+
+
+class TestPrecomputedInputsExact:
+    """Passing precomputed ATR must produce byte-identical results."""
+
+    def _frame(self, n: int = 300) -> pd.DataFrame:
+        rng = np.random.default_rng(3)
+        close = 1.1 + np.cumsum(rng.normal(0, 0.004, n))
+        df = _frame(n)
+        df = df.copy()
+        df["close"] = close
+        opens = np.roll(close, 1)
+        opens[0] = close[0]
+        df["open"] = opens
+        df["high"] = np.maximum(df["open"], close) + 0.002
+        df["low"] = np.minimum(df["open"], close) - 0.002
+        return df
+
+    def test_detect_zones_with_atr_series(self) -> None:
+        df = self._frame()
+        expected = detect_zones(df, lookback=200, min_strength=40.0)
+        got = detect_zones(
+            df,
+            lookback=200,
+            min_strength=40.0,
+            atr_series=atr(df.tail(200).reset_index(drop=True)),
+        )
+        assert [asdict(z) for z in expected] == [asdict(z) for z in got]
+
+    def test_detect_patterns_with_atr_now(self) -> None:
+        df = self._frame()
+        expected = detect_patterns(df, check_last=1)
+        atr_now = float(atr(df.tail(200).reset_index(drop=True)).iloc[-1]) or 1.0
+        got = detect_patterns(df, check_last=1, atr_now=atr_now)
+        assert [asdict(p) for p in expected] == [asdict(p) for p in got]
+
+
+class TestFrameCache:
+    def test_roundtrip_identical(self, tmp_path, monkeypatch) -> None:
+        import backtest as bt
+
+        monkeypatch.setattr(bt, "FRAME_CACHE_DIR", tmp_path)
+        df = _bullish_frame(500)
+        path, meta_path = bt._cache_paths("EURUSD", "H1", 500)
+        _cache_write(path, meta_path, df)
+        frames = bt.load_frames(
+            "EURUSD", ["H1"], 500, use_cache=True, allow_mt5=False, ttl=3600
+        )
+        assert list(frames.keys()) == ["H1"]
+        pd.testing.assert_frame_equal(frames["H1"], df)
+
+    def test_missing_cache_returns_empty_without_mt5(self, tmp_path, monkeypatch) -> None:
+        import backtest as bt
+
+        monkeypatch.setattr(bt, "FRAME_CACHE_DIR", tmp_path)
+        frames = bt.load_frames(
+            "EURUSD", ["H1", "H4"], 500, use_cache=True, allow_mt5=False, ttl=3600
+        )
+        assert frames == {}
+
+    def test_stale_cache_reused_without_mt5(self, tmp_path, monkeypatch) -> None:
+        import backtest as bt
+
+        monkeypatch.setattr(bt, "FRAME_CACHE_DIR", tmp_path)
+        df = _bullish_frame(500)
+        path, meta_path = bt._cache_paths("EURUSD", "H1", 500)
+        _cache_write(path, meta_path, df)
+        frames = bt.load_frames(
+            "EURUSD", ["H1"], 500, use_cache=True, allow_mt5=False, ttl=0.0
+        )
+        # stale cache is reused (with a warning) when MT5 is unavailable
+        assert list(frames.keys()) == ["H1"]
+        pd.testing.assert_frame_equal(frames["H1"], df)
+
+
+class TestVariantJob:
+    def test_runs_from_cache(self, tmp_path, monkeypatch) -> None:
+        import backtest as bt
+
+        monkeypatch.setattr(bt, "FRAME_CACHE_DIR", tmp_path)
+        df = _bullish_frame(1200)
+        frames = {"H1": df, "H4": _frame_for_tfs(df, "4h")}
+        for tf, frame in frames.items():
+            path, meta_path = bt._cache_paths("EURUSD", tf, 500)
+            _cache_write(path, meta_path, frame)
+        p = BacktestParams(symbol="EURUSD", bars=500)
+        job = {
+            "params": asdict(p),
+            "info": _info(),
+            "out_dir": str(tmp_path / "results"),
+            "use_cache": True,
+            "ttl": 3600,
+        }
+        done = _run_variant_job(job)
+        assert done["result"].errors == []
+        assert (tmp_path / "results" / f"{done['name']}.json").exists()
+
+    def test_empty_frames_report_error(self, tmp_path, monkeypatch) -> None:
+        import backtest as bt
+
+        monkeypatch.setattr(bt, "FRAME_CACHE_DIR", tmp_path)
+        p = BacktestParams(symbol="EURUSD", bars=500)
+        job = {
+            "params": asdict(p),
+            "info": _info(),
+            "out_dir": str(tmp_path / "results"),
+            "use_cache": True,
+            "ttl": 3600,
+        }
+        done = _run_variant_job(job)
+        assert done["result"].errors

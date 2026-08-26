@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from common import TradePlan, TrendResult
-from strategy import evaluate_strategy, trend_analysis
+from mt5_mcp.common import TradePlan, TrendResult
+from mt5_mcp.strategy import evaluate_strategy, trend_analysis
 
 
 def register(mcp) -> None:

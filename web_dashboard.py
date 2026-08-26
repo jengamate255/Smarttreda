@@ -27,8 +27,28 @@ import pandas as pd
 from fastapi import FastAPI, HTTPException, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import HTMLResponse
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.gzip import GZipMiddleware
+from starlette.requests import Request
+from starlette.responses import Response
 
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, _BASE_DIR)
+sys.path.append(os.path.join(_BASE_DIR, "mt5_mcp"))
+from client import get_client
+from memory.trade_journal import get_journal
+from price_action import detect_patterns
+from strategy import analyze_trend as bot_trend
+from strategy import evaluate_strategy, market_structure
+from supply_demand import detect_zones
+from tools.trades import close_position, modify_sl_tp, open_market
+
+from mt5_mcp.market_intel import market_health, scan_markets
+from mt5_mcp.chart_patterns import analyze_chart
+from mt5_mcp.tools.boom_crash_strategy import detect_spike
+
 sys.path.insert(0, _BASE_DIR)
 sys.path.append(os.path.join(_BASE_DIR, "mt5_mcp"))
 from client import get_client
@@ -69,14 +89,38 @@ HEALTH_INTERVAL = int(os.getenv("WEB_HEALTH_INTERVAL", "15"))
 
 _lock = threading.Lock()
 
-# Backtesting (blended from the mt5_mcp backtest tooling).
-_BT_RESULTS = os.path.join(BASE_DIR, "mt5_mcp", "backtest", "results")
-_BT_MONTH = os.path.join(_BT_RESULTS, "month")
-_BT_FORWARD = os.path.join(_BT_RESULTS, "forward")
-_BT_LOCK = threading.Lock()
-_BT_MC_CACHE: dict = {"ts": 0.0, "data": None}
-_BT_TFS = ("M1", "M5", "M15", "M30", "H1", "H4", "D1", "W1")
-_BT_MAX_BARS = 20000
+WEB_AUTH_TOKEN = os.getenv("WEB_AUTH_TOKEN", "")
+
+_lock = threading.RLock()
+
+
+class _TTLCache:
+    """Simple in-memory TTL cache."""
+
+    def __init__(self, ttl_seconds: int):
+        self._ttl = ttl_seconds
+        self._data: dict = {}
+
+    def get(self, key):
+        hit = self._data.get(key)
+        if not hit:
+            return None
+        ts, value = hit
+        if time.time() > ts:
+            del self._data[key]
+            return None
+        return value
+
+    def set(self, key, value) -> None:
+        self._data[key] = (time.time() + self._ttl, value)
+
+
+_scan_cache = _TTLCache(ttl_seconds=30)
+
+
+def _cache_key(*args, **kwargs) -> tuple:
+    return (args, tuple(sorted(kwargs.items())))
+
 
 
 def _setup_logging() -> logging.Logger:
@@ -115,6 +159,37 @@ TIMEFRAMES = {
 CLOSED_ENTRY = mt5.DEAL_ENTRY_OUT
 
 
+_tick_cache: dict = {}
+_TICK_TTL = 1.0  # seconds - collapses bursts of identical tick lookups
+_tick_lock = threading.Lock()
+
+
+def _cached_tick(symbol: str):
+    """symbol_info_tick with a 1s micro-cache (many endpoints share ticks)."""
+    now = time.monotonic()
+    key = symbol.upper()
+    with _tick_lock:
+        hit = _tick_cache.get(key)
+        if hit and now - hit[0] < _TICK_TTL:
+            return hit[1]
+    tick = mt5.symbol_info_tick(symbol)
+    with _tick_lock:
+        _tick_cache[key] = (now, tick)
+    return tick
+
+
+def _tick_quote(symbol: str):
+    """Return {"bid": .., "ask": ..} for an MT5 symbol, or None."""
+    try:
+        tick = _cached_tick(symbol)
+        if tick is None:
+            return None
+        return {"bid": float(tick.bid), "ask": float(tick.ask)}
+    except Exception:
+        return None
+
+
+
 def _health_check_loop(stop: threading.Event):
     """Background watchdog: reconnect if the MT5 connection drops."""
     while not stop.is_set():
@@ -149,6 +224,61 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="MT5 Web Dashboard", lifespan=lifespan)
+
+
+class NoCacheJS(BaseHTTPMiddleware):
+    """Hashed static assets revalidate via ETag (fast 304s); HTML no-cache."""
+
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        path = request.url.path
+        if path == "/" or path.endswith(".html"):
+            response.headers["Cache-Control"] = "no-cache"
+        elif path.startswith("/static/") and response.status_code == 200:
+            response.headers["Cache-Control"] = "no-cache"
+        return response
+
+
+class AuthMiddleware(BaseHTTPMiddleware):
+    """Enforce auth token on all /api/* and /ws endpoints."""
+
+    # Rate limiting: sliding window per client IP (item #13).
+    _rl_hits: dict = {}
+    _RL_WINDOW = 60.0  # seconds
+    _RL_MAX = 240      # requests per window per IP
+
+    async def dispatch(self, request: Request, call_next):
+        if not WEB_AUTH_TOKEN:
+            return await call_next(request)
+        path = request.url.path
+        if not path.startswith("/api/") and path != "/ws":
+            return await call_next(request)
+        token = request.headers.get("x-auth-token", "")
+        if not token:
+            token = request.query_params.get("token", "")
+        if token != WEB_AUTH_TOKEN:
+            return Response(content="Unauthorized", status_code=401)
+        # Per-IP throttle (only after auth so valid users are keyed, not scanners)
+        client_ip = request.client.host if request.client else "?"
+        now = time.monotonic()
+        hits = self._rl_hits.setdefault(client_ip, [])
+        while hits and now - hits[0] > self._RL_WINDOW:
+            hits.pop(0)
+        if len(hits) >= self._RL_MAX:
+            return Response(content="Rate limit exceeded", status_code=429)
+        hits.append(now)
+        return await call_next(request)
+
+
+app.add_middleware(AuthMiddleware)
+app.add_middleware(NoCacheJS)
+app.add_middleware(GZipMiddleware, minimum_size=1024)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
@@ -159,7 +289,7 @@ def _require_connected():
 
 def _server_now() -> datetime.datetime:
     """Current date/time anchored to the MT5 server clock (from the last tick)."""
-    tick = mt5.symbol_info_tick("EURUSD")
+    tick = _cached_tick("EURUSD")
     if tick is not None and tick.time > 0:
         return datetime.datetime.fromtimestamp(tick.time)  # noqa: DTZ006
     return datetime.datetime.now()  # noqa: DTZ005
@@ -169,7 +299,7 @@ def _server_epoch() -> int:
     """Current time in deal-time space (server clock). MT5 deal/order times
     live in this space, so windows must be built from tick.time, not the
     local clock."""
-    tick = mt5.symbol_info_tick("EURUSD")
+    tick = _cached_tick("EURUSD")
     if tick is not None and tick.time > 0:
         return int(tick.time)
     return int(time.time())
@@ -196,14 +326,25 @@ def _deals_since(days: int):
     return mt5.history_deals_get(now - max(1, days) * 86400, now)
 
 
-@app.get("/")
+@app.get("/", response_model=None)
 async def index():
-    return FileResponse(os.path.join(STATIC_DIR, "index.html"))
+    html_path = os.path.join(STATIC_DIR, "index.html")
+    if WEB_AUTH_TOKEN:
+        try:
+            with open(html_path, encoding="utf-8") as fh:
+                html = fh.read()
+            meta = f'<meta name="auth-token" content="{WEB_AUTH_TOKEN}">'
+            if "</head>" in html:
+                html = html.replace("</head>", meta + "</head>", 1)
+            return HTMLResponse(content=html)
+        except OSError:
+            pass
+    return FileResponse(html_path)
 
 
 def _server_offset() -> int:
     """Seconds between the MT5 server clock and the local clock."""
-    tick = mt5.symbol_info_tick("EURUSD")
+    tick = _cached_tick("EURUSD")
     if tick is not None and tick.time > 0:
         return int(tick.time) - int(time.time())
     return 0
@@ -702,47 +843,461 @@ def journal_notes(ticket: int, payload: dict):
     return {"ok": True, "ticket": ticket}
 
 
-@app.get("/api/news")
-def news(horizon_hours: int = Query(24, ge=1, le=72)):
-    """Upcoming economic events from the ForexFactory weekly calendar."""
+
+# ---------- Accounts & switching (reconstructed) ----------
+
+@app.get("/api/accounts")
+def accounts():
+    """Configured MT5 accounts with active flag based on current session."""
     try:
-        report = news_filter(horizon_hours=horizon_hours)
-        events = [
-            {
-                "time": e["time"].strftime("%Y-%m-%d %H:%M"),
-                "currency": e["currency"],
-                "impact": e["impact"],
-                "title": e["title"],
-                "forecast": e["forecast"],
-                "previous": e["previous"],
-            }
-            for e in report["events"]
-        ]
+        from mt5_mcp.config import get_settings
+
+        settings = get_settings()
+        try:
+            info = get_client().account_info()
+            active_login = int(info.get("login", 0)) if info else 0
+        except Exception:
+            active_login = 0
+        result = []
+        for label, cfg, name in (
+            ("prop", settings.mt5, "Prop firm"),
+            ("deriv", getattr(settings, "deriv_mt5", None), "Deriv synthetic"),
+        ):
+            if not cfg or not cfg.login:
+                continue
+            result.append({
+                "login": int(cfg.login),
+                "server": cfg.server,
+                "name": f"{name} ({cfg.server})",
+                "terminal": cfg.terminal_path,
+                "active": int(cfg.login) == active_login,
+                "label": label,
+            })
+        return result
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("accounts endpoint failed: %s", exc)
+        return []
+
+
+@app.post("/api/account/switch")
+def account_switch(payload: dict):
+    """Switch the shared client to another configured account (same process).
+
+    Re-routes the mt5_mcp client layer by setting MT5_MCP_ACCOUNT, which is
+    the supported dual-terminal mechanism. Terminals must already be logged
+    in to their respective accounts.
+    """
+    try:
+        import os as _os
+
+        login = int(payload.get("login", 0))
+        if not login:
+            raise HTTPException(status_code=400, detail="login required")
+        from mt5_mcp.config import get_settings
+
+        settings = get_settings()
+        target = None
+        if getattr(settings, "mt5", None) and int(settings.mt5.login or 0) == login:
+            target = "PROP"
+        elif getattr(settings, "deriv_mt5", None) and int(settings.deriv_mt5.login or 0) == login:
+            target = "DERIV"
+        if not target:
+            raise HTTPException(status_code=404, detail=f"account {login} not configured")
+        _os.environ["MT5_MCP_ACCOUNT"] = target
+        # Force a fresh connection attempt against the routed config.
+        try:
+            from client import _clients  # type: ignore
+
+            _clients.clear()
+        except Exception:
+            pass
+        client = get_client()
+        client.ensure_connected()
+        info = client.account_info()
+        return {"ok": True, "login": info.get("login"), "routed": target}
+    except HTTPException:
+        raise
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("account switch failed: %s", exc)
+        raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.get("/api/account/switch-status")
+def account_switch_status():
+    return {"switching": False}
+
+
+# ---------- AI detection & signals (reconstructed wrappers) ----------
+
+def _ai_detection_report(symbol: str, timeframe: str, lookback: int = 300) -> dict:
+    """Fetch candles and map analyze_chart output to the dashboard shape."""
+    from mt5_mcp.tools.boom_crash_strategy import mt5_symbol as _mt5sym
+
+    name = (
+        _mt5sym(symbol)
+        if any(k in symbol.upper() for k in ("BOOM", "CRASH", "VOLATILITY"))
+        else symbol
+    )
+    frame = get_client().rates(name, timeframe, max(lookback + 100, 400))
+    if frame is None or len(frame) == 0:
+        raise RuntimeError(f"no rate data for {symbol} {timeframe}")
+    import pandas as _pd
+
+    if not isinstance(frame, _pd.DataFrame):
+        frame = _pd.DataFrame(frame)
+    report = analyze_chart(frame, symbol=symbol, timeframe=timeframe, lookback=lookback)
+    patterns = []
+    for p in report.get("patterns", []):
+        patterns.append({
+            "name": p.get("name") or p.get("pattern") or "pattern",
+            "confidence": p.get("quality_score", p.get("confidence", 0)),
+            "direction": p.get("direction", ""),
+            "target": p.get("target"),
+            "invalidation": p.get("invalidation"),
+        })
+    sr = [
+        {"type": lv.get("type", "support"), "price": lv.get("price"),
+         "strength": lv.get("strength", lv.get("quality", 50))}
+        for lv in (report.get("levels") or report.get("support_resistance") or [])
+    ]
+    return {
+        "symbol": symbol,
+        "timeframe": timeframe,
+        "patterns": patterns,
+        "support_resistance": sr,
+        "verdict": report.get("verdict", ""),
+        "score": report.get("overall_score", report.get("score", 0)),
+    }
+
+
+@app.get("/api/ai-detection")
+def ai_detection(
+    symbol: str = Query("EURUSD"),
+    timeframe: str = Query("H1"),
+    lookback: int = Query(300, ge=100, le=1000),
+):
+    """Autochartist-style pattern + S/R detection with quality scores."""
+    try:
+        return _ai_detection_report(symbol.upper(), timeframe.upper(), lookback)
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("ai-detection failed for %s: %s", symbol, exc)
+        return {"symbol": symbol, "patterns": [], "support_resistance": [], "error": str(exc)}
+
+
+@app.get("/api/ai-detection/scan")
+def ai_detection_scan(
+    symbols: str = Query(""),
+    timeframe: str = Query("H1"),
+    min_quality: float = Query(60.0, ge=0.0, le=100.0),
+):
+    """Rank symbols by best available pattern quality."""
+    try:
+        universe = [s.strip().upper() for s in symbols.split(",") if s.strip()]
+        if not universe:
+            universe = ["EURUSD", "GBPUSD", "USDJPY", "XAUUSD", "BTCUSD"]
+        results = []
+        for sym in universe[:12]:
+            try:
+                rep = _ai_detection_report(sym, timeframe.upper())
+                best = max(
+                    (p.get("confidence", 0) for p in rep.get("patterns", [])),
+                    default=0,
+                )
+                if best >= min_quality:
+                    results.append({"symbol": sym, "best_quality": best,
+                                    "patterns": rep.get("patterns", [])})
+            except Exception:  # noqa: BLE001
+                continue
+        results.sort(key=lambda r: -r["best_quality"])
+        return {"scanned": len(universe), "results": results}
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("ai-detection scan failed: %s", exc)
+        return {"results": [], "error": str(exc)}
+
+
+@app.get("/api/signals")
+def get_signals(
+    symbol: str = Query("BOOM500"),
+    timeframe: str = Query("M1"),
+    confidence_floor: float = Query(0.0, ge=0.0, le=100.0),
+):
+    """Boom/Crash spike signals (signals only exist for synthetic indices)."""
+    sym = symbol.upper()
+    if not any(k in sym for k in ("BOOM", "CRASH")):
         return {
-            "provider": report["provider"],
-            "events": events,
-            "high_impact_count": report["high_impact_count"],
-            "high_impact_imminent": report["high_impact_imminent"],
-            "trading_blocked": report["trading_blocked"],
-            "imminent_events": [
-                {"currency": e["currency"], "title": e["title"]}
-                for e in report["imminent_events"]
-            ],
+            "symbol": sym, "signals": [], "enabled": False,
+            "confidence_floor": confidence_floor,
+            "message": "signals only available for Boom/Crash synthetic indices",
         }
-    except Exception as exc:  # noqa: BLE001 - news is best-effort
-        logger.warning("news endpoint failed: %s", exc)
-        return {"events": [], "high_impact_imminent": False, "trading_blocked": False, "error": str(exc)}
+    try:
+        signal = detect_spike(sym, lookback_minutes=60)
+        out = []
+        if signal and signal.confidence >= confidence_floor:
+            out.append({
+                "symbol": sym,
+                "direction": signal.direction,
+                "confidence": round(signal.confidence, 1),
+                "entry": signal.entry_price,
+                "sl": signal.sl_price,
+                "tp": signal.tp_price,
+                "age": signal.spike_age_candles,
+                "reason": signal.reason,
+            })
+        return {"symbol": sym, "signals": out, "enabled": True,
+                "confidence_floor": confidence_floor}
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("signals failed for %s: %s", symbol, exc)
+        return {"symbol": sym, "signals": [], "enabled": True,
+                "confidence_floor": confidence_floor, "error": str(exc)}
 
 
-@app.get("/api/risk")
-def risk():
-    """Daily/weekly loss usage, open risk and exposure from the risk manager."""
+# ---------- Journal analytics (equity curve + distribution) ----------
+
+@app.get("/api/journal/equity-curve")
+def journal_equity_curve(days: int = Query(30, ge=1, le=365)):
+    """Equity curve data for PnL chart: cumulative PnL over time."""
+    try:
+        j = get_journal()
+        cutoff = (
+            datetime.datetime.now(datetime.timezone.utc)
+            - datetime.timedelta(days=days)
+        ).isoformat()
+
+        with j._lock:
+            conn = j._conn()
+            rows = conn.execute(
+                "SELECT close_time, pnl, outcome, symbol, side, lots, entry, exit_price "
+                "FROM trades WHERE close_time >= ? AND pnl IS NOT NULL "
+                "ORDER BY close_time ASC",
+                [cutoff],
+            ).fetchall()
+
+        points = []
+        cumulative = 0.0
+        for row in rows:
+            pnl = row["pnl"] or 0.0
+            cumulative += pnl
+            points.append({
+                "time": row["close_time"],
+                "pnl": round(pnl, 2),
+                "cumulative": round(cumulative, 2),
+                "outcome": row["outcome"],
+                "symbol": row["symbol"],
+            })
+
+        return {
+            "points": points,
+            "total_trades": len(points),
+            "net_pnl": round(sum(p["pnl"] for p in points), 2),
+            "max_dd": round(min(p["cumulative"] for p in points), 2) if points else 0,
+            "max_runup": round(max(p["cumulative"] for p in points), 2) if points else 0,
+        }
+    except Exception as exc:
+        logger.warning("journal equity curve failed: %s", exc)
+        return {"error": str(exc)}
+
+
+def _histogram(values, bins=20):
+    if not values:
+        return {"bins": [], "counts": []}
+    lo, hi = min(values), max(values)
+    if hi == lo:
+        hi = lo + 1
+    width = (hi - lo) / bins
+    counts = [0] * bins
+    edges = [lo + i * width for i in range(bins + 1)]
+    for v in values:
+        idx = min(int((v - lo) / width), bins - 1)
+        counts[idx] += 1
+    bin_centers = [round((edges[i] + edges[i + 1]) / 2, 4) for i in range(bins)]
+    return {"bins": bin_centers, "counts": counts}
+
+
+@app.get("/api/journal/distribution")
+def journal_distribution(days: int = Query(30, ge=1, le=365)):
+    """PnL distribution: histogram + summary stats for the distribution panel."""
+    try:
+        j = get_journal()
+        cutoff = (
+            datetime.datetime.now(datetime.timezone.utc)
+            - datetime.timedelta(days=days)
+        ).isoformat()
+
+        with j._lock:
+            conn = j._conn()
+            rows = conn.execute(
+                "SELECT pnl, outcome FROM trades WHERE close_time >= ? AND pnl IS NOT NULL",
+                [cutoff],
+            ).fetchall()
+
+        pnls = [float(r["pnl"]) for r in rows]
+        wins = [p for p in pnls if p > 0]
+        losses = [p for p in pnls if p < 0]
+        gross_win = sum(wins)
+        gross_loss = abs(sum(losses))
+        avg_win = sum(wins) / len(wins) if wins else 0.0
+        avg_loss = sum(losses) / len(losses) if losses else 0.0
+        rs = []
+        for w, l in ((wins, avg_win and -avg_loss or 1),):
+            pass
+        avg_abs_loss = abs(avg_loss) if avg_loss else 1.0
+        rs = [p / avg_abs_loss for p in pnls]
+
+        return {
+            "days": days,
+            "total_trades": len(pnls),
+            "win_rate": round(len(wins) / len(pnls) * 100, 1) if pnls else 0.0,
+            "avg_win": round(avg_win, 2),
+            "avg_loss": round(avg_loss, 2),
+            "profit_factor": round(gross_win / gross_loss, 2) if gross_loss else 0.0,
+            "avg_r": round(sum(rs) / len(rs), 3) if rs else 0.0,
+            "largest_win": round(max(pnls), 2) if pnls else 0.0,
+            "largest_loss": round(min(pnls), 2) if pnls else 0.0,
+            "net_pnl": round(sum(pnls), 2),
+            "pnl_histogram": _histogram(pnls, bins=20),
+        }
+    except Exception as exc:
+        logger.warning("journal distribution failed: %s", exc)
+        return {"error": str(exc)}
+
+
+# ---------- Extracted routers ----------
+from web_backtests import router as backtests_router  # noqa: E402
+import web_boomcrash as _boomcrash  # noqa: E402
+from web_account import router as account_router  # noqa: E402
+from web_research import router as research_router  # noqa: E402
+
+app.include_router(backtests_router)
+app.include_router(research_router)
+
+
+def _require_connected():
+    if not mt5_connection.is_connected():
+        raise HTTPException(status_code=503, detail="MT5 terminal not connected")
+
+
+_boomcrash.configure(require_connected=_require_connected, lock=_lock)
+app.include_router(_boomcrash.router)
+import web_account as _account_mod
+_account_mod.configure(require_connected=_require_connected, tick_quote=_tick_quote)
+app.include_router(account_router)
+
+
+
+def _forex_args():
+    """Defaults namespace mirroring forex_breakout_watch argparse."""
+    import argparse as _ap
+
+    args = _ap.Namespace()
+    args.live = False
+    args.once = False
+    args.interval = 60.0
+    args.confidence_floor = 65.0
+    args.range_bars = 24
+    args.min_rr = 1.2
+    args.rr = 1.5
+    args.risk_percent = 0.5
+    args.symbols = ""
+    args.trend_tf = "H1"
+    args.lookback = 400
+    return args
+
+
+
+# ---------- Forex Breakout Signals ----------
+
+@app.get("/api/forex-breakout/scan")
+def forex_breakout_scan(
+    symbols: str = Query("", description="Comma-separated symbols, default: all forex majors"),
+    min_confidence: float = Query(65.0, ge=0.0, le=100.0),
+    range_bars: int = Query(24, ge=5, le=100),
+    min_rr: float = Query(1.2, ge=0.5, le=5.0),
+    rr: float = Query(1.5, ge=0.5, le=5.0),
+    risk_percent: float = Query(0.5, ge=0.1, le=5.0),
+):
+    """Scan forex symbols for Donchian range breakout setups (same logic as forex_breakout_watch.py)."""
+    # Cache key includes all parameters that affect results
+    cache_key = _cache_key("forex_scan", symbols=symbols, min_confidence=min_confidence,
+                           range_bars=range_bars, min_rr=min_rr, rr=rr, risk_percent=risk_percent)
+    cached = _scan_cache.get(cache_key)
+    if cached is not None:
+        return cached
+
     with _lock:
         _require_connected()
     try:
-        return risk_report()
-    except Exception as exc:  # noqa: BLE001 - risk is best-effort
-        logger.warning("risk endpoint failed: %s", exc)
+        from forex_breakout_watch import _find_breakout, FOREX_SYMBOLS
+
+        args = _forex_args()
+        args.symbols = symbols if symbols else ",".join(FOREX_SYMBOLS)
+        args.confidence_floor = min_confidence
+        args.range_bars = range_bars
+        args.min_rr = min_rr
+        args.rr = rr
+        args.risk_percent = risk_percent
+        args.live = False  # dry-run for scanning
+
+        client = get_client()
+        client.ensure_connected()
+
+        symbols_list = [s.strip().upper() for s in args.symbols.split(",") if s.strip()]
+        results = []
+        for sym in symbols_list:
+            try:
+                if _has_exposure(client, sym):
+                    continue
+                setup = _find_breakout(client, None, args, sym)
+                if setup:
+                    results.append({
+                        "symbol": sym,
+                        "side": setup["side"],
+                        "entry": round(setup["entry"], 5),
+                        "sl": round(setup["sl"], 5),
+                        "tp": round(setup["tp"], 5),
+                        "rr": setup["rr"],
+                        "confidence": round(setup["confidence"], 1),
+                        "range_high": round(setup["range_high"], 5),
+                        "range_low": round(setup["range_low"], 5),
+                        "atr": round(setup["atr"], 5),
+                    })
+            except Exception as exc:
+                logger.debug("breakout scan failed for %s: %s", sym, exc)
+
+        result = {
+            "scanned_at": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            "symbols_scanned": len(symbols_list),
+            "signals": sorted(results, key=lambda x: x["confidence"], reverse=True),
+            "count": len(results),
+        }
+        _scan_cache.set(cache_key, result)
+        return result
+    except Exception as exc:
+        logger.warning("forex breakout scan failed: %s", exc)
+        return {"signals": [], "count": 0, "error": str(exc)}
+
+
+# ---------- Signal Quality Tracker ----------
+
+@app.get("/api/signal-quality")
+def signal_quality(
+    symbol: str = Query("", description="Filter by symbol"),
+    setup: str = Query("", description="Filter by setup type"),
+    min_confidence: float = Query(0.0, ge=0.0, le=100.0),
+    days: int = Query(30, ge=1, le=365),
+):
+    """Signal quality statistics: win rate, profit factor, R multiple by confidence tier and setup."""
+    try:
+        from mt5_mcp.memory.trade_journal import get_journal
+        journal = get_journal()
+        stats = journal.get_signal_stats(
+            symbol=symbol.upper() if symbol else "",
+            setup=setup,
+            min_confidence=min_confidence,
+            days=days,
+        )
+        return stats
+    except Exception as exc:
+        logger.warning("signal quality failed: %s", exc)
         return {"error": str(exc)}
 
 
@@ -773,84 +1328,223 @@ def market_scan(symbols: str = "", timeframe: str = "H1", min_score: float = 0.0
         return {"scanned": 0, "ranked": [], "failed": [str(exc)]}
 
 
-# ---------- Research Agent ----------
+# ---------- Live strategy overlay (chart) ----------
 
-@app.get("/api/research-report")
-def api_research_report(days: int = 7, min_trades: int = 1, save: bool = True):
-    """Periodic research report: stats + data-driven suggestions over the last N days."""
+def _atr_frame(frame: pd.DataFrame, period: int = 14) -> float:
+    high = frame["high"].astype(float)
+    low = frame["low"].astype(float)
+    close = frame["close"].astype(float)
+    tr = pd.concat(
+        [high - low, (high - close.shift(1)).abs(), (low - close.shift(1)).abs()],
+        axis=1,
+    ).max(axis=1)
+    return float(tr.ewm(alpha=1 / period, adjust=False).mean().iloc[-1])
+
+
+@app.get("/api/live-overlay")
+def live_overlay(
+    symbol: str = "EURUSD",
+    range_bars: int = Query(24, ge=5, le=100),
+    atr_period: int = Query(14, ge=2, le=60),
+):
+    """Strategy overlay for the chart: Donchian range, H1 EMA200 trend and the
+    live breakout setup (same math as forex_breakout_watch.py), plus the
+    boom/crash spike levels when the symbol is a synthetic index."""
+    api_key = re.sub(r"\s+", "", symbol.upper())
+    api_key = re.sub(r"^(BOOM|CRASH)(\d*)INDEX$", r"\1\2", api_key)
+    api_key = re.sub(r"^(BOOM|CRASH)0+", r"\1", api_key)
+    is_boom_crash = bool(re.fullmatch(r"(BOOM|CRASH)\d+", api_key))
+
     try:
-        return research_report(days=days, min_trades=min_trades, save=save)
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("research report failed: %s", exc)
-        return {"error": str(exc)}
+        with _lock:
+            times_m15, _o, hh, ll, cc, _v = _fetch_rates_raw(symbol, "M15", 100)
+            hh2 = ll2 = cc2 = None
+            try:
+                times_h1, _o2, hh2, ll2, cc2, _v2 = _fetch_rates_raw(symbol, "H1", 300)
+            except HTTPException:
+                pass
 
-
-@app.get("/api/weekly-research-report")
-def api_weekly_research_report(save: bool = True):
-    """Standard weekly report (last 7 days), saved to memory/reports/."""
-    try:
-        return weekly_report(save=save)
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("weekly research report failed: %s", exc)
-        return {"error": str(exc)}
-
-
-# ---------- AI Coach ----------
-
-@app.get("/api/coach-review/latest")
-def coach_review_latest():
-    """Full post-trade review for the most recent closed trade."""
-    try:
-        return coach_review(None)
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("coach review latest failed: %s", exc)
-        return {"error": str(exc)}
-
-
-@app.get("/api/coach-review/{ticket}")
-def coach_review_by_ticket(ticket: int):
-    """Full post-trade review for a specific closed trade ticket."""
-    try:
-        return coach_review(ticket)
-    except Exception as exc:  # noqa: BLE001
-        logger.warning("coach review failed for %s: %s", ticket, exc)
-        return {"error": str(exc)}
-        logger.warning("coach review latest failed: %s", exc)
-        return {"error": str(exc)}
-
-
-@app.get("/api/sessions")
-def sessions():
-    """Best sessions/setups/pairs from the trade journal."""
-    try:
-        return {
-            "sessions": best_sessions(),
-            "setups": best_setups(),
-            "pairs": best_pairs(),
-        }
-    except Exception as exc:  # noqa: BLE001 - learning is best-effort
-        logger.warning("sessions endpoint failed: %s", exc)
-        return {"sessions": [], "setups": [], "pairs": [], "error": str(exc)}
-
-
-@app.get("/api/quote")
-def quote(symbol: str = "EURUSD"):
-    """Current bid/ask/spread for the chart header and live-candle updates."""
-    with _lock:
-        _require_connected()
-        tick = mt5.symbol_info_tick(symbol)
-        if tick is None:
-            raise HTTPException(status_code=404, detail=f"no tick for {symbol}")
-        info = mt5.symbol_info(symbol)
-        point = info.point if info else 0.0
-        return {
+        result: dict = {
             "symbol": symbol,
-            "bid": tick.bid,
-            "ask": tick.ask,
-            "spread": round((tick.ask - tick.bid) / point) if point else 0,
-            "time": tick.time,
+            "is_boom_crash": is_boom_crash,
+            "range_bars": range_bars,
+            "range": None,
+            "trend": None,
+            "breakout": None,
+            "spike": None,
         }
 
+        df_m15 = pd.DataFrame({"high": hh, "low": ll, "close": cc})
+        atr_m15 = _atr_frame(df_m15, atr_period)
+        if len(df_m15) >= range_bars + 2 and atr_m15 > 0:
+            window = df_m15.iloc[-(range_bars + 1): -1]
+            range_high = float(window["high"].max())
+            range_low = float(window["low"].min())
+            range_height = range_high - range_low
+            compactness = (
+                min(100.0, 2.0 * atr_m15 / range_height * 100.0)
+                if range_height > 0
+                else 50.0
+            )
+            result["range"] = {
+                "high": round(range_high, 6),
+                "low": round(range_low, 6),
+                "atr": round(atr_m15, 6),
+                "compactness": round(compactness, 1),
+            }
+
+            # H1 EMA200 trend filter (same as _ema200_direction).
+            if hh2 is not None:
+                df_h1 = pd.DataFrame({"high": hh2, "low": ll2, "close": cc2})
+            if hh2 is not None and len(df_h1) >= 220:
+                closes = df_h1["close"].astype(float)
+                ema200 = float(closes.tail(220).ewm(span=200, adjust=False).mean().iloc[-1])
+                last = float(closes.iloc[-1])
+                h1_atr = _atr_frame(df_h1, 14)
+                if last > ema200 + 0.3 * h1_atr:
+                    trend_dir = "bull"
+                elif last < ema200 - 0.3 * h1_atr:
+                    trend_dir = "bear"
+                else:
+                    trend_dir = "flat"
+                result["trend"] = {
+                    "direction": trend_dir,
+                    "ema200": round(ema200, 6),
+                    "atr_h1": round(h1_atr, 6),
+                }
+
+                # Breakout candidates (mirror forex_breakout_watch confidence).
+                last_close = float(df_m15["close"].iloc[-1])
+                buffer = 0.2 * atr_m15
+                candidates = []
+                if trend_dir != "bear":
+                    entry_buy = range_high + buffer
+                    if last_close - range_high <= 0.5 * atr_m15:
+                        sl_buy = range_low - 0.8 * atr_m15
+                        risk = entry_buy - sl_buy
+                        if risk > 0:
+                            candidates.append(("BUY", entry_buy, sl_buy, risk))
+                if trend_dir != "bull":
+                    entry_sell = range_low - buffer
+                    if range_low - last_close <= 0.5 * atr_m15:
+                        sl_sell = range_high + 0.8 * atr_m15
+                        risk = sl_sell - entry_sell
+                        if risk > 0:
+                            candidates.append(("SELL", entry_sell, sl_sell, risk))
+                best = None
+                best_conf = -1.0
+                for side, entry, sl, risk in candidates:
+                    align = 25.0 if (side == "BUY" and trend_dir == "bull") or (side == "SELL" and trend_dir == "bear") else 0.0
+                    overshoot = max(0.0, min(
+                        (last_close - range_high) if side == "BUY" else (range_low - last_close),
+                        0.5 * atr_m15,
+                    ))
+                    momentum = min(100.0, overshoot / max(0.5 * atr_m15, 1e-12) * 100.0)
+                    confidence = 0.45 * compactness + align + 0.2 * momentum
+                    if confidence > best_conf:
+                        best_conf = confidence
+                        best = (side, entry, sl, entry + 1.5 * risk if side == "BUY" else entry - 1.5 * risk)
+                if best:
+                    result["breakout"] = {
+                        "side": best[0],
+                        "entry": round(best[1], 6),
+                        "sl": round(best[2], 6),
+                        "tp": round(best[3], 6),
+                        "confidence": round(best_conf, 1),
+                    }
+
+        if is_boom_crash:
+            try:
+                signal = detect_spike(api_key)
+                if signal:
+                    result["spike"] = {
+                        "direction": signal.direction,
+                        "spike_high": signal.spike_high,
+                        "spike_low": signal.spike_low,
+                        "entry_price": signal.entry_price,
+                        "sl_price": signal.sl_price,
+                        "tp_price": signal.tp_price,
+                        "confidence": signal.confidence,
+                        "spike_age_candles": signal.spike_age_candles,
+                        "atr": signal.atr,
+                        "drift_direction": signal.drift_direction,
+                        "retracement": signal.retracement,
+                        "current_price": signal.current_price,
+                    }
+            except Exception as exc:  # noqa: BLE001 - spike is best-effort
+                logger.debug("live-overlay spike failed for %s: %s", symbol, exc)
+        return result
+    except HTTPException:
+        return {"symbol": symbol, "error": "no data"}
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("live-overlay failed for %s: %s", symbol, exc)
+        return {"symbol": symbol, "error": str(exc)}
+
+
+# ---------- Trade events (watcher fills/closes/trails) ----------
+
+@app.get("/api/events")
+def trade_events(
+    since: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
+):
+    """Trade events emitted by the watchers (fills, orders, exits, trails)."""
+    from mt5_mcp.trade_events import read_since
+
+    events, latest = read_since(since, limit)
+    return {"events": events, "latest_id": latest}
+
+
+# ---------- Peer dashboard (dual-account view) ----------
+
+PEER_PORT = int(os.getenv("WEB_PEER_PORT", "0"))
+PEER_NAME = os.getenv("WEB_PEER_NAME", "").strip() or "other account"
+_peer_cache: dict = {"ts": 0.0, "data": None}
+
+
+def _fetch_peer_data() -> dict | None:
+    if not PEER_PORT:
+        return None
+    now = time.monotonic()
+    if _peer_cache["data"] is not None and now - _peer_cache["ts"] < 5:
+        return _peer_cache["data"]
+    data = {"configured": True, "name": PEER_NAME, "port": PEER_PORT, "ok": False, "error": None}
+    try:
+        import urllib.request
+
+        with urllib.request.urlopen(
+            f"http://127.0.0.1:{PEER_PORT}/api/account", timeout=3
+        ) as resp:
+            account = json.loads(resp.read().decode("utf-8"))
+        with urllib.request.urlopen(
+            f"http://127.0.0.1:{PEER_PORT}/api/positions", timeout=3
+        ) as resp:
+            positions = json.loads(resp.read().decode("utf-8"))
+        with urllib.request.urlopen(
+            f"http://127.0.0.1:{PEER_PORT}/api/health", timeout=3
+        ) as resp:
+            health = json.loads(resp.read().decode("utf-8"))
+        data.update(
+            {
+                "ok": True,
+                "account": account,
+                "positions": positions.get("positions", []),
+                "health": health,
+            }
+        )
+    except Exception as exc:  # noqa: BLE001
+        data["error"] = str(exc)
+    _peer_cache.update(ts=now, data=data)
+    return data
+
+
+@app.get("/api/peer")
+def peer_status():
+    """Live snapshot of the other dashboard's account (dual-account view)."""
+    data = _fetch_peer_data()
+    if data is None:
+        return {"configured": False}
+    return data
 
 def _execute_plan_inner(symbol: str, timeframe: str) -> dict:
     """Shared: rebuild the plan server-side, verify risk limits, then send
@@ -947,253 +1641,6 @@ def position_close(ticket: int):
     return result.model_dump(mode="json") if hasattr(result, "model_dump") else dict(result)
 
 
-# ---------------- Backtesting (blended from the mt5_mcp backtest tooling) ----------------
-
-def _bt_rows(out_dir: str) -> list[dict]:
-    """Result summary rows for one results directory (month/forward/top-level)."""
-    rows: list[dict] = []
-    for path in sorted(glob.glob(os.path.join(out_dir, "*.json"))):
-        try:
-            with open(path, encoding="utf-8") as fh:
-                data = json.load(fh)
-        except (OSError, ValueError):
-            continue
-        p = data.get("params", {}) or {}
-        rows.append({
-            "dir": os.path.basename(out_dir.rstrip("/\\")),
-            "file": os.path.basename(path),
-            "symbol": p.get("symbol", ""),
-            "trend_tf": p.get("trend_timeframe", ""),
-            "zone_tfs": "+".join(p.get("zone_timeframes", []) or []),
-            "min_zone_score": p.get("min_zone_score", 0),
-            "min_rr": p.get("min_rr", 0),
-            "tp_min": p.get("tp_min", 0),
-            "tp_max": p.get("tp_max", 0),
-            "trades": data.get("n_trades", 0),
-            "win_rate": data.get("win_rate", 0),
-            "profit_factor": data.get("profit_factor", 0),
-            "net_pnl": data.get("net_pnl", 0),
-            "total_return_pct": data.get("total_return_pct", 0),
-            "max_drawdown_pct": data.get("max_drawdown_pct", 0),
-            "expectancy": data.get("expectancy", 0),
-            "avg_rr": data.get("avg_rr", 0),
-            "start": data.get("start", ""),
-            "end": data.get("end", ""),
-        })
-    rows.sort(key=lambda r: float(r.get("net_pnl") or 0), reverse=True)
-    return rows
-
-
-def _bt_resolve(name: str) -> str | None:
-    """Resolve a relative result name, refusing path traversal."""
-    if not name or not name.endswith(".json"):
-        return None
-    root = os.path.realpath(_BT_RESULTS)
-    path = os.path.realpath(os.path.join(root, name))
-    if path == root or not path.startswith(root + os.sep):
-        return None
-    return path if os.path.isfile(path) else None
-
-
-def _bt_equity_points(result: BacktestResult) -> list[dict]:
-    equity = float(result.params.get("start_balance", 10000.0))
-    points = [{"label": "start", "value": round(equity, 2)}]
-    for t in result.trades:
-        equity += float(t.get("pnl", 0.0))
-        points.append({"label": str(t.get("exit_time", ""))[:10], "value": round(equity, 2)})
-    return points
-
-
-def _bt_detail(result: BacktestResult, name: str | None = None) -> dict:
-    data = asdict(result)
-    data["name"] = name or ""
-    data["saved"] = name or ""
-    data["equity"] = _bt_equity_points(result)
-    data["trades"] = data["trades"][-1000:]
-    return data
-
-
-def _bt_monte_carlo() -> dict | None:
-    now = time.perf_counter()
-    if _BT_MC_CACHE["data"] is not None and now - _BT_MC_CACHE["ts"] < 300:
-        return _BT_MC_CACHE["data"]
-    try:
-        trades = load_trades(_BT_MONTH)
-        if not trades:
-            _BT_MC_CACHE.update(ts=now, data=None)
-            return None
-        day_pool, month_weekdays = build_day_pool(trades)
-        stats = simulate_month(day_pool, month_weekdays, sims=3000)
-        stats["n_trades"] = len(trades)
-        _BT_MC_CACHE.update(ts=now, data=stats)
-        return stats
-    except Exception as exc:  # noqa: BLE001
-        logger.error("backtest Monte Carlo failed: %s", exc)
-        _BT_MC_CACHE.update(ts=now, data=None)
-        return None
-
-
-def _bt_params_from(payload: dict) -> tuple[BacktestParams, str | None]:
-    payload = payload or {}
-    symbol = str(payload.get("symbol", "")).strip().upper()
-    if not symbol:
-        raise HTTPException(status_code=400, detail="symbol required")
-    if len(symbol) > 12:
-        raise HTTPException(status_code=400, detail="invalid symbol")
-    since = str(payload.get("since", "")).strip() or None
-    if since:
-        try:
-            datetime.date.fromisoformat(since)
-        except ValueError as exc:
-            raise HTTPException(status_code=400, detail="since must be YYYY-MM-DD") from exc
-
-    def tf(name: str, default: str) -> str:
-        value = str(payload.get(name) or default).upper()
-        if value not in _BT_TFS:
-            raise HTTPException(status_code=400, detail=f"invalid {name}")
-        return value
-
-    trend = tf("trend_tf", "H4")
-    confirm = tf("confirm_tf", "H1")
-    zone_tfs = [z for z in (z.strip().upper() for z in str(payload.get("zone_tfs") or "H1,H4").split(",")) if z in _BT_TFS]
-    if not zone_tfs:
-        raise HTTPException(status_code=400, detail="zone_tfs required (e.g. H1,H4)")
-    try:
-        bars = int(payload.get("bars") or 1500)
-    except (TypeError, ValueError) as exc:
-        raise HTTPException(status_code=400, detail="invalid bars") from exc
-    if not (200 <= bars <= _BT_MAX_BARS):
-        raise HTTPException(status_code=400, detail="bars must be 200..20000")
-
-    def number(name: str, default: float, lo: float, hi: float) -> float:
-        try:
-            v = float(payload.get(name, default))
-        except (TypeError, ValueError) as exc:
-            raise HTTPException(status_code=400, detail=f"invalid {name}") from exc
-        if not (lo <= v <= hi):
-            raise HTTPException(status_code=400, detail=f"{name} out of range")
-        return v
-
-    params = BacktestParams(
-        symbol=symbol,
-        trend_timeframe=trend,
-        zone_timeframes=zone_tfs,
-        confirmation_timeframe=confirm,
-        min_zone_score=number("min_zone_score", 40.0, 0.0, 100.0),
-        min_rr=number("min_rr", 3.0, 0.5, 10.0),
-        tp_min=number("tp_min", 80.0, 1.0, 1000.0),
-        tp_max=number("tp_max", 100.0, 1.0, 1000.0),
-        sl_min=number("sl_min", 20.0, 1.0, 500.0),
-        risk_percent=number("risk", 0.5, 0.01, 10.0),
-        start_balance=number("start_balance", 10000.0, 100.0, 1e9),
-        bars=bars,
-    )
-    if params.tp_max < params.tp_min:
-        raise HTTPException(status_code=400, detail="tp_max must be >= tp_min")
-    return params, since
-
-
-def _bt_run(
-    params: BacktestParams, since: str | None, out_dir: str | None = None
-) -> tuple[BacktestResult, str | None]:
-    """Fetch frames (optionally sliced to a forward window), run and save."""
-    with _BT_LOCK:
-        tfs = sorted({params.trend_timeframe, params.confirmation_timeframe, *params.zone_timeframes})
-        frames = load_frames(params.symbol, tfs, params.bars)
-        if since:
-            since_ts = pd.Timestamp(since)
-            sliced: dict[str, pd.DataFrame] = {}
-            for tf_name, frame in frames.items():
-                col = frame["time"]
-                if col.dt.tz is not None:
-                    col = col.dt.tz_localize(None)
-                frame = frame.assign(time=col)
-                sliced[tf_name] = frame[frame["time"] >= since_ts]
-            frames = sliced
-        info: dict = {}
-        try:
-            info = get_client().symbol_info(params.symbol)
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("backtest symbol_info failed: %s", exc)
-        result = Backtester(params, frames, info).run()
-        saved: str | None = None
-        if not result.errors or result.n_trades:
-            out = Path(out_dir or _BT_MONTH)
-            try:
-                path = save_result(result, out)
-                rebuild_summary(out)
-                dir_name = os.path.basename(str(out).rstrip("/\\"))
-                saved = dir_name + "/" + os.path.basename(str(path))
-            except Exception as exc:  # noqa: BLE001
-                logger.warning("backtest save failed: %s", exc)
-        return result, saved
-
-
-@app.get("/api/backtests")
-def backtests():
-    """Backtest result browser: month/forward/all groups + Monte Carlo for month."""
-    month = _bt_rows(_BT_MONTH)
-    forward = _bt_rows(_BT_FORWARD)
-    top = _bt_rows(_BT_RESULTS)
-    seen: set = set()
-    all_rows: list[dict] = []
-    for group in (month, forward, top):
-        for r in group:
-            key = (r["file"], r["dir"])
-            if key in seen:
-                continue
-            seen.add(key)
-            all_rows.append(r)
-    return {
-        "groups": {"month": month, "forward": forward, "all": all_rows},
-        "mc": _bt_monte_carlo(),
-        "generated": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-    }
-
-
-@app.get("/api/backtest/run")
-def backtest_detail(name: str):
-    """Full detail (stats, trades, equity points) of a saved backtest result."""
-    path = _bt_resolve(name)
-    if not path:
-        raise HTTPException(status_code=404, detail="backtest run not found")
-    try:
-        with open(path, encoding="utf-8") as fh:
-            data = json.load(fh)
-        result = BacktestResult(**data)
-    except (OSError, ValueError, TypeError) as exc:
-        raise HTTPException(status_code=400, detail=f"unreadable result: {exc}") from exc
-    return _bt_detail(result, name)
-
-
-@app.post("/api/backtest/run")
-def backtest_run(payload: dict):
-    """Run a backtest (optionally windowed from a 'since' date) and save it."""
-    params, since = _bt_params_from(payload)
-    out_dir = _BT_FORWARD if since or str(payload.get("out", "month")) == "forward" else _BT_MONTH
-    started = time.perf_counter()
-    result, saved = _bt_run(params, since, out_dir=out_dir)
-    detail = _bt_detail(result, saved)
-    detail["elapsed_s"] = round(time.perf_counter() - started, 1)
-    return detail
-
-
-@app.post("/api/backtest/forward")
-def backtest_forward(payload: dict):
-    """Forward test: windowed (out-of-sample) run + full backtest comparison."""
-    params, since = _bt_params_from(payload)
-    if not since:
-        raise HTTPException(status_code=400, detail="since (YYYY-MM-DD) required for forward test")
-    started = time.perf_counter()
-    full, full_saved = _bt_run(params, None, out_dir=_BT_FORWARD)
-    windowed, w_saved = _bt_run(params, since, out_dir=_BT_FORWARD)
-    return {
-        "windowed": _bt_detail(windowed, w_saved),
-        "full": _bt_detail(full, full_saved),
-        "elapsed_s": round(time.perf_counter() - started, 1),
-    }
-
-
 @app.post("/api/client-error")
 async def client_error(payload: dict):
     """Receive frontend error reports for monitoring/debugging."""
@@ -1211,44 +1658,50 @@ async def client_error(payload: dict):
 
 
 _ws_clients: set[WebSocket] = set()
+_ws_subscriptions: dict[WebSocket, set[str]] = {}
 _ws_lock = threading.Lock()
 WS_INTERVAL = 5
 
 # Notification state shared with the broadcast loop.
 _ws_state: dict = {"positions": set(), "plan_key": None, "plan_action": None}
 _active_plan_key: dict = {"key": None}
-
+_deals_cache: dict = {"ts": 0, "realized": 0.0, "count": 0}
+_DEALS_CACHE_TTL = 5  # seconds
 
 def _summary_snapshot() -> dict:
-    """Quick account + positions snapshot for WebSocket push. Not locked:
-    runs in a worker thread while other requests are served."""
-    if not mt5_connection.is_connected():
-        return {"type": "summary", "connected": False}
+    """Quick account + positions snapshot for WebSocket push."""
     try:
-        with _lock:
-            info = mt5.account_info()
-            if info is None:
-                return {"type": "summary", "connected": False}
-            positions = mt5.positions_get() or []
-            deals = mt5.history_deals_get(_server_midnight_epoch(), _server_epoch()) or []
-            realized = round(sum(d.profit + d.swap + d.fee for d in deals), 2)
-            floating = round(sum(p.profit + p.swap for p in positions), 2)
-            return {
+        client = get_client()
+        client.ensure_connected()
+        info = client.account_info()
+        if info is None:
+            return {"type": "summary", "connected": False}
+        positions = client.positions_get() or []
+        floating = round(sum(p.profit + p.swap for p in positions), 2)
+
+        now = time.time()
+        if now - _deals_cache["ts"] >= _DEALS_CACHE_TTL:
+            deals = client.history_deals_get(_server_midnight_epoch(), _server_epoch()) or []
+            _deals_cache["ts"] = now
+            _deals_cache["realized"] = round(sum(d.profit + d.swap + d.fee for d in deals), 2)
+            _deals_cache["count"] = sum(1 for d in deals if d.entry == CLOSED_ENTRY)
+        realized = _deals_cache["realized"]
+        trade_count = _deals_cache["count"]
+
+        return {
                 "type": "summary",
                 "connected": True,
                 "account": {
-                    "login": info.login,
-                    "balance": info.balance,
-                    "equity": info.equity,
-                    "free_margin": info.margin_free,
-                    "margin_level": info.margin_level,
-                    "currency": info.currency,
+                    "login": info.get("login"),
+                    "balance": info.get("balance"),
+                    "equity": info.get("equity"),
+                    "free_margin": info.get("margin_free"),
+                    "margin_level": info.get("margin_level"),
+                    "currency": info.get("currency"),
                     "floating_pnl": floating,
                     "daily_realized": realized,
                     "daily_pnl": round(realized + floating, 2),
-                    "daily_trades": sum(
-                        1 for d in deals if d.entry == CLOSED_ENTRY
-                    ),
+                    "daily_trades": trade_count,
                     "server_time": _server_now().strftime("%H:%M:%S"),
                 },
                 "positions": [
@@ -1272,14 +1725,39 @@ def _summary_snapshot() -> dict:
 
 
 async def _ws_broadcast_loop():
+    """Broadcast live account/position/compliance/breakout updates to all WS clients."""
+    position_interval = 3  # seconds (was 1 - hammered MT5 IPC 86k times/day)
+    compliance_interval = 30  # seconds
+    breakout_interval = 60  # seconds
+    alerts_interval = 15  # seconds
+
+    last_compliance = 0
+    last_breakout = 0
+    last_alerts = 0
+    last_position_push = 0.0
+    last_payload_sig: str = ""
+
     while True:
-        await asyncio.sleep(WS_INTERVAL)
+        await asyncio.sleep(1)
         if not _ws_clients:
             continue
-        payload = await asyncio.to_thread(_summary_snapshot)
 
-        notify: list[dict] = []
-        if payload.get("connected"):
+        now = time.time()
+
+        # Position/account snapshot - throttled + deduplicated
+        if now - last_position_push < position_interval:
+            payload = None
+        else:
+            last_position_push = now
+            payload = await asyncio.to_thread(_summary_snapshot)
+            sig = json.dumps(payload, sort_keys=True, default=str)
+            if sig == last_payload_sig:
+                payload = None  # nothing changed - skip network write
+            else:
+                last_payload_sig = sig
+        
+        notify = []
+        if payload is not None and payload.get("connected"):
             current = {p["ticket"] for p in payload.get("positions", [])}
             closed = _ws_state["positions"] - current
             if closed:
@@ -1295,28 +1773,113 @@ async def _ws_broadcast_loop():
                         _ws_state["plan_key"] = key
                         _ws_state["plan_action"] = action
                     elif action != _ws_state["plan_action"]:
-                        notify.append(
-                            {
-                                "type": "notify",
-                                "kind": "plan_changed",
-                                "symbol": key[0],
-                                "action": action,
-                            }
-                        )
+                        notify.append({
+                            "type": "notify",
+                            "kind": "plan_changed",
+                            "symbol": key[0],
+                            "action": action,
+                        })
                         _ws_state["plan_action"] = action
 
+            # Send compliance status periodically
+            if now - last_compliance >= compliance_interval:
+                try:
+                    from mt5_mcp.compliance import evaluate as compliance_evaluate
+                    comp = compliance_evaluate()
+                    payload["compliance"] = {
+                        "mode": comp.get("mode"),
+                        "halt_reason": comp.get("halt_reason", ""),
+                        "daily_used_pct": round(comp.get("daily_used", 0) * 100, 1),
+                        "dd_pct": round(comp.get("dd_pct", 0), 2),
+                        "trades_today": comp.get("trades_today", 0),
+                        "max_trades": comp.get("max_trades_per_day", 0),
+                        "daily_pnl": comp.get("daily_pnl", 0),
+                    }
+                    last_compliance = now
+                except Exception:
+                    pass
+
+            # Send forex breakout signals periodically (only if clients watch forex panel)
+            if now - last_breakout >= breakout_interval:
+                try:
+                    with _ws_lock:
+                        subs_snapshot = list(_ws_subscriptions.values())
+                    has_forex_viewer = any("forex-breakout" in s for s in subs_snapshot)
+                    if has_forex_viewer:
+                        from forex_breakout_watch import _find_breakout
+                        from forex_breakout_watch import FOREX_SYMBOLS
+                        
+                        args = _forex_args()
+                        args.confidence_floor = 25.0  # show all candidates
+                        args.live = False
+                        
+                        client = get_client()
+                        client.ensure_connected()
+                        
+                        breakout_signals = []
+                        for sym in FOREX_SYMBOLS:
+                            try:
+                                if _has_exposure(client, sym):
+                                    continue
+                                setup = _find_breakout(client, None, args, sym)
+                                if setup:
+                                    breakout_signals.append({
+                                        "symbol": sym,
+                                        "side": setup["side"],
+                                        "entry": round(setup["entry"], 5),
+                                        "sl": round(setup["sl"], 5),
+                                        "tp": round(setup["tp"], 5),
+                                        "confidence": round(setup["confidence"], 1),
+                                        "range_high": round(setup["range_high"], 5),
+                                        "range_low": round(setup["range_low"], 5),
+                                        "atr": round(setup["atr"], 5),
+                                    })
+                            except Exception:
+                                pass
+                        
+                        if breakout_signals:
+                            payload["breakout_signals"] = sorted(breakout_signals, key=lambda x: x["confidence"], reverse=True)
+                    last_breakout = now
+                except Exception:
+                    pass
+
+            # Fire due alerts (persistent store + Telegram notification)
+            if now - last_alerts >= alerts_interval:
+                try:
+                    from mt5_mcp.alerts import check_alerts as _check_alerts
+                    fired = await asyncio.to_thread(_check_alerts, _tick_quote)
+                    if fired:
+                        payload["alerts_fired"] = fired
+                        for a in fired:
+                            notify.append({
+                                "type": "notify",
+                                "kind": "alert_triggered",
+                                "alert": {
+                                    "symbol": a["symbol"],
+                                    "price": a["price"],
+                                    "condition": a["condition"],
+                                    "name": a.get("name", ""),
+                                },
+                            })
+                    last_alerts = now
+                except Exception:
+                    pass
+        
         for msg in notify:
             for ws in list(_ws_clients):
                 try:
                     await ws.send_json(msg)
-                except Exception:  # noqa: BLE001
+                except Exception:
                     with _ws_lock:
                         _ws_clients.discard(ws)
+
+        if payload is None:
+            continue  # throttled or unchanged - nothing to push
 
         for ws in list(_ws_clients):
             try:
                 await ws.send_json(payload)
-            except Exception:  # noqa: BLE001
+            except Exception:
                 with _ws_lock:
                     _ws_clients.discard(ws)
 
@@ -1326,22 +1889,68 @@ async def ws_endpoint(ws: WebSocket):
     await ws.accept()
     with _ws_lock:
         _ws_clients.add(ws)
+        _ws_subscriptions[ws] = set()
     logger.info("ws client connected (%d total)", len(_ws_clients))
     try:
         while True:
             msg = await ws.receive_text()
             if msg == "ping":
                 await ws.send_json({"type": "pong"})
+            else:
+                try:
+                    data = json.loads(msg)
+                    ch = data.get("channel", "")
+                    if data.get("type") == "subscribe" and ch:
+                        with _ws_lock:
+                            _ws_subscriptions.setdefault(ws, set()).add(ch)
+                    elif data.get("type") == "unsubscribe" and ch:
+                        with _ws_lock:
+                            subs = _ws_subscriptions.get(ws, set())
+                            subs.discard(ch)
+                except (json.JSONDecodeError, AttributeError):
+                    pass
     except WebSocketDisconnect:
         pass
     finally:
         with _ws_lock:
             _ws_clients.discard(ws)
+            _ws_subscriptions.pop(ws, None)
         logger.info("ws client disconnected (%d total)", len(_ws_clients))
 
 
 if __name__ == "__main__":
+    import argparse
     import uvicorn
+
+    parser = argparse.ArgumentParser(description="MT5 Web Dashboard")
+    parser.add_argument("--port", type=int, default=8050, help="Port to run on (default: 8050)")
+    parser.add_argument("--host", default="127.0.0.1", help="Host to bind to (default: 127.0.0.1)")
+    parser.add_argument("--terminal", default=None, help="MT5 terminal path")
+    parser.add_argument("--login", type=int, default=None, help="MT5 login")
+    parser.add_argument("--password", default=None, help="MT5 password")
+    parser.add_argument("--server", default=None, help="MT5 server")
+    args = parser.parse_args()
+
+    if args.terminal:
+        os.environ["MT5_MCP_MT5_TERMINAL_PATH"] = args.terminal
+        # server.py's MT5Config reads these (legacy names):
+        os.environ["MT5_PATH"] = args.terminal
+    if args.login:
+        os.environ["MT5_MCP_MT5_LOGIN"] = str(args.login)
+        os.environ["MT5_LOGIN"] = str(args.login)
+    if args.password:
+        os.environ["MT5_MCP_MT5_PASSWORD"] = args.password
+        os.environ["MT5_PASSWORD"] = args.password
+    if args.server:
+        os.environ["MT5_MCP_MT5_SERVER"] = args.server
+        os.environ["MT5_SERVER"] = args.server
+
+    # Route the shared mt5_mcp client layer (get_client) to the same terminal.
+    is_deriv = bool(args.terminal and "deriv" in args.terminal.lower())
+    os.environ.setdefault("MT5_MCP_ACCOUNT", "DERIV" if is_deriv else "PROP")
+
+    PORT = args.port
+    HOST = args.host
 
     print(f"MT5 Web Dashboard -> http://{HOST}:{PORT}")
     uvicorn.run(app, host=HOST, port=PORT)

@@ -1,0 +1,172 @@
+[
+  {
+    "name": "BOOM100_arch_drift",
+    "symbol": "BOOM100",
+    "params": {
+      "spike_threshold_atr": 2.5,
+      "min_spike_ticks": 8,
+      "max_hold_bars": 240,
+      "fill_deadline_bars": 30,
+      "min_bars_between_trades": 60,
+      "reward_risk_ratio": 2.0,
+      "sl_atr_buffer": 2.0,
+      "max_spike_age": 15
+    },
+    "stats": {
+      "trades": 95,
+      "win_rate": 56.8,
+      "profit_factor": 2.23,
+      "net_usd": 1632.04,
+      "avg_r": 17.179
+    },
+    "baseline": {
+      "trades": 92,
+      "win_rate": 58.7,
+      "profit_factor": 1.7,
+      "net_usd": 890.85,
+      "avg_r": 9.683
+    },
+    "dojo": {
+      "sessions": 8,
+      "edge_retention": 100.0,
+      "keep": true
+    },
+    "promoted_at": "2026-08-13T14:58:05.626382+00:00"
+  },
+  {
+    "name": "BOOM100_arch_tight_sl",
+    "symbol": "BOOM100",
+    "params": {
+      "spike_threshold_atr": 2.5,
+      "min_spike_ticks": 8,
+      "max_hold_bars": 120,
+      "fill_deadline_bars": 30,
+      "min_bars_between_trades": 60,
+      "reward_risk_ratio": 2.0,
+      "sl_atr_buffer": 1.0,
+      "max_spike_age": 15
+    },
+    "stats": {
+      "trades": 92,
+      "win_rate": 55.4,
+      "profit_factor": 1.89,
+      "net_usd": 1005.26,
+      "avg_r": 10.927
+    },
+    "baseline": {
+      "trades": 92,
+      "win_rate": 58.7,
+      "profit_factor": 1.7,
+      "net_usd": 890.85,
+      "avg_r": 9.683
+    },
+    "dojo": {
+      "sessions": 8,
+      "edge_retention": 100.0,
+      "keep": true
+    },
+    "promoted_at": "2026-08-13T14:58:05.626382+00:00"
+  },
+  {
+    "name": "BOOM100_v01",
+    "symbol": "BOOM100",
+    "params": {
+      "spike_threshold_atr": 2.5,
+      "min_spike_ticks": 8,
+      "max_hold_bars": 120,
+      "fill_deadline_bars": 45,
+      "min_bars_between_trades": 60,
+      "reward_risk_ratio": 1.5,
+      "sl_atr_buffer": 2.0,
+      "max_spike_age": 30
+    },
+    "stats": {
+      "trades": 98,
+      "win_rate": 56.1,
+      "profit_factor": 1.73,
+      "net_usd": 965.82,
+      "avg_r": 9.855
+    },
+    "baseline": {
+      "trades": 92,
+      "win_rate": 58.7,
+      "profit_factor": 1.7,
+      "net_usd": 890.85,
+      "avg_r": 9.683
+    },
+    "dojo": {
+      "sessions": 8,
+      "edge_retention": 100.0,
+      "keep": true
+    },
+    "promoted_at": "2026-08-13T14:58:05.626382+00:00"
+  },
+  {
+    "name": "BOOM100_v05",
+    "symbol": "BOOM100",
+    "params": {
+      "spike_threshold_atr": 2.0,
+      "min_spike_ticks": 8,
+      "max_hold_bars": 180,
+      "fill_deadline_bars": 30,
+      "min_bars_between_trades": 60,
+      "reward_risk_ratio": 1.5,
+      "sl_atr_buffer": 2.0,
+      "max_spike_age": 15
+    },
+    "stats": {
+      "trades": 253,
+      "win_rate": 50.2,
+      "profit_factor": 1.34,
+      "net_usd": 1343.57,
+      "avg_r": 5.311
+    },
+    "baseline": {
+      "trades": 249,
+      "win_rate": 50.2,
+      "profit_factor": 1.32,
+      "net_usd": 1237.29,
+      "avg_r": 4.969
+    },
+    "dojo": {
+      "sessions": 20,
+      "edge_retention": 100.0,
+      "keep": true
+    },
+    "promoted_at": "2026-08-13T16:37:32.905497+00:00"
+  },
+  {
+    "name": "CRASH300_v06",
+    "symbol": "CRASH300",
+    "params": {
+      "spike_threshold_atr": 2.5,
+      "min_spike_ticks": 6,
+      "max_hold_bars": 180,
+      "fill_deadline_bars": 45,
+      "min_bars_between_trades": 60,
+      "reward_risk_ratio": 1.5,
+      "sl_atr_buffer": 1.0,
+      "max_spike_age": 15
+    },
+    "stats": {
+      "trades": 241,
+      "win_rate": 52.3,
+      "profit_factor": 1.5,
+      "net_usd": 583.61,
+      "avg_r": 2.422
+    },
+    "baseline": {
+      "trades": 241,
+      "win_rate": 49.0,
+      "profit_factor": 1.29,
+      "net_usd": 419.09,
+      "avg_r": 1.739
+    },
+    "dojo": {
+      "sessions": 20,
+      "edge_retention": 100.0,
+      "keep": true
+    },
+    "promoted_at": "2026-08-13T16:37:32.905497+00:00"
+  }
+]

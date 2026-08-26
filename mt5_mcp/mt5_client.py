@@ -17,7 +17,7 @@ from __future__ import annotations
 import logging
 import threading
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import pandas as pd
@@ -228,7 +228,10 @@ class MT5Client:
                 if date_to is not None:
                     return fn(date_from, date_to)
                 return fn(date_from)
-            return fn(*args, **kwargs)
+            # This MetaTrader5 build rejects an empty keyword expansion for
+            # order_send (RES_E_INVALID_PARAMS), even when positional args
+            # are valid. Avoid passing **{} to native extension functions.
+            return fn(*args, **kwargs) if kwargs else fn(*args)
 
     def _tuple_to_dict(self, value: Any) -> dict[str, Any]:
         if value is None:
@@ -280,17 +283,32 @@ class MT5Client:
         return self._tuple_to_dict(tick)
 
     def rates(
-        self, symbol: str, timeframe: Timeframe | str, count: int, from_pos: int = 0
+        self,
+        symbol: str,
+        timeframe: Timeframe | str,
+        count: int,
+        from_pos: int | None = None,
     ) -> pd.DataFrame:
+        """Fetch OHLCV bars.
+
+        By default (``from_pos=None``) the *newest* bars are returned,
+        anchored to the current time (``copy_rates_range``). Passing an
+        explicit ``from_pos`` keeps the legacy position semantics, which
+        start from the oldest cached bar of the terminal and must not be
+        used for live analysis.
+        """
         tf_name = str(timeframe).upper()
         tf = TIMEFRAME_MT5.get(tf_name)
         if tf is None:
             raise ValueError(f"Unknown timeframe '{timeframe}'")
         if count < 1 or count > 1_000_000:
             raise ValueError("count must be between 1 and 1,000,000")
-        data = self._call("copy_rates_from_pos", symbol, tf, from_pos, count)
+        if from_pos is None:
+            data = self._rates_newest(symbol, tf, tf_name, count)
+        else:
+            data = self._call("copy_rates_from_pos", symbol, tf, from_pos, count)
         if data is None or len(data) == 0:
-            data = self._aggregate_rates(symbol, tf_name, count, from_pos)
+            data = self._aggregate_rates(symbol, tf_name, count)
             if data is None or len(data) == 0:
                 raise MT5Error(f"No rate data for '{symbol}' ({timeframe})")
         frame = pd.DataFrame(data)
@@ -316,8 +334,35 @@ class MT5Client:
             .reset_index(drop=True)
         )
 
+    def _rates_newest(
+        self, symbol: str, tf: int, tf_name: str, count: int
+    ) -> list | None:
+        """Fetch the newest bars of ``tf`` anchored at the current time.
+
+        A symbol_select warm-up keeps the terminal serving live bar history
+        instead of a stale cache. Falls back to the positional call and then
+        to a plain oldest-anchored request for terminals without a working
+        ``copy_rates_range`` (e.g. test doubles).
+        """
+        try:
+            self._call("symbol_select", symbol, True)
+        except Exception:
+            pass
+        now = datetime.now(timezone.utc)
+        span = timedelta(seconds=count * tf * 60)
+        try:
+            data = self._call("copy_rates_range", symbol, tf, now - span, now)
+            if data is not None and len(data) > 0:
+                return data
+        except Exception:
+            pass
+        try:
+            return self._call("copy_rates_from_pos", symbol, tf, 0, count)
+        except Exception:
+            return None
+
     def _aggregate_rates(
-        self, symbol: str, tf_name: str, count: int, from_pos: int
+        self, symbol: str, tf_name: str, count: int, from_pos: int | None = None
     ) -> list | None:
         source = AGG_SOURCES.get(tf_name)
         if source is None:
@@ -325,7 +370,10 @@ class MT5Client:
         src_tf_name, bars_per_bar = source
         src_tf = TIMEFRAME_MT5[src_tf_name]
         needed = min(count * bars_per_bar + bars_per_bar, MAX_HISTORY_BARS)
-        data = self._call("copy_rates_from_pos", symbol, src_tf, from_pos, needed)
+        if from_pos is None:
+            data = self._rates_newest(symbol, src_tf, src_tf_name, needed)
+        else:
+            data = self._call("copy_rates_from_pos", symbol, src_tf, from_pos, needed)
         if data is None or len(data) == 0:
             return None
         frame = pd.DataFrame(data)

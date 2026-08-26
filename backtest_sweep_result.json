@@ -1,0 +1,1058 @@
+{
+  "results": [
+    {
+      "params": {
+        "spike_threshold_atr": 2.0,
+        "sl_atr_buffer": 1.0,
+        "reward_risk_ratio": 1.0,
+        "max_spike_age": 30
+      },
+      "total_trades": 308,
+      "win_rate": 54.5,
+      "profit_factor": 1.96,
+      "net_usd": 1452.21,
+      "avg_r": 0.438
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.0,
+        "sl_atr_buffer": 1.0,
+        "reward_risk_ratio": 1.5,
+        "max_spike_age": 30
+      },
+      "total_trades": 308,
+      "win_rate": 54.5,
+      "profit_factor": 1.96,
+      "net_usd": 1452.21,
+      "avg_r": 0.438
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.0,
+        "sl_atr_buffer": 1.0,
+        "reward_risk_ratio": 2.0,
+        "max_spike_age": 30
+      },
+      "total_trades": 308,
+      "win_rate": 54.5,
+      "profit_factor": 1.96,
+      "net_usd": 1452.21,
+      "avg_r": 0.438
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.5,
+        "sl_atr_buffer": 1.0,
+        "reward_risk_ratio": 1.0,
+        "max_spike_age": 30
+      },
+      "total_trades": 308,
+      "win_rate": 54.5,
+      "profit_factor": 1.96,
+      "net_usd": 1452.21,
+      "avg_r": 0.438
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.5,
+        "sl_atr_buffer": 1.0,
+        "reward_risk_ratio": 1.5,
+        "max_spike_age": 30
+      },
+      "total_trades": 308,
+      "win_rate": 54.5,
+      "profit_factor": 1.96,
+      "net_usd": 1452.21,
+      "avg_r": 0.438
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.5,
+        "sl_atr_buffer": 1.0,
+        "reward_risk_ratio": 2.0,
+        "max_spike_age": 30
+      },
+      "total_trades": 308,
+      "win_rate": 54.5,
+      "profit_factor": 1.96,
+      "net_usd": 1452.21,
+      "avg_r": 0.438
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 3.0,
+        "sl_atr_buffer": 1.0,
+        "reward_risk_ratio": 1.0,
+        "max_spike_age": 30
+      },
+      "total_trades": 308,
+      "win_rate": 54.5,
+      "profit_factor": 1.96,
+      "net_usd": 1452.21,
+      "avg_r": 0.438
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 3.0,
+        "sl_atr_buffer": 1.0,
+        "reward_risk_ratio": 1.5,
+        "max_spike_age": 30
+      },
+      "total_trades": 308,
+      "win_rate": 54.5,
+      "profit_factor": 1.96,
+      "net_usd": 1452.21,
+      "avg_r": 0.438
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 3.0,
+        "sl_atr_buffer": 1.0,
+        "reward_risk_ratio": 2.0,
+        "max_spike_age": 30
+      },
+      "total_trades": 308,
+      "win_rate": 54.5,
+      "profit_factor": 1.96,
+      "net_usd": 1452.21,
+      "avg_r": 0.438
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.0,
+        "sl_atr_buffer": 2.0,
+        "reward_risk_ratio": 1.0,
+        "max_spike_age": 15
+      },
+      "total_trades": 251,
+      "win_rate": 55.4,
+      "profit_factor": 2.09,
+      "net_usd": 1341.42,
+      "avg_r": 0.437
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.0,
+        "sl_atr_buffer": 2.0,
+        "reward_risk_ratio": 1.5,
+        "max_spike_age": 15
+      },
+      "total_trades": 251,
+      "win_rate": 55.4,
+      "profit_factor": 2.09,
+      "net_usd": 1341.42,
+      "avg_r": 0.437
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.0,
+        "sl_atr_buffer": 2.0,
+        "reward_risk_ratio": 2.0,
+        "max_spike_age": 15
+      },
+      "total_trades": 251,
+      "win_rate": 55.4,
+      "profit_factor": 2.09,
+      "net_usd": 1341.42,
+      "avg_r": 0.437
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.5,
+        "sl_atr_buffer": 2.0,
+        "reward_risk_ratio": 1.0,
+        "max_spike_age": 15
+      },
+      "total_trades": 251,
+      "win_rate": 55.4,
+      "profit_factor": 2.09,
+      "net_usd": 1341.42,
+      "avg_r": 0.437
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.5,
+        "sl_atr_buffer": 2.0,
+        "reward_risk_ratio": 1.5,
+        "max_spike_age": 15
+      },
+      "total_trades": 251,
+      "win_rate": 55.4,
+      "profit_factor": 2.09,
+      "net_usd": 1341.42,
+      "avg_r": 0.437
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.5,
+        "sl_atr_buffer": 2.0,
+        "reward_risk_ratio": 2.0,
+        "max_spike_age": 15
+      },
+      "total_trades": 251,
+      "win_rate": 55.4,
+      "profit_factor": 2.09,
+      "net_usd": 1341.42,
+      "avg_r": 0.437
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 3.0,
+        "sl_atr_buffer": 2.0,
+        "reward_risk_ratio": 1.0,
+        "max_spike_age": 15
+      },
+      "total_trades": 251,
+      "win_rate": 55.4,
+      "profit_factor": 2.09,
+      "net_usd": 1341.42,
+      "avg_r": 0.437
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 3.0,
+        "sl_atr_buffer": 2.0,
+        "reward_risk_ratio": 1.5,
+        "max_spike_age": 15
+      },
+      "total_trades": 251,
+      "win_rate": 55.4,
+      "profit_factor": 2.09,
+      "net_usd": 1341.42,
+      "avg_r": 0.437
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 3.0,
+        "sl_atr_buffer": 2.0,
+        "reward_risk_ratio": 2.0,
+        "max_spike_age": 15
+      },
+      "total_trades": 251,
+      "win_rate": 55.4,
+      "profit_factor": 2.09,
+      "net_usd": 1341.42,
+      "avg_r": 0.437
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.0,
+        "sl_atr_buffer": 1.0,
+        "reward_risk_ratio": 1.0,
+        "max_spike_age": 15
+      },
+      "total_trades": 251,
+      "win_rate": 52.2,
+      "profit_factor": 1.96,
+      "net_usd": 1120.65,
+      "avg_r": 0.433
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.0,
+        "sl_atr_buffer": 1.0,
+        "reward_risk_ratio": 1.5,
+        "max_spike_age": 15
+      },
+      "total_trades": 251,
+      "win_rate": 52.2,
+      "profit_factor": 1.96,
+      "net_usd": 1120.65,
+      "avg_r": 0.433
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.0,
+        "sl_atr_buffer": 1.0,
+        "reward_risk_ratio": 2.0,
+        "max_spike_age": 15
+      },
+      "total_trades": 251,
+      "win_rate": 52.2,
+      "profit_factor": 1.96,
+      "net_usd": 1120.65,
+      "avg_r": 0.433
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.5,
+        "sl_atr_buffer": 1.0,
+        "reward_risk_ratio": 1.0,
+        "max_spike_age": 15
+      },
+      "total_trades": 251,
+      "win_rate": 52.2,
+      "profit_factor": 1.96,
+      "net_usd": 1120.65,
+      "avg_r": 0.433
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.5,
+        "sl_atr_buffer": 1.0,
+        "reward_risk_ratio": 1.5,
+        "max_spike_age": 15
+      },
+      "total_trades": 251,
+      "win_rate": 52.2,
+      "profit_factor": 1.96,
+      "net_usd": 1120.65,
+      "avg_r": 0.433
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.5,
+        "sl_atr_buffer": 1.0,
+        "reward_risk_ratio": 2.0,
+        "max_spike_age": 15
+      },
+      "total_trades": 251,
+      "win_rate": 52.2,
+      "profit_factor": 1.96,
+      "net_usd": 1120.65,
+      "avg_r": 0.433
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 3.0,
+        "sl_atr_buffer": 1.0,
+        "reward_risk_ratio": 1.0,
+        "max_spike_age": 15
+      },
+      "total_trades": 251,
+      "win_rate": 52.2,
+      "profit_factor": 1.96,
+      "net_usd": 1120.65,
+      "avg_r": 0.433
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 3.0,
+        "sl_atr_buffer": 1.0,
+        "reward_risk_ratio": 1.5,
+        "max_spike_age": 15
+      },
+      "total_trades": 251,
+      "win_rate": 52.2,
+      "profit_factor": 1.96,
+      "net_usd": 1120.65,
+      "avg_r": 0.433
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 3.0,
+        "sl_atr_buffer": 1.0,
+        "reward_risk_ratio": 2.0,
+        "max_spike_age": 15
+      },
+      "total_trades": 251,
+      "win_rate": 52.2,
+      "profit_factor": 1.96,
+      "net_usd": 1120.65,
+      "avg_r": 0.433
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.0,
+        "sl_atr_buffer": 3.0,
+        "reward_risk_ratio": 1.0,
+        "max_spike_age": 15
+      },
+      "total_trades": 251,
+      "win_rate": 55.8,
+      "profit_factor": 2.02,
+      "net_usd": 1399.83,
+      "avg_r": 0.404
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.0,
+        "sl_atr_buffer": 3.0,
+        "reward_risk_ratio": 1.5,
+        "max_spike_age": 15
+      },
+      "total_trades": 251,
+      "win_rate": 55.8,
+      "profit_factor": 2.02,
+      "net_usd": 1399.83,
+      "avg_r": 0.404
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.0,
+        "sl_atr_buffer": 3.0,
+        "reward_risk_ratio": 2.0,
+        "max_spike_age": 15
+      },
+      "total_trades": 251,
+      "win_rate": 55.8,
+      "profit_factor": 2.02,
+      "net_usd": 1399.83,
+      "avg_r": 0.404
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.5,
+        "sl_atr_buffer": 3.0,
+        "reward_risk_ratio": 1.0,
+        "max_spike_age": 15
+      },
+      "total_trades": 251,
+      "win_rate": 55.8,
+      "profit_factor": 2.02,
+      "net_usd": 1399.83,
+      "avg_r": 0.404
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.5,
+        "sl_atr_buffer": 3.0,
+        "reward_risk_ratio": 1.5,
+        "max_spike_age": 15
+      },
+      "total_trades": 251,
+      "win_rate": 55.8,
+      "profit_factor": 2.02,
+      "net_usd": 1399.83,
+      "avg_r": 0.404
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.5,
+        "sl_atr_buffer": 3.0,
+        "reward_risk_ratio": 2.0,
+        "max_spike_age": 15
+      },
+      "total_trades": 251,
+      "win_rate": 55.8,
+      "profit_factor": 2.02,
+      "net_usd": 1399.83,
+      "avg_r": 0.404
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 3.0,
+        "sl_atr_buffer": 3.0,
+        "reward_risk_ratio": 1.0,
+        "max_spike_age": 15
+      },
+      "total_trades": 251,
+      "win_rate": 55.8,
+      "profit_factor": 2.02,
+      "net_usd": 1399.83,
+      "avg_r": 0.404
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 3.0,
+        "sl_atr_buffer": 3.0,
+        "reward_risk_ratio": 1.5,
+        "max_spike_age": 15
+      },
+      "total_trades": 251,
+      "win_rate": 55.8,
+      "profit_factor": 2.02,
+      "net_usd": 1399.83,
+      "avg_r": 0.404
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 3.0,
+        "sl_atr_buffer": 3.0,
+        "reward_risk_ratio": 2.0,
+        "max_spike_age": 15
+      },
+      "total_trades": 251,
+      "win_rate": 55.8,
+      "profit_factor": 2.02,
+      "net_usd": 1399.83,
+      "avg_r": 0.404
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.0,
+        "sl_atr_buffer": 2.0,
+        "reward_risk_ratio": 1.0,
+        "max_spike_age": 30
+      },
+      "total_trades": 308,
+      "win_rate": 55.8,
+      "profit_factor": 1.89,
+      "net_usd": 1483.04,
+      "avg_r": 0.397
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.0,
+        "sl_atr_buffer": 2.0,
+        "reward_risk_ratio": 1.5,
+        "max_spike_age": 30
+      },
+      "total_trades": 308,
+      "win_rate": 55.8,
+      "profit_factor": 1.89,
+      "net_usd": 1483.04,
+      "avg_r": 0.397
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.0,
+        "sl_atr_buffer": 2.0,
+        "reward_risk_ratio": 2.0,
+        "max_spike_age": 30
+      },
+      "total_trades": 308,
+      "win_rate": 55.8,
+      "profit_factor": 1.89,
+      "net_usd": 1483.04,
+      "avg_r": 0.397
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.5,
+        "sl_atr_buffer": 2.0,
+        "reward_risk_ratio": 1.0,
+        "max_spike_age": 30
+      },
+      "total_trades": 308,
+      "win_rate": 55.8,
+      "profit_factor": 1.89,
+      "net_usd": 1483.04,
+      "avg_r": 0.397
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.5,
+        "sl_atr_buffer": 2.0,
+        "reward_risk_ratio": 1.5,
+        "max_spike_age": 30
+      },
+      "total_trades": 308,
+      "win_rate": 55.8,
+      "profit_factor": 1.89,
+      "net_usd": 1483.04,
+      "avg_r": 0.397
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.5,
+        "sl_atr_buffer": 2.0,
+        "reward_risk_ratio": 2.0,
+        "max_spike_age": 30
+      },
+      "total_trades": 308,
+      "win_rate": 55.8,
+      "profit_factor": 1.89,
+      "net_usd": 1483.04,
+      "avg_r": 0.397
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 3.0,
+        "sl_atr_buffer": 2.0,
+        "reward_risk_ratio": 1.0,
+        "max_spike_age": 30
+      },
+      "total_trades": 308,
+      "win_rate": 55.8,
+      "profit_factor": 1.89,
+      "net_usd": 1483.04,
+      "avg_r": 0.397
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 3.0,
+        "sl_atr_buffer": 2.0,
+        "reward_risk_ratio": 1.5,
+        "max_spike_age": 30
+      },
+      "total_trades": 308,
+      "win_rate": 55.8,
+      "profit_factor": 1.89,
+      "net_usd": 1483.04,
+      "avg_r": 0.397
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 3.0,
+        "sl_atr_buffer": 2.0,
+        "reward_risk_ratio": 2.0,
+        "max_spike_age": 30
+      },
+      "total_trades": 308,
+      "win_rate": 55.8,
+      "profit_factor": 1.89,
+      "net_usd": 1483.04,
+      "avg_r": 0.397
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.0,
+        "sl_atr_buffer": 1.0,
+        "reward_risk_ratio": 1.0,
+        "max_spike_age": 10
+      },
+      "total_trades": 194,
+      "win_rate": 51.0,
+      "profit_factor": 1.77,
+      "net_usd": 661.14,
+      "avg_r": 0.342
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.0,
+        "sl_atr_buffer": 1.0,
+        "reward_risk_ratio": 1.5,
+        "max_spike_age": 10
+      },
+      "total_trades": 194,
+      "win_rate": 51.0,
+      "profit_factor": 1.77,
+      "net_usd": 661.14,
+      "avg_r": 0.342
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.0,
+        "sl_atr_buffer": 1.0,
+        "reward_risk_ratio": 2.0,
+        "max_spike_age": 10
+      },
+      "total_trades": 194,
+      "win_rate": 51.0,
+      "profit_factor": 1.77,
+      "net_usd": 661.14,
+      "avg_r": 0.342
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.5,
+        "sl_atr_buffer": 1.0,
+        "reward_risk_ratio": 1.0,
+        "max_spike_age": 10
+      },
+      "total_trades": 194,
+      "win_rate": 51.0,
+      "profit_factor": 1.77,
+      "net_usd": 661.14,
+      "avg_r": 0.342
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.5,
+        "sl_atr_buffer": 1.0,
+        "reward_risk_ratio": 1.5,
+        "max_spike_age": 10
+      },
+      "total_trades": 194,
+      "win_rate": 51.0,
+      "profit_factor": 1.77,
+      "net_usd": 661.14,
+      "avg_r": 0.342
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.5,
+        "sl_atr_buffer": 1.0,
+        "reward_risk_ratio": 2.0,
+        "max_spike_age": 10
+      },
+      "total_trades": 194,
+      "win_rate": 51.0,
+      "profit_factor": 1.77,
+      "net_usd": 661.14,
+      "avg_r": 0.342
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 3.0,
+        "sl_atr_buffer": 1.0,
+        "reward_risk_ratio": 1.0,
+        "max_spike_age": 10
+      },
+      "total_trades": 194,
+      "win_rate": 51.0,
+      "profit_factor": 1.77,
+      "net_usd": 661.14,
+      "avg_r": 0.342
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 3.0,
+        "sl_atr_buffer": 1.0,
+        "reward_risk_ratio": 1.5,
+        "max_spike_age": 10
+      },
+      "total_trades": 194,
+      "win_rate": 51.0,
+      "profit_factor": 1.77,
+      "net_usd": 661.14,
+      "avg_r": 0.342
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 3.0,
+        "sl_atr_buffer": 1.0,
+        "reward_risk_ratio": 2.0,
+        "max_spike_age": 10
+      },
+      "total_trades": 194,
+      "win_rate": 51.0,
+      "profit_factor": 1.77,
+      "net_usd": 661.14,
+      "avg_r": 0.342
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.0,
+        "sl_atr_buffer": 3.0,
+        "reward_risk_ratio": 1.0,
+        "max_spike_age": 30
+      },
+      "total_trades": 308,
+      "win_rate": 54.5,
+      "profit_factor": 1.74,
+      "net_usd": 1417.67,
+      "avg_r": 0.336
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.0,
+        "sl_atr_buffer": 3.0,
+        "reward_risk_ratio": 1.5,
+        "max_spike_age": 30
+      },
+      "total_trades": 308,
+      "win_rate": 54.5,
+      "profit_factor": 1.74,
+      "net_usd": 1417.67,
+      "avg_r": 0.336
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.0,
+        "sl_atr_buffer": 3.0,
+        "reward_risk_ratio": 2.0,
+        "max_spike_age": 30
+      },
+      "total_trades": 308,
+      "win_rate": 54.5,
+      "profit_factor": 1.74,
+      "net_usd": 1417.67,
+      "avg_r": 0.336
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.5,
+        "sl_atr_buffer": 3.0,
+        "reward_risk_ratio": 1.0,
+        "max_spike_age": 30
+      },
+      "total_trades": 308,
+      "win_rate": 54.5,
+      "profit_factor": 1.74,
+      "net_usd": 1417.67,
+      "avg_r": 0.336
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.5,
+        "sl_atr_buffer": 3.0,
+        "reward_risk_ratio": 1.5,
+        "max_spike_age": 30
+      },
+      "total_trades": 308,
+      "win_rate": 54.5,
+      "profit_factor": 1.74,
+      "net_usd": 1417.67,
+      "avg_r": 0.336
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.5,
+        "sl_atr_buffer": 3.0,
+        "reward_risk_ratio": 2.0,
+        "max_spike_age": 30
+      },
+      "total_trades": 308,
+      "win_rate": 54.5,
+      "profit_factor": 1.74,
+      "net_usd": 1417.67,
+      "avg_r": 0.336
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 3.0,
+        "sl_atr_buffer": 3.0,
+        "reward_risk_ratio": 1.0,
+        "max_spike_age": 30
+      },
+      "total_trades": 308,
+      "win_rate": 54.5,
+      "profit_factor": 1.74,
+      "net_usd": 1417.67,
+      "avg_r": 0.336
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 3.0,
+        "sl_atr_buffer": 3.0,
+        "reward_risk_ratio": 1.5,
+        "max_spike_age": 30
+      },
+      "total_trades": 308,
+      "win_rate": 54.5,
+      "profit_factor": 1.74,
+      "net_usd": 1417.67,
+      "avg_r": 0.336
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 3.0,
+        "sl_atr_buffer": 3.0,
+        "reward_risk_ratio": 2.0,
+        "max_spike_age": 30
+      },
+      "total_trades": 308,
+      "win_rate": 54.5,
+      "profit_factor": 1.74,
+      "net_usd": 1417.67,
+      "avg_r": 0.336
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.0,
+        "sl_atr_buffer": 2.0,
+        "reward_risk_ratio": 1.0,
+        "max_spike_age": 10
+      },
+      "total_trades": 194,
+      "win_rate": 52.6,
+      "profit_factor": 1.82,
+      "net_usd": 781.39,
+      "avg_r": 0.326
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.0,
+        "sl_atr_buffer": 2.0,
+        "reward_risk_ratio": 1.5,
+        "max_spike_age": 10
+      },
+      "total_trades": 194,
+      "win_rate": 52.6,
+      "profit_factor": 1.82,
+      "net_usd": 781.39,
+      "avg_r": 0.326
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.0,
+        "sl_atr_buffer": 2.0,
+        "reward_risk_ratio": 2.0,
+        "max_spike_age": 10
+      },
+      "total_trades": 194,
+      "win_rate": 52.6,
+      "profit_factor": 1.82,
+      "net_usd": 781.39,
+      "avg_r": 0.326
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.5,
+        "sl_atr_buffer": 2.0,
+        "reward_risk_ratio": 1.0,
+        "max_spike_age": 10
+      },
+      "total_trades": 194,
+      "win_rate": 52.6,
+      "profit_factor": 1.82,
+      "net_usd": 781.39,
+      "avg_r": 0.326
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.5,
+        "sl_atr_buffer": 2.0,
+        "reward_risk_ratio": 1.5,
+        "max_spike_age": 10
+      },
+      "total_trades": 194,
+      "win_rate": 52.6,
+      "profit_factor": 1.82,
+      "net_usd": 781.39,
+      "avg_r": 0.326
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.5,
+        "sl_atr_buffer": 2.0,
+        "reward_risk_ratio": 2.0,
+        "max_spike_age": 10
+      },
+      "total_trades": 194,
+      "win_rate": 52.6,
+      "profit_factor": 1.82,
+      "net_usd": 781.39,
+      "avg_r": 0.326
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 3.0,
+        "sl_atr_buffer": 2.0,
+        "reward_risk_ratio": 1.0,
+        "max_spike_age": 10
+      },
+      "total_trades": 194,
+      "win_rate": 52.6,
+      "profit_factor": 1.82,
+      "net_usd": 781.39,
+      "avg_r": 0.326
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 3.0,
+        "sl_atr_buffer": 2.0,
+        "reward_risk_ratio": 1.5,
+        "max_spike_age": 10
+      },
+      "total_trades": 194,
+      "win_rate": 52.6,
+      "profit_factor": 1.82,
+      "net_usd": 781.39,
+      "avg_r": 0.326
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 3.0,
+        "sl_atr_buffer": 2.0,
+        "reward_risk_ratio": 2.0,
+        "max_spike_age": 10
+      },
+      "total_trades": 194,
+      "win_rate": 52.6,
+      "profit_factor": 1.82,
+      "net_usd": 781.39,
+      "avg_r": 0.326
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.0,
+        "sl_atr_buffer": 3.0,
+        "reward_risk_ratio": 1.0,
+        "max_spike_age": 10
+      },
+      "total_trades": 194,
+      "win_rate": 53.1,
+      "profit_factor": 1.76,
+      "net_usd": 807.98,
+      "avg_r": 0.295
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.0,
+        "sl_atr_buffer": 3.0,
+        "reward_risk_ratio": 1.5,
+        "max_spike_age": 10
+      },
+      "total_trades": 194,
+      "win_rate": 53.1,
+      "profit_factor": 1.76,
+      "net_usd": 807.98,
+      "avg_r": 0.295
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.0,
+        "sl_atr_buffer": 3.0,
+        "reward_risk_ratio": 2.0,
+        "max_spike_age": 10
+      },
+      "total_trades": 194,
+      "win_rate": 53.1,
+      "profit_factor": 1.76,
+      "net_usd": 807.98,
+      "avg_r": 0.295
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.5,
+        "sl_atr_buffer": 3.0,
+        "reward_risk_ratio": 1.0,
+        "max_spike_age": 10
+      },
+      "total_trades": 194,
+      "win_rate": 53.1,
+      "profit_factor": 1.76,
+      "net_usd": 807.98,
+      "avg_r": 0.295
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.5,
+        "sl_atr_buffer": 3.0,
+        "reward_risk_ratio": 1.5,
+        "max_spike_age": 10
+      },
+      "total_trades": 194,
+      "win_rate": 53.1,
+      "profit_factor": 1.76,
+      "net_usd": 807.98,
+      "avg_r": 0.295
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 2.5,
+        "sl_atr_buffer": 3.0,
+        "reward_risk_ratio": 2.0,
+        "max_spike_age": 10
+      },
+      "total_trades": 194,
+      "win_rate": 53.1,
+      "profit_factor": 1.76,
+      "net_usd": 807.98,
+      "avg_r": 0.295
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 3.0,
+        "sl_atr_buffer": 3.0,
+        "reward_risk_ratio": 1.0,
+        "max_spike_age": 10
+      },
+      "total_trades": 194,
+      "win_rate": 53.1,
+      "profit_factor": 1.76,
+      "net_usd": 807.98,
+      "avg_r": 0.295
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 3.0,
+        "sl_atr_buffer": 3.0,
+        "reward_risk_ratio": 1.5,
+        "max_spike_age": 10
+      },
+      "total_trades": 194,
+      "win_rate": 53.1,
+      "profit_factor": 1.76,
+      "net_usd": 807.98,
+      "avg_r": 0.295
+    },
+    {
+      "params": {
+        "spike_threshold_atr": 3.0,
+        "sl_atr_buffer": 3.0,
+        "reward_risk_ratio": 2.0,
+        "max_spike_age": 10
+      },
+      "total_trades": 194,
+      "win_rate": 53.1,
+      "profit_factor": 1.76,
+      "net_usd": 807.98,
+      "avg_r": 0.295
+    }
+  ],
+  "grid_size": 81
+}

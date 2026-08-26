@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from client import get_client
-from common import PatternResult, Timeframe
-from price_action import detect_patterns
+from mt5_mcp.client import get_client
+from mt5_mcp.common import PatternResult, Timeframe
+from mt5_mcp.price_action import detect_patterns
 
 
 def patterns(

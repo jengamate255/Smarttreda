@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import numpy as np
+import pandas as pd
 import pytest
 from helpers import build_frame
 
@@ -83,3 +85,34 @@ def test_swings_on_zigzag():
     lows = swing_lows(frame, left=3, right=3)
     assert highs == [9]
     assert lows == [19]
+
+
+def _naive_swings(values, left, right, find_max):
+    n = len(values)
+    out = []
+    for i in range(left, n - right):
+        window = values[i - left : i + right + 1]
+        extreme = window.max() if find_max else window.min()
+        unique = (window == extreme).sum() == 1
+        if (find_max and values[i] == extreme and unique) or (
+            not find_max and values[i] == extreme and unique
+        ):
+            out.append(i)
+    return out
+
+
+def test_vectorized_swings_match_naive():
+    rng = np.random.default_rng(11)
+    n = 200
+    high = 100 + np.cumsum(rng.normal(0, 0.6, n)) + rng.uniform(0, 0.5, n)
+    low = high - rng.uniform(0.2, 0.9, n)
+    df = pd.DataFrame({"high": high, "low": low})
+    for left, right in [(5, 5), (3, 5), (5, 3), (1, 1), (8, 2)]:
+        assert swing_highs(df, left, right) == _naive_swings(high, left, right, True)
+        assert swing_lows(df, left, right) == _naive_swings(low, left, right, False)
+
+
+def test_swings_empty_when_too_short():
+    df = pd.DataFrame({"high": [1.0, 2.0, 3.0], "low": [0.9, 1.9, 2.9]})
+    assert swing_highs(df, 5, 5) == []
+    assert swing_lows(df, 5, 5) == []

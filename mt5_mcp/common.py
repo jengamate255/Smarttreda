@@ -14,6 +14,51 @@ logger = logging.getLogger("mt5_mcp")
 
 Timeframe = Literal["M1", "M5", "M15", "M30", "H1", "H4", "D1", "W1", "MN1"]
 
+# Standard Deriv Boom/Crash synthetic indices available on the connected MT5
+# account. Flip indices are intentionally excluded because they do not follow
+# the one-direction spike assumptions used by the Boom/Crash strategy.
+BOOM_CRASH_SYMBOLS: tuple[str, ...] = (
+    "BOOM1000",
+    "BOOM900",
+    "BOOM600",
+    "BOOM500",
+    "BOOM300",
+    "BOOM200",
+    "BOOM150",
+    "BOOM100",
+    "BOOM99",
+    "BOOM50",
+    "CRASH1000",
+    "CRASH900",
+    "CRASH600",
+    "CRASH500",
+    "CRASH300",
+    "CRASH200",
+    "CRASH150",
+    "CRASH100",
+    "CRASH99",
+    "CRASH50",
+)
+
+# Volatility indices (Deriv) — oscillate both directions, faded via
+# mean-reversion: spike-up → SELL, spike-down → BUY, chandelier trail exit.
+# Symbols are lower-case "Volatility" prefix so the detector guard
+# ``symbol.startswith("Volatility")`` admits them while rejecting
+# arbitrary tickers.
+VOLATILITY_SYMBOLS: tuple[str, ...] = (
+    "Volatility 5 Index",
+    "Volatility 10 Index",
+    "Volatility 15 Index",
+    "Volatility 25 Index",
+    "Volatility 30 Index",
+    "Volatility 50 Index",
+    "Volatility 75 Index",
+    "Volatility 90 Index",
+    "Volatility 100 Index",
+    "Volatility 150 Index",
+    "Volatility 250 Index",
+)
+
 TIMEFRAME_MT5: dict[str, int] = {
     "M1": 1,
     "M5": 5,
@@ -34,7 +79,7 @@ MT5_TIME_SPECIAL = 6
 TRADE_ACTION_DEAL = 1
 TRADE_ACTION_PENDING = 5
 TRADE_ACTION_SLTP = 6
-TRADE_ACTION_REMOVE = 7
+TRADE_ACTION_REMOVE = 8
 
 ORDER_TYPE_BUY = 0
 ORDER_TYPE_SELL = 1

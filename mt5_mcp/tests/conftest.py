@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import sys
 import time
+import importlib
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -13,7 +14,46 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from mt5_client import MT5Client
+
+def _alias_test_modules() -> None:
+    """Keep legacy top-level test imports on the package module instances."""
+    names = (
+        "client",
+        "common",
+        "config",
+        "mt5_client",
+        "indicators",
+        "price_action",
+        "supply_demand",
+        "strategy",
+        "market_intel",
+        "chart_patterns",
+        "coach",
+        "research",
+        "ml_ranker",
+        "monte_carlo",
+        "backtest",
+        "dashboard",
+    )
+    for name in names:
+        sys.modules[name] = importlib.import_module(f"mt5_mcp.{name}")
+
+    sys.modules["memory"] = importlib.import_module("mt5_mcp.memory")
+    for name in ("trade_journal", "learning", "statistics"):
+        sys.modules[f"memory.{name}"] = importlib.import_module(
+            f"mt5_mcp.memory.{name}"
+        )
+
+    sys.modules["tools"] = importlib.import_module("mt5_mcp.tools")
+    for name in ("news", "risk", "trades", "strategy", "candles"):
+        sys.modules[f"tools.{name}"] = importlib.import_module(
+            f"mt5_mcp.tools.{name}"
+        )
+
+
+_alias_test_modules()
+
+from mt5_mcp.mt5_client import MT5Client
 
 
 class FakeMT5Module:

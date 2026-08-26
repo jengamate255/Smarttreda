@@ -6,9 +6,9 @@ from datetime import datetime, timezone
 
 from pydantic import BaseModel
 
-from client import get_client
-from common import pip_size, pip_value_per_lot
-from config import get_settings
+from mt5_mcp.client import get_client
+from mt5_mcp.common import pip_size, pip_value_per_lot
+from mt5_mcp.config import get_settings
 
 
 class TickInfo(BaseModel):
@@ -45,7 +45,7 @@ def market_search(query: str, max_results: int = 50) -> list[str]:
     client.ensure_connected()
     symbols = client.symbols()
     query_upper = query.upper()
-    matches = [s for s in symbols if query_upper in s]
+    matches = [s for s in symbols if query_upper in s.upper()]
     return matches[:max_results]
 
 
@@ -81,6 +81,15 @@ def market_status(symbol: str) -> dict:
     tick = market_tick(symbol)
     utc_hour = datetime.now(timezone.utc).hour
     spread_limit = get_settings().risk.max_spread_points
+    spread_relative = (
+        (tick.ask - tick.bid) / ((tick.ask + tick.bid) / 2)
+        if tick.ask + tick.bid
+        else 0.0
+    )
+    relative_limit = get_settings().risk.max_spread_relative
+    spread_ok = (
+        not spread_limit or tick.spread_points <= spread_limit
+    ) or (relative_limit and spread_relative <= relative_limit)
     return {
         "symbol": symbol,
         "market_open": open_ok,
@@ -89,7 +98,9 @@ def market_status(symbol: str) -> dict:
         "utc_time": datetime.now(timezone.utc).isoformat(),
         "spread_points": tick.spread_points,
         "max_spread_points": spread_limit,
-        "spread_ok": tick.spread_points <= spread_limit,
+        "spread_relative": round(spread_relative * 100, 4),
+        "max_spread_relative": relative_limit,
+        "spread_ok": spread_ok,
         "trade_mode": info.get("trade_mode", "?"),
         "digits": info.get("digits"),
         "point": info.get("point"),

@@ -1,9 +1,13 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MT5 Dashboard</title>
+<meta name="theme-color" content="#111216">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/static/icons/icon-180.png">
+<link rel="icon" type="image/png" href="/static/icons/icon-192.png">
 <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -47,7 +51,12 @@
   </div>
   <div class="header-right">
     <span id="h-risk-badge" class="risk-badge hidden" title="Risk warning"></span>
-    <span>Account <b id="h-login">--</b></span>
+    <span class="acct-label">Account</span>
+    <select id="h-account-select" class="acct-select" title="Switch account">
+      <option value="">--</option>
+    </select>
+    <span id="h-login" class="acct-active"></span>
+    <span id="peer-chip" class="peer-chip hidden" title="Other account dashboard"></span>
     <span class="sep">|</span>
     <span id="h-server-time">--:--:--</span>
     <span class="sep">|</span>
@@ -89,10 +98,14 @@
       <label class="check"><input type="checkbox" id="chk-rsi" checked>RSI</label>
       <label class="check"><input type="checkbox" id="chk-macd" checked>MACD</label>
       <label class="check"><input type="checkbox" id="chk-bot" checked>Bot</label>
+      <label class="check"><input type="checkbox" id="chk-sd" checked>S/D Zones</label>
+      <label class="check"><input type="checkbox" id="chk-bt" title="Backtest entries/exits on chart">Trades</label>
+      <label class="check"><input type="checkbox" id="chk-strat" title="Live strategy overlay: Donchian range, H1 EMA200 trend, breakout/spike setup">Strategy</label>
       <select id="count-select">
         <option value="150">150 bars</option>
         <option value="300" selected>300 bars</option>
         <option value="500">500 bars</option>
+        <option value="1000">1000 bars</option>
       </select>
       <span id="bot-badge" class="bot-badge hidden"></span>
       <span class="tick-info" id="chart-tick">--</span>
@@ -141,6 +154,50 @@
       </div>
     </section>
 
+    <section class="panel alerts-panel">
+      <div class="panel-title">Alerts <span class="sub">Price & Signal notifications</span>
+        <span class="alert-actions">
+          <select id="alert-symbol" class="symbol-input" list="symbol-list" style="width:100px" placeholder="Symbol"></select>
+          <input id="alert-price" type="number" step="0.00001" placeholder="Price" style="width:100px">
+          <select id="alert-condition">
+            <option value="above">Price â‰¥</option>
+            <option value="below">Price â‰¤</option>
+            <option value="cross_up">Crosses above</option>
+            <option value="cross_down">Crosses below</option>
+          </select>
+          <input id="alert-name" type="text" placeholder="Label (optional)" style="width:120px">
+          <button id="alert-add" class="btn small">Add</button>
+        </span>
+      </div>
+      <div id="alerts-body">
+        <div class="plan-empty">Loading...</div>
+      </div>
+    </section>
+
+    <section class="panel compliance-panel">
+      <div class="panel-title">Compliance <span class="badge" id="comp-badge">--</span></div>
+      <div id="comp-body">
+        <div class="plan-empty">Loading...</div>
+      </div>
+    </section>
+
+    <section class="panel forex-breakout-panel">
+      <div class="panel-title">Forex Breakout <span class="sub">Donchian range + EMA200 trend</span>
+        <span class="fb-actions">
+          <input id="fb-min-conf" type="number" min="0" max="100" value="65" style="width:70px" title="Min confidence %">
+          <select id="fb-rr" style="width:90px">
+            <option value="1.5">R:R 1.5</option>
+            <option value="2">R:R 2</option>
+            <option value="3">R:R 3</option>
+          </select>
+          <button id="fb-scan" class="btn small">Scan</button>
+        </span>
+      </div>
+      <div id="fb-body">
+        <div class="plan-empty">Loading...</div>
+      </div>
+    </section>
+
     <section class="panel">
       <div class="panel-title">Journal Insights <span class="sub">from your trading history</span></div>
       <div id="sessions-body">
@@ -182,6 +239,8 @@
 <section class="panel equity-panel">
   <div class="panel-title">Equity Curve <span class="sub" id="equity-period">last 30 days</span>
     <span class="eq-toggles">
+      <button class="btn-xs" id="eq-tab-equity" onclick="showEquityTab('equity')">Equity Curve</button>
+      <button class="btn-xs" id="eq-tab-dist" onclick="showEquityTab('dist')">Distribution</button>
       <label class="check"><input type="checkbox" id="eq-balance" checked>Balance</label>
       <label class="check"><input type="checkbox" id="eq-floating">Equity</label>
       <label class="check"><input type="checkbox" id="eq-ma5">MA5</label>
@@ -190,6 +249,7 @@
   </div>
   <div class="equity-wrap">
     <canvas id="equity-chart"></canvas>
+    <canvas id="distribution-chart" style="display:none"></canvas>
     <div id="equity-stats" class="equity-stats"></div>
   </div>
 </section>
@@ -216,7 +276,7 @@
     </table>
   </div>
   <div id="journal-editor" class="journal-editor hidden">
-    <div class="je-title">Edit journal entry <b id="je-ticket"></b> <button id="je-cancel" class="btn small">✕</button></div>
+    <div class="je-title">Edit journal entry <b id="je-ticket"></b> <button id="je-cancel" class="btn small">âœ•</button></div>
     <label>Reason <input id="je-reason" type="text" placeholder="why this trade"></label>
     <label>Mistakes <input id="je-mistakes" type="text" placeholder="separate with ;"></label>
     <label>Lessons <input id="je-lessons" type="text" placeholder="what to do differently"></label>
@@ -241,6 +301,12 @@
 <section class="panel backtest-panel">
   <div class="panel-title">Backtesting <span class="sub" id="bt-sub"></span>
     <span class="bt-actions">
+      <input id="bt-symbol" class="symbol-input" list="symbol-list" value="EURUSD" spellcheck="false" placeholder="Symbol">
+      <select id="bt-tf"><option value="M5">M5</option><option value="M15" selected>M15</option><option value="H1">H1</option><option value="H4">H4</option></select>
+      <input id="bt-days" type="number" min="1" max="365" value="30" style="width:60px" title="Days">
+      <input id="bt-since" type="date" style="width:120px" title="Forward test from date">
+      <select id="bt-out"><option value="month">Month</option><option value="forward">Forward</option></select>
+      <button id="bt-run" class="btn small">Run</button>
       <button id="bt-refresh" class="btn small" title="Refresh saved results">Refresh</button>
     </span>
   </div>
@@ -288,9 +354,51 @@
   </div>
 </section>
 
+<section class="panel boom-crash-panel">
+  <div class="panel-title">Boom/Crash Strategy <span class="sub">Spike + Drift on Synthetic Indices</span>
+    <span class="bc-actions">
+      <select id="bc-min-conf">
+        <option value="50">Min confidence 50%</option>
+        <option value="65" selected>Min confidence 65%</option>
+        <option value="80">Min confidence 80%</option>
+      </select>
+      <button id="bc-scan" class="btn small">Scan</button>
+    </span>
+  </div>
+  <div id="bc-body">
+    <div class="plan-empty">Loading...</div>
+  </div>
+  <div id="bc-meta" class="bc-meta"></div>
+</section>
+
+<section class="panel ai-detection-panel">
+  <div class="panel-title">AI Chart Detection <span class="sub">Autochartist-style formations, levels & confluence</span>
+    <span class="aid-actions">
+      <select id="aid-timeframe" title="Detection timeframe">
+        <option>M15</option>
+        <option selected>H1</option>
+        <option>H4</option>
+        <option>D1</option>
+      </select>
+      <select id="aid-min-quality" title="Minimum pattern quality">
+        <option value="50">Quality 50+</option>
+        <option value="60" selected>Quality 60+</option>
+        <option value="75">Quality 75+</option>
+      </select>
+      <button id="aid-run" class="btn small">Detect</button>
+    </span>
+  </div>
+  <div id="aid-body">
+    <div class="plan-empty">Loading...</div>
+  </div>
+</section>
+
 <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 
 <script src="/static/vendor/lightweight-charts.js"></script>
-<script src="/static/app.js"></script>
+<script src="/static/app.core.js?v=20260826"></script>
+<script src="/static/app.panels.js?v=20260826"></script>
+<script src="/static/app.chart.js?v=20260826"></script>
+<script src="/static/app.agents.js?v=20260826"></script>
 </body>
 </html>

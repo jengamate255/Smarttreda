@@ -22,7 +22,7 @@
     "conservative_risk_percent": 0.25,
     "max_daily_loss_percent": 3.0,
     "max_weekly_loss_percent": 6.0,
-    "max_open_risk_percent": 1.0,
+    "max_open_risk_percent": 3.0,
     "max_drawdown_percent": 8.0,
     "daily_conservative_ratio": 0.8,
     "drawdown_conservative_ratio": 0.8,
@@ -33,8 +33,9 @@
     "sl_min_pips": 20,
     "sl_max_pips": 30,
     "max_spread_points": 40,
-    "max_positions": 5,
-    "max_trades_per_day": 3,
+    "max_positions": 2,
+    "max_trades_per_day": 6,
+    "max_trades_per_day_green_bonus": 2,
     "max_consecutive_losses": 3,
     "revenge_cooldown_minutes": 60,
     "news_blackout_minutes": 30,
@@ -46,7 +47,10 @@
   },
   "strategy": {
     "trend_timeframe": "H4",
-    "zone_timeframes": ["H1", "H4"],
+    "zone_timeframes": [
+      "H1",
+      "H4"
+    ],
     "confirmation_timeframe": "H1",
     "trend_fast_ema": 50,
     "trend_slow_ema": 200,
@@ -66,5 +70,40 @@
     "log_dir": "logs",
     "max_bytes": 5242880,
     "backup_count": 5
+  },
+  "boom_crash": {
+    "trail_arm_r": 1.0,
+    "trail_atr_distance": 1.0,
+    "trail_atr_min": 1.0,
+    "trail_atr_max": 1.5,
+    "partial_exit_fraction": 0.5,
+    "partial_exit_enabled": true,
+    "watchlist": [
+      "CRASH1000",
+      "CRASH500",
+      "BOOM1000",
+      "BOOM500"
+    ]
+  },
+  "deriv": {
+    "enabled": true,
+    "ws_url": "wss://ws.derivws.com/websockets/v3",
+    "app_id": 1089,
+    "api_token": "",
+    "request_timeout_seconds": 15.0,
+    "connect_timeout_seconds": 20.0,
+    "reconnect_attempts": 5,
+    "reconnect_delay_seconds": 5.0,
+    "ping_interval_seconds": 30.0
+  },
+  "deriv_mt5": {
+    "terminal_path": "C:\\Program Files\\Deriv VU MT5 Terminal\\terminal64.exe",
+    "login": 21727841,
+    "password": "",
+    "server": "DerivVU-Server",
+    "connect_timeout_seconds": 30,
+    "reconnect_attempts": 5,
+    "reconnect_delay_seconds": 5,
+    "health_check_interval_seconds": 30
   }
 }

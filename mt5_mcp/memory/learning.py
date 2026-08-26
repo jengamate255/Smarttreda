@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from collections import Counter, defaultdict
 
-from memory.trade_journal import Journal, get_journal
+from mt5_mcp.memory.trade_journal import Journal, get_journal
 
 
 def _split_mistakes(raw: str | None) -> list[str]:

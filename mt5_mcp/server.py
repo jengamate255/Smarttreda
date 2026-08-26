@@ -86,9 +86,12 @@ def _audit(
 def register_all(mcp) -> None:
     from mt5_mcp.tools import (
         account,
+        boom_crash_strategy,
+        chart_patterns,
         candles,
         coach,
         compliance,
+        deriv,
         history,
         indicators,
         market,
@@ -100,11 +103,14 @@ def register_all(mcp) -> None:
         risk,
         strategy,
         supply_demand,
+        trade_learning,
         trades,
     )
 
     for module in (
         account,
+        boom_crash_strategy,
+        chart_patterns,
         market,
         candles,
         indicators,
@@ -120,6 +126,8 @@ def register_all(mcp) -> None:
         market_intel,
         research,
         coach,
+        deriv,
+        trade_learning,
     ):
         module.register(mcp)
     if hasattr(mcp, "add_middleware"):
@@ -323,6 +331,22 @@ def _register_server_tools(mcp) -> None:
         found = get_journal().recent_audit(limit=limit)
         return {"records": found, "count": len(found)}
 
+    @mcp.tool(
+        name="deriv_health", description="Deriv connection health, uptime and last error."
+    )
+    def tool_deriv_health() -> dict:
+        try:
+            from mt5_mcp.deriv_client import get_deriv_client
+            client = get_deriv_client()
+            return client.health()
+        except Exception as exc:
+            return {
+                "ok": False,
+                "connected": False,
+                "last_error": str(exc),
+                "uptime_s": 0.0,
+            }
+
 
 def build_server() -> FastMCP:
     from fastmcp import FastMCP
@@ -348,6 +372,21 @@ def main() -> None:
         logger.warning(
             "MT5 not connected at startup: %s (tools will retry)", client.last_error()
         )
+    
+    # Initialize Deriv client if configured
+    if settings.deriv.enabled:
+        from mt5_mcp.deriv_client import get_deriv_client
+        deriv_client = get_deriv_client()
+        if deriv_client.connect():
+            logger.info("Connected to Deriv at startup")
+        else:
+            logger.warning(
+                "Deriv not connected at startup: %s (tools will retry)", deriv_client.last_error()
+            )
+        atexit.register(deriv_client.shutdown)
+    else:
+        logger.info("Deriv not configured, skipping")
+    
     atexit.register(client.shutdown)
 
     mcp = build_server()

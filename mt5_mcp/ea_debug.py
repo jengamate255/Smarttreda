@@ -11,11 +11,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 import numpy as np
 
-from client import get_client
-from indicators import atr
-from price_action import detect_patterns
-from strategy import DEMAND, SUPPLY, _best_confirmation, _select_zone, analyze_trend
-from supply_demand import detect_zones
+from mt5_mcp.client import get_client
+from mt5_mcp.indicators import atr
+from mt5_mcp.price_action import detect_patterns
+from mt5_mcp.strategy import DEMAND, SUPPLY, _best_confirmation, _select_zone, analyze_trend
+from mt5_mcp.supply_demand import detect_zones
 
 
 def count_gates(symbol: str = "EURUSD", trend_tf: str = "H4",

@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from market_intel import health_commentary, market_health, scan_markets
+from mt5_mcp.market_intel import health_commentary, market_health, scan_markets
 
 
 def register(mcp) -> None:

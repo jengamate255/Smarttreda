@@ -1,0 +1,115 @@
+{
+  "generated_at": "2026-08-26T08:28:56.068788+00:00",
+  "window_days": 7,
+  "window_start": "2026-08-19T08:40:38+00:00",
+  "window_end": "2026-08-19T10:36:24+00:00",
+  "trades": 6,
+  "win_rate": 83.3,
+  "expectancy": 22.22,
+  "profit_factor": 2.69,
+  "average_rr": 0.0,
+  "average_win": 42.4,
+  "average_loss": -78.69,
+  "net_pnl": 133.32,
+  "max_drawdown": {
+    "max_drawdown": 78.69,
+    "max_drawdown_percent": 0.77,
+    "peak_time": "2026-08-19T09:27:49+00:00",
+    "trough_time": "2026-08-19T09:59:58+00:00"
+  },
+  "best_symbols": [
+    {
+      "name": "CRASH 150 INDEX",
+      "trades": 2,
+      "win_rate": 100.0,
+      "net_pnl": 90.92,
+      "avg_pnl": 45.46
+    },
+    {
+      "name": "BOOM 150 INDEX",
+      "trades": 1,
+      "win_rate": 100.0,
+      "net_pnl": 40.95,
+      "avg_pnl": 40.95
+    },
+    {
+      "name": "BOOM 900 INDEX",
+      "trades": 1,
+      "win_rate": 100.0,
+      "net_pnl": 40.88,
+      "avg_pnl": 40.88
+    },
+    {
+      "name": "CRASH 50 INDEX",
+      "trades": 1,
+      "win_rate": 100.0,
+      "net_pnl": 39.26,
+      "avg_pnl": 39.26
+    },
+    {
+      "name": "CRASH 600 INDEX",
+      "trades": 1,
+      "win_rate": 0.0,
+      "net_pnl": -78.69,
+      "avg_pnl": -78.69
+    }
+  ],
+  "worst_symbols": [
+    {
+      "name": "CRASH 600 INDEX",
+      "trades": 1,
+      "win_rate": 0.0,
+      "net_pnl": -78.69,
+      "avg_pnl": -78.69
+    },
+    {
+      "name": "CRASH 50 INDEX",
+      "trades": 1,
+      "win_rate": 100.0,
+      "net_pnl": 39.26,
+      "avg_pnl": 39.26
+    },
+    {
+      "name": "BOOM 900 INDEX",
+      "trades": 1,
+      "win_rate": 100.0,
+      "net_pnl": 40.88,
+      "avg_pnl": 40.88
+    }
+  ],
+  "setups": [
+    {
+      "name": "boom_crash_spike_drift",
+      "trades": 2,
+      "win_rate": 100.0,
+      "net_pnl": 90.49,
+      "avg_pnl": 45.25
+    },
+    {
+      "name": "manual",
+      "trades": 4,
+      "win_rate": 75.0,
+      "net_pnl": 42.83,
+      "avg_pnl": 10.71
+    }
+  ],
+  "sessions": [
+    {
+      "name": "08:00 UTC",
+      "trades": 1,
+      "win_rate": 100.0,
+      "net_pnl": 39.26,
+      "avg_pnl": 39.26
+    },
+    {
+      "name": "09:00 UTC",
+      "trades": 3,
+      "win_rate": 66.7,
+      "net_pnl": 3.57,
+      "avg_pnl": 1.19
+    }
+  ],
+  "mistakes": [],
+  "suggestions": [],
+  "markdown": "# Research Report - 2026-08-26\n\nWindow: 7 day(s) from 2026-08-19 to 2026-08-19\n\n- Trades: 6\n- Win rate: 83.3%\n- Expectancy: +22.22 per trade\n- Profit factor: 2.69\n- Average R multiple: 0.00\n- Net P&L: +133.32\n- Max drawdown: 0.77%\n\n## Best symbols\n- CRASH 150 INDEX: 2 trades, 100% win, +90.92\n- BOOM 150 INDEX: 1 trades, 100% win, +40.95\n- BOOM 900 INDEX: 1 trades, 100% win, +40.88\n- CRASH 50 INDEX: 1 trades, 100% win, +39.26\n- CRASH 600 INDEX: 1 trades, 0% win, -78.69\n\n## Worst symbols\n- CRASH 600 INDEX: 1 trades, 0% win, -78.69\n- CRASH 50 INDEX: 1 trades, 100% win, +39.26\n- BOOM 900 INDEX: 1 trades, 100% win, +40.88\n\n## Setups\n- boom_crash_spike_drift: 2 trades, +90.49\n- manual: 4 trades, +42.83\n\n## Mistakes\n- none recorded\n\n## Suggestions\n- not enough data for statistically significant suggestions\n"
+}

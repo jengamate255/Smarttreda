@@ -1,0 +1,18 @@
+{
+  "accounts": [
+    {
+      "login": 11911448,
+      "password": "",
+      "server": "FundingPips2-SIM",
+      "name": "Prop firm (FundingPips2-SIM)",
+      "terminal": "C:\\Program Files\\MetaTrader 5 Terminal\\terminal64.exe"
+    },
+    {
+      "login": 41204968,
+      "password": "REDACTED_MT5_PASSWORD$$$$",
+      "server": "Deriv-Demo",
+      "name": "Deriv synthetic (Deriv-Demo)",
+      "terminal": "C:\\Program Files\\MetaTrader 5 Terminal\\terminal64.exe"
+    }
+  ]
+}

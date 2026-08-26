@@ -1,0 +1,12 @@
+{
+  "global": {
+    "enabled": true,
+    "confidence_floor": 90.0,
+    "max_spike_age": 15,
+    "spike_threshold_atr": 2.5,
+    "size_multiplier": 1.0
+  },
+  "symbols": {},
+  "priors": {},
+  "updated_at": "2026-08-26T16:43:50.319564+00:00"
+}

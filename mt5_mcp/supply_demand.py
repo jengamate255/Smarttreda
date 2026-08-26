@@ -14,8 +14,8 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from common import Zone
-from indicators import atr
+from mt5_mcp.common import Zone
+from mt5_mcp.indicators import atr
 
 DEMAND = "demand"
 SUPPLY = "supply"
@@ -173,14 +173,20 @@ def detect_zones(
     impulse_mult: float = 1.5,
     lookback: int = 400,
     min_strength: float = 0.0,
+    atr_series: pd.Series | None = None,
 ) -> list[Zone]:
-    """Detect and score supply/demand zones. Sorted by strength (highest first)."""
+    """Detect and score supply/demand zones. Sorted by strength (highest first).
+
+    ``atr_series`` may be passed precomputed and aligned to ``df`` (after the
+    tail/reset_index slice) to avoid recomputing the ATR every call.
+    """
     if df is None or len(df) < base_bars + 30:
         return []
     frame = df.tail(int(lookback)).reset_index(drop=True)
     if frame.empty:
         return []
-    atr_series = atr(frame, atr_period)
+    if atr_series is None:
+        atr_series = atr(frame, atr_period)
     current_index = len(frame)
     candidates = _detect_candidates(
         frame, atr_series, int(base_bars), float(impulse_mult)

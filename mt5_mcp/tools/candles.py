@@ -2,8 +2,12 @@
 
 from __future__ import annotations
 
-from client import get_client
-from common import Candle, Timeframe
+from datetime import timezone
+
+import pandas as pd
+
+from mt5_mcp.client import get_client
+from mt5_mcp.common import Candle, Timeframe
 
 
 def get_candles(
@@ -16,7 +20,9 @@ def get_candles(
     for row in frame.itertuples(index=False):
         candles.append(
             Candle(
-                time=row.time,
+                time=pd.Timestamp(row.time).to_pydatetime().replace(
+                    tzinfo=timezone.utc
+                ),
                 open=float(row.open),
                 high=float(row.high),
                 low=float(row.low),

@@ -28,10 +28,10 @@ import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from client import get_client
-from common import TRADE_ACTION_REMOVE, pip_size, pip_value_per_lot
-from config import get_settings
-from tools.news import get_provider
+from mt5_mcp.client import get_client
+from mt5_mcp.common import TRADE_ACTION_REMOVE, pip_size, pip_value_per_lot
+from mt5_mcp.config import get_settings
+from mt5_mcp.tools.news import get_provider
 
 logger = logging.getLogger("mt5_mcp")
 
@@ -42,6 +42,27 @@ DEAL_ENTRY_IN = 0
 DEAL_ENTRY_OUT = 1
 DEAL_TYPE_BUY = 0
 DEAL_TYPE_SELL = 1
+
+
+def is_synthetic_symbol(symbol: str) -> bool:
+    """Economic news does not affect Deriv synthetic-index price feeds."""
+    name = str(symbol or "").upper().replace(" ", "")
+    return any(
+        marker in name
+        for marker in (
+            "BOOM",
+            "CRASH",
+            "VOLATILITY",
+            "1HZ",
+            "R_",
+            "STEP",
+            "JUMP",
+            "DRIFT",
+            "RANGE",
+            "BULL",
+            "BEAR",
+        )
+    )
 
 CORRELATION_GROUPS: dict[str, str] = {
     "EURUSD": "euro",
@@ -351,6 +372,16 @@ def evaluate(state_path: Path | None = None) -> dict:
             f"{settings.revenge_cooldown_minutes:.0f} minutes",
         )
 
+    # Flexible daily trade limit: the base limit is raised while the day is
+    # green (positive realized+floating P&L). No bonus in conservative or
+    # halted modes, so a losing day never unlocks extra trades.
+    green_bonus = (
+        settings.max_trades_per_day_green_bonus
+        if daily_pnl > 0 and mode == "normal"
+        else 0
+    )
+    effective_max_trades = settings.max_trades_per_day + green_bonus
+
     newly_halted = mode == "halted" and prev_mode != "halted"
     _save_state(state_path, state)
 
@@ -404,7 +435,9 @@ def evaluate(state_path: Path | None = None) -> dict:
         "max_open_risk": round(max_open, 2),
         "open_positions": len(client.positions() or []),
         "trades_today": trades_today,
-        "max_trades_per_day": settings.max_trades_per_day,
+        "max_trades_per_day": effective_max_trades,
+        "max_trades_per_day_base": settings.max_trades_per_day,
+        "max_trades_per_day_green_bonus": green_bonus,
         "consecutive_losses": losses,
         "max_consecutive_losses": settings.max_consecutive_losses,
         "revenge_paused_until": (
@@ -433,6 +466,7 @@ def gate(
     sl_price: float | None = None,
     sl_pips: float | None = None,
     confidence: float | None = None,
+    entry_price: float | None = None,
     state_path: Path | None = None,
 ) -> dict:
     """Pre-trade veto gate. Returns verdict with violations; trade only if allowed."""
@@ -467,15 +501,20 @@ def gate(
             f"liquidity blackout ({settings.liquidity_blackout_start}-"
             f"{settings.liquidity_blackout_end} server time)"
         )
-    if status["news_blocked"]:
+    if status["news_blocked"] and not is_synthetic_symbol(symbol):
         violations.append(
             f"high-impact news within {settings.news_blackout_minutes:.0f} minutes"
         )
 
     tick = client.tick(symbol)
-    entry = (
-        float(tick.get("ask") or 0.0) if side == "BUY" else float(tick.get("bid") or 0.0)
-    )
+    if entry_price is not None:
+        entry = float(entry_price)
+    else:
+        entry = (
+            float(tick.get("ask") or 0.0)
+            if side == "BUY"
+            else float(tick.get("bid") or 0.0)
+        )
     if sl_price is None and sl_pips is None:
         violations.append("stop-loss required to bound risk")
     elif sl_pips is None:
@@ -514,9 +553,9 @@ def gate(
                 f"exceeds combined cap ({cap:.2f})"
             )
 
-    if status["trades_today"] >= settings.max_trades_per_day:
+    if status["trades_today"] >= status["max_trades_per_day"]:
         violations.append(
-            f"daily trade limit reached ({settings.max_trades_per_day})"
+            f"daily trade limit reached ({status['max_trades_per_day']})"
         )
 
     losses = status["consecutive_losses"]
@@ -535,10 +574,26 @@ def gate(
 
     point = float(info.get("point") or 0.0)
     if point:
-        spread = (float(tick.get("ask") or 0.0) - float(tick.get("bid") or 0.0)) / point
-        if spread > settings.max_spread_points:
+        bid = float(tick.get("bid") or 0.0)
+        ask = float(tick.get("ask") or 0.0)
+        spread_points = (ask - bid) / point
+        mid = (ask + bid) / 2 if (ask + bid) else 0.0
+        relative_spread = (ask - bid) / mid if mid else 0.0
+        if is_synthetic_symbol(symbol):
+            spread_ok = (
+                not settings.max_spread_relative
+                or relative_spread <= settings.max_spread_relative
+            )
+        elif settings.max_spread_points:
+            spread_ok = spread_points <= settings.max_spread_points
+        else:
+            spread_ok = (
+                not settings.max_spread_relative
+                or relative_spread <= settings.max_spread_relative
+            )
+        if not spread_ok:
             violations.append(
-                f"spread {spread:.0f} points exceeds limit {settings.max_spread_points:.0f}"
+                f"spread {spread_points:.0f} points ({relative_spread * 100:.3f}%) exceeds configured limit"
             )
 
     return _verdict(violations, warnings, status)

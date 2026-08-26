@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from coach import coach_review
+from mt5_mcp.coach import coach_review
 
 
 def register(mcp) -> None:

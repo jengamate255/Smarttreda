@@ -13,8 +13,8 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from common import PatternResult
-from indicators import atr, swing_highs, swing_lows
+from mt5_mcp.common import PatternResult
+from mt5_mcp.indicators import atr, swing_highs, swing_lows
 
 NEUTRAL = "neutral"
 
@@ -381,13 +381,19 @@ def detect_patterns(
     right: int = 5,
     atr_period: int = 14,
     check_last: int = 5,
+    atr_now: float | None = None,
 ) -> list[PatternResult]:
-    """Detect all patterns on the most recent candles. Sorted by confidence."""
+    """Detect all patterns on the most recent candles. Sorted by confidence.
+
+    ``atr_now`` may be passed as the ATR value at the last bar (e.g. from a
+    precomputed full-frame ATR series) to avoid recomputing it every call.
+    """
     if frame is None or len(frame) < left + right + 5:
         return []
     df = frame.tail(int(lookback)).reset_index(drop=True)
-    atr_series = atr(df, atr_period)
-    atr_now = float(atr_series.iloc[-1]) or 1.0
+    if atr_now is None:
+        atr_series = atr(df, atr_period)
+        atr_now = float(atr_series.iloc[-1]) or 1.0
     highs = swing_highs(df, int(left), int(right))
     lows = swing_lows(df, int(left), int(right))
     results: list[PatternResult] = []

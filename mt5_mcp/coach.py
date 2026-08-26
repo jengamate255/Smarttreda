@@ -22,8 +22,8 @@ import logging
 from datetime import datetime, timezone
 from typing import Any
 
-from config import get_settings
-from memory.trade_journal import get_journal
+from mt5_mcp.config import get_settings
+from mt5_mcp.memory.trade_journal import get_journal
 
 logger = logging.getLogger("mt5_mcp.coach")
 

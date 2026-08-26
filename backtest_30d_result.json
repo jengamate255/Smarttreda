@@ -1,0 +1,66 @@
+{
+  "boom500": {
+    "metrics": {
+      "total_trades": 446,
+      "win_rate": 57.4,
+      "avg_win_usd": 11.9,
+      "avg_loss_usd": -7.95,
+      "profit_factor": 2.02,
+      "net_usd": 1535.6,
+      "avg_r": 0.416,
+      "avg_hold_minutes": 28.4
+    },
+    "by_symbol": {
+      "BOOM500": {
+        "trades": 446,
+        "win_rate": 57.4,
+        "net_usd": 1535.6,
+        "avg_r": 0.416,
+        "avg_risk_usd": 8.07
+      }
+    },
+    "exit_reasons": {
+      "sl": 445,
+      "time": 1
+    }
+  },
+  "others": {
+    "metrics": {
+      "total_trades": 1154,
+      "win_rate": 52.7,
+      "avg_win_usd": 13.89,
+      "avg_loss_usd": -8.11,
+      "profit_factor": 1.91,
+      "net_usd": 4015.11,
+      "avg_r": 0.405,
+      "avg_hold_minutes": 26.6
+    },
+    "by_symbol": {
+      "BOOM1000": {
+        "trades": 346,
+        "win_rate": 54.6,
+        "net_usd": 2466.27,
+        "avg_r": 0.493,
+        "avg_risk_usd": 14.68
+      },
+      "CRASH1000": {
+        "trades": 364,
+        "win_rate": 51.6,
+        "net_usd": 861.21,
+        "avg_r": 0.429,
+        "avg_risk_usd": 5.72
+      },
+      "CRASH500": {
+        "trades": 444,
+        "win_rate": 52.0,
+        "net_usd": 687.63,
+        "avg_r": 0.316,
+        "avg_risk_usd": 5.24
+      }
+    },
+    "exit_reasons": {
+      "sl": 1148,
+      "time": 6
+    }
+  }
+}

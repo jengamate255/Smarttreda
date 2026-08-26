@@ -12,13 +12,15 @@ To add another provider, subclass ``NewsProvider`` and swap it in
 from __future__ import annotations
 
 import logging
+import json
 import time
 import urllib.request
 import xml.etree.ElementTree as ET
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
-from common import NewsEvent
+from mt5_mcp.common import NewsEvent
 
 logger = logging.getLogger("mt5_mcp.news")
 
@@ -59,15 +61,68 @@ class ForexFactoryNewsProvider(NewsProvider):
     FEED_URL = "https://nfs.faireconomy.media/ff_calendar_thisweek.xml"
     CACHE_TTL = 900.0
     FAILURE_TTL = 180.0
+    DISK_CACHE_TTL = 6 * 3600.0
+    CACHE_PATH = Path(__file__).resolve().parents[1] / "memory" / "news_cache.json"
     _cache: tuple[float, list[NewsEvent]] | None = None
     _failure_until: float = 0.0
+    _cache_usable: bool = False
+    _last_error: str = ""
+
+    def _load_disk_cache(self) -> list[NewsEvent] | None:
+        try:
+            payload = json.loads(self.CACHE_PATH.read_text(encoding="utf-8"))
+            saved_at = float(payload.get("saved_at", 0.0))
+            if not saved_at or time.time() - saved_at > self.DISK_CACHE_TTL:
+                return None
+            events = [
+                NewsEvent(
+                    time=datetime.fromisoformat(item["time"]),
+                    currency=str(item.get("currency", "")),
+                    impact=str(item.get("impact", "low")),
+                    title=str(item.get("title", "")),
+                    forecast=str(item.get("forecast", "")),
+                    previous=str(item.get("previous", "")),
+                )
+                for item in payload.get("events", [])
+            ]
+            self._cache = (saved_at, events)
+            self._cache_usable = True
+            return events
+        except (OSError, ValueError, TypeError, KeyError, json.JSONDecodeError):
+            return None
+
+    def _save_disk_cache(self, saved_at: float, events: list[NewsEvent]) -> None:
+        try:
+            self.CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+            self.CACHE_PATH.write_text(
+                json.dumps(
+                    {
+                        "saved_at": saved_at,
+                        "events": [
+                            {
+                                "time": event.time.isoformat(),
+                                "currency": event.currency,
+                                "impact": event.impact,
+                                "title": event.title,
+                                "forecast": event.forecast,
+                                "previous": event.previous,
+                            }
+                            for event in events
+                        ],
+                    },
+                    indent=2,
+                ),
+                encoding="utf-8",
+            )
+        except OSError as exc:
+            logger.warning("news cache write failed: %s", exc)
 
     def _fetch(self) -> list[NewsEvent]:
         now = time.time()
         if self._cache is not None and now - self._cache[0] < self.CACHE_TTL:
             return self._cache[1]
         if now < self._failure_until:
-            return []
+            return self._cache[1] if self._cache_usable and self._cache else []
         raw = b""
         try:
             req = urllib.request.Request(  # noqa: S310 - public calendar feed
@@ -77,8 +132,9 @@ class ForexFactoryNewsProvider(NewsProvider):
                 raw = resp.read()
         except Exception as exc:  # noqa: BLE001 - offline fallback
             logger.warning("news feed unavailable: %s", exc)
+            self._last_error = str(exc)
             self._failure_until = now + self.FAILURE_TTL
-            return []
+            return self._load_disk_cache() or []
 
         events: list[NewsEvent] = []
         try:
@@ -111,9 +167,15 @@ class ForexFactoryNewsProvider(NewsProvider):
                 )
         except Exception as exc:  # noqa: BLE001 - malformed feed
             logger.warning("news feed parse failed: %s", exc)
-            events = []
+            self._last_error = str(exc)
+            self._failure_until = now + self.FAILURE_TTL
+            return self._load_disk_cache() or []
         events.sort(key=lambda e: e.time)
         self._cache = (now, events)
+        self._cache_usable = True
+        self._last_error = ""
+        self._failure_until = 0.0
+        self._save_disk_cache(now, events)
         return events
 
     def upcoming(self, hours: int = 24, currency: str = "") -> list[NewsEvent]:
@@ -150,6 +212,8 @@ def news_filter(horizon_hours: int = 24, currency: str = "") -> dict:
         "high_impact_imminent": len(imminent) > 0,
         "imminent_events": imminent,
         "trading_blocked": len(imminent) > 0,
+        "cached_data_usable": bool(getattr(get_provider(), "_cache_usable", False)),
+        "provider_error": str(getattr(get_provider(), "_last_error", "") or ""),
         "note": "ForexFactory weekly calendar (UTC, converted from ET)",
     }
 

@@ -16,8 +16,9 @@ from __future__ import annotations
 import os
 from typing import Any
 
-from client import get_client
-from common import (
+from mt5_mcp.client import get_client
+from mt5_mcp.compliance import is_synthetic_symbol
+from mt5_mcp.common import (
     ORDER_TIME_DAY,
     ORDER_TYPE_BUY,
     ORDER_TYPE_BUY_LIMIT,
@@ -33,7 +34,7 @@ from common import (
     pip_value_per_lot,
     round_to_step,
 )
-from config import get_settings
+from mt5_mcp.config import get_settings
 
 MAGIC = int(os.getenv("MT5_MCP_MAGIC", "20260601"))
 
@@ -71,9 +72,23 @@ def _preflight(
     tick_bid = float(tick.get("bid", 0.0))
     bid, ask = tick_bid, float(tick.get("ask", tick_bid))
     spread_points = (ask - bid) / point if point else 0
-    if settings.max_spread_points and spread_points > settings.max_spread_points:
+    mid = (ask + bid) / 2 if (ask + bid) else 0.0
+    relative_spread = (ask - bid) / mid if mid else 0.0
+    if is_synthetic_symbol(symbol):
+        spread_ok = (
+            not settings.max_spread_relative
+            or relative_spread <= settings.max_spread_relative
+        )
+    elif settings.max_spread_points:
+        spread_ok = spread_points <= settings.max_spread_points
+    else:
+        spread_ok = (
+            not settings.max_spread_relative
+            or relative_spread <= settings.max_spread_relative
+        )
+    if not spread_ok:
         raise OrderRejected(
-            f"spread {spread_points:.0f} points exceeds limit {settings.max_spread_points:.0f}"
+            f"spread {spread_points:.0f} points ({relative_spread * 100:.3f}%) exceeds limit {settings.max_spread_points:.0f} points"
         )
     checks.append(f"spread {spread_points:.0f} points within limit")
 
@@ -164,13 +179,20 @@ def open_market(
     sl: float | None = None,
     tp: float | None = None,
     comment: str = "",
+    confidence: float | None = None,
 ) -> TradeResult:
     client = get_client()
     client.ensure_connected()
     try:
-        from compliance import gate
+        from mt5_mcp.compliance import gate
 
-        verdict = gate(symbol, side.upper(), lots, sl_price=sl)
+        verdict = gate(
+            symbol,
+            side.upper(),
+            lots,
+            sl_price=sl,
+            confidence=confidence,
+        )
         if not verdict["allowed"]:
             return TradeResult(
                 accepted=False,
@@ -191,8 +213,8 @@ def open_market(
             "volume": pre["volume"],
             "type": order_type,
             "price": pre["entry"],
-            "sl": sl,
-            "tp": tp,
+            "sl": sl if sl is not None else 0.0,
+            "tp": tp if tp is not None else 0.0,
             "deviation": int(pre.get("info", {}).get("trade_stops_level", 20)),
             "magic": MAGIC,
             "comment": comment[:30] or "mt5-mcp",
@@ -246,29 +268,39 @@ def pending_order(
                 error=f"invalid pending type '{order_type}' (use buy_limit, sell_limit, buy_stop, sell_stop)",
             )
         side = "BUY" if kind in (ORDER_TYPE_BUY_LIMIT, ORDER_TYPE_BUY_STOP) else "SELL"
-        from compliance import gate
-
-        verdict = gate(symbol, side, lots, sl_price=sl)
-        if not verdict["allowed"]:
-            return TradeResult(
-                accepted=False,
-                error=f"compliance: {verdict['violations'][0]}",
-                checks=[],
-            )
         info = client.symbol_info(symbol)
         point = float(info.get("point", 0.0))
         tick = client.tick(symbol)
         tick_bid = float(tick.get("bid", 0.0))
         bid, ask = tick_bid, float(tick.get("ask", tick_bid))
-        if kind in (ORDER_TYPE_BUY_LIMIT, ORDER_TYPE_SELL_STOP) and price >= ask:
+        if kind == ORDER_TYPE_BUY_LIMIT and price >= ask:
             return TradeResult(
                 accepted=False,
                 error=f"{order_type} must be placed below current ask ({ask:.5f})",
             )
-        if kind in (ORDER_TYPE_SELL_LIMIT, ORDER_TYPE_BUY_STOP) and price <= bid:
+        if kind == ORDER_TYPE_SELL_LIMIT and price <= bid:
             return TradeResult(
                 accepted=False,
                 error=f"{order_type} must be placed above current bid ({bid:.5f})",
+            )
+        if kind == ORDER_TYPE_SELL_STOP and price >= bid:
+            return TradeResult(
+                accepted=False,
+                error=f"{order_type} must be placed below current bid ({bid:.5f})",
+            )
+        if kind == ORDER_TYPE_BUY_STOP and price <= ask:
+            return TradeResult(
+                accepted=False,
+                error=f"{order_type} must be placed above current ask ({ask:.5f})",
+            )
+        from mt5_mcp.compliance import gate
+
+        verdict = gate(symbol, side, lots, sl_price=sl, entry_price=price)
+        if not verdict["allowed"]:
+            return TradeResult(
+                accepted=False,
+                error=f"compliance: {verdict['violations'][0]}",
+                checks=[],
             )
         pre, checks = _preflight(symbol, price, side, lots, sl, tp)
         request = {
@@ -277,8 +309,8 @@ def pending_order(
             "volume": pre["volume"],
             "type": kind,
             "price": round(price, int(info.get("digits", 5))),
-            "sl": sl,
-            "tp": tp,
+            "sl": sl if sl is not None else 0.0,
+            "tp": tp if tp is not None else 0.0,
             "magic": MAGIC,
             "comment": comment[:30] or "mt5-mcp",
             "type_time": ORDER_TIME_DAY,

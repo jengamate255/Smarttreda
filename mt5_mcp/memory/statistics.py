@@ -6,7 +6,7 @@ from __future__ import annotations
 import math
 from collections import defaultdict
 
-from memory.trade_journal import Journal, get_journal
+from mt5_mcp.memory.trade_journal import Journal, get_journal
 
 
 def _load_trades(journal: Journal) -> list[dict]:

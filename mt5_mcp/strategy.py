@@ -20,8 +20,8 @@ from datetime import datetime, timezone
 
 import pandas as pd
 
-from client import get_client
-from common import (
+from mt5_mcp.client import get_client
+from mt5_mcp.common import (
     TIMEFRAME_MT5,
     PatternResult,
     TradePlan,
@@ -30,10 +30,10 @@ from common import (
     pip_value_per_lot,
     round_to_step,
 )
-from config import get_settings
-from indicators import atr, ema, swing_highs, swing_lows
-from price_action import detect_patterns
-from supply_demand import Zone, detect_zones
+from mt5_mcp.config import get_settings
+from mt5_mcp.indicators import atr, ema, swing_highs, swing_lows
+from mt5_mcp.price_action import detect_patterns
+from mt5_mcp.supply_demand import Zone, detect_zones
 
 try:
     from ml_ranker import load_model, rank_signal
@@ -266,6 +266,7 @@ def evaluate_strategy(
     zone_timeframes: list[str] | None = None,
     confirmation_timeframe: str | None = None,
     lookback: int | None = None,
+    closed_confirmation: bool = False,
 ) -> TradePlan:
     settings = get_settings()
     risk = settings.risk
@@ -389,6 +390,11 @@ def evaluate_strategy(
         plan.errors.append(f"no {confirm_tf} data: {exc}")
         plan.reason = "; ".join(plan.errors)
         return plan
+
+    # Automation should evaluate only completed candles. Keep the default
+    # behaviour unchanged for existing dashboard/MCP callers.
+    if closed_confirmation and len(confirm_frame) > 1:
+        confirm_frame = confirm_frame.iloc[:-1].reset_index(drop=True)
 
     patterns = detect_patterns(confirm_frame)
     confirmation = _best_confirmation(

@@ -1,0 +1,43 @@
+# Never commit large binary datasets or models
+*.parquet
+*.csv
+*.pt
+*.pkl
+*.joblib
+*.zip
+*.gz
+
+# Data and model artifacts (regenerated or synced via Google Drive / GitHub Releases)
+data/
+models/
+logs/
+exports/
+
+# Environment / secrets
+.env
+.env.local
+*.env
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+build/
+dist/
+*.egg-info/
+.eggs/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*~

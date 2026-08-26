@@ -5,8 +5,8 @@ from __future__ import annotations
 from collections import defaultdict
 from datetime import datetime, timezone
 
-from client import get_client
-from common import pip_size
+from mt5_mcp.client import get_client
+from mt5_mcp.common import pip_size
 
 
 def _order_stats(order: dict) -> dict | None:

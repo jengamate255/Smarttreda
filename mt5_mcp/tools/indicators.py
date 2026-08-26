@@ -4,9 +4,9 @@ from __future__ import annotations
 
 import pandas as pd
 
-from client import get_client
-from common import Timeframe
-from indicators import (
+from mt5_mcp.client import get_client
+from mt5_mcp.common import Timeframe
+from mt5_mcp.indicators import (
     atr,
     bollinger,
     ema,

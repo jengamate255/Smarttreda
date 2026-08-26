@@ -21,24 +21,62 @@
     "min_rr": 3.0,
     "spread_points": 15.0,
     "start_balance": 10000.0,
-    "bars": 5000,
+    "bars": 12000,
     "timeout_bars": 200
   },
-  "n_trades": 8,
-  "wins": 5,
-  "losses": 3,
-  "gross_profit": 542.91,
-  "gross_loss": 167.44,
-  "net_pnl": 375.47,
-  "profit_factor": 3.242,
-  "win_rate": 62.5,
-  "expectancy": 46.93,
-  "total_return_pct": 3.75,
+  "n_trades": 10,
+  "wins": 6,
+  "losses": 4,
+  "gross_profit": 609.0,
+  "gross_loss": 217.69,
+  "net_pnl": 391.31,
+  "profit_factor": 2.798,
+  "win_rate": 60.0,
+  "expectancy": 39.13,
+  "total_return_pct": 3.91,
   "max_drawdown_pct": 0.59,
   "avg_rr": 3.0,
-  "start": "2025-10-23T12:00:00",
+  "start": "2025-07-14T07:00:00",
   "end": "2026-07-31T23:00:00",
   "trades": [
+    {
+      "entry_time": "2025-08-04T22:00:00",
+      "exit_time": "2025-08-15T15:00:00",
+      "action": "BUY",
+      "entry": 6344.45,
+      "sl": 6218.09096,
+      "tp": 6723.527121,
+      "lots": 0.01,
+      "sl_pips": 126.4,
+      "tp_pips": 379.1,
+      "rr": 3.0,
+      "exit_price": 6476.63,
+      "pnl": 66.09,
+      "reason": "timeout",
+      "trend_confidence": 0.868,
+      "zone_strength": 80.9,
+      "confirmation": "outside_bar (bullish)",
+      "ml_score": 0.221
+    },
+    {
+      "entry_time": "2025-08-20T05:00:00",
+      "exit_time": "2025-08-20T16:00:00",
+      "action": "BUY",
+      "entry": 6415.15,
+      "sl": 6364.898145,
+      "tp": 6565.905564,
+      "lots": 0.02,
+      "sl_pips": 50.3,
+      "tp_pips": 150.8,
+      "rr": 3.0,
+      "exit_price": 6364.898145,
+      "pnl": -50.25,
+      "reason": "SL",
+      "trend_confidence": 0.996,
+      "zone_strength": 88.8,
+      "confirmation": "hammer (bullish)",
+      "ml_score": 0.266
+    },
     {
       "entry_time": "2025-12-19T02:00:00",
       "exit_time": "2026-01-02T21:00:00",
@@ -55,7 +93,8 @@
       "reason": "timeout",
       "trend_confidence": 0.739,
       "zone_strength": 95.0,
-      "confirmation": "pin_bar (bullish)"
+      "confirmation": "pin_bar (bullish)",
+      "ml_score": 0.286
     },
     {
       "entry_time": "2026-01-14T14:00:00",
@@ -73,7 +112,8 @@
       "reason": "SL",
       "trend_confidence": 0.88,
       "zone_strength": 87.3,
-      "confirmation": "outside_bar (bullish)"
+      "confirmation": "outside_bar (bullish)",
+      "ml_score": 0.238
     },
     {
       "entry_time": "2026-01-20T22:00:00",
@@ -91,7 +131,8 @@
       "reason": "TP",
       "trend_confidence": 0.763,
       "zone_strength": 85.9,
-      "confirmation": "pin_bar (bullish)"
+      "confirmation": "pin_bar (bullish)",
+      "ml_score": 0.216
     },
     {
       "entry_time": "2026-02-02T08:00:00",
@@ -109,7 +150,8 @@
       "reason": "SL",
       "trend_confidence": 0.749,
       "zone_strength": 76.5,
-      "confirmation": "pin_bar (bullish)"
+      "confirmation": "pin_bar (bullish)",
+      "ml_score": 0.31
     },
     {
       "entry_time": "2026-02-06T05:00:00",
@@ -127,7 +169,8 @@
       "reason": "TP",
       "trend_confidence": 0.71,
       "zone_strength": 68.9,
-      "confirmation": "pin_bar (bullish)"
+      "confirmation": "pin_bar (bullish)",
+      "ml_score": 0.354
     },
     {
       "entry_time": "2026-02-13T01:00:00",
@@ -145,7 +188,8 @@
       "reason": "timeout",
       "trend_confidence": 0.727,
       "zone_strength": 67.0,
-      "confirmation": "pin_bar (bullish)"
+      "confirmation": "pin_bar (bullish)",
+      "ml_score": 0.383
     },
     {
       "entry_time": "2026-04-14T21:00:00",
@@ -163,7 +207,8 @@
       "reason": "timeout",
       "trend_confidence": 0.793,
       "zone_strength": 98.4,
-      "confirmation": "BOS (bullish)"
+      "confirmation": "BOS (bullish)",
+      "ml_score": 0.189
     },
     {
       "entry_time": "2026-06-23T05:00:00",
@@ -181,7 +226,8 @@
       "reason": "SL",
       "trend_confidence": 0.814,
       "zone_strength": 83.2,
-      "confirmation": "liquidity_sweep (bullish)"
+      "confirmation": "liquidity_sweep (bullish)",
+      "ml_score": 0.299
     }
   ],
   "errors": []

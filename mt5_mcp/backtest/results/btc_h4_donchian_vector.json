@@ -1,0 +1,62 @@
+[
+  {
+    "n_trades": 48,
+    "wins": 17,
+    "win_rate": 35.41666666666667,
+    "profit_factor": 0.47366590227607513,
+    "net_return_pct": -58.20655210881836,
+    "max_drawdown_pct": 63.88231482173911,
+    "expectancy": -1.6605400090483489,
+    "name": "D12 ATR2.0 RR3"
+  },
+  {
+    "n_trades": 41,
+    "wins": 14,
+    "win_rate": 34.146341463414636,
+    "profit_factor": 0.43385209477676895,
+    "net_return_pct": -54.44555253744721,
+    "max_drawdown_pct": 58.74880744467881,
+    "expectancy": -1.7673272727747737,
+    "name": "D24 ATR2.0 RR3"
+  },
+  {
+    "n_trades": 32,
+    "wins": 13,
+    "win_rate": 40.625,
+    "profit_factor": 0.5544753370356486,
+    "net_return_pct": -37.98657188828114,
+    "max_drawdown_pct": 44.82782239981376,
+    "expectancy": -1.3303833594762597,
+    "name": "D48 ATR2.0 RR3"
+  },
+  {
+    "n_trades": 24,
+    "wins": 9,
+    "win_rate": 37.5,
+    "profit_factor": 0.4971997153655519,
+    "net_return_pct": -35.60174313344713,
+    "max_drawdown_pct": 40.195510833218265,
+    "expectancy": -1.6589911235038948,
+    "name": "D48 ATR2.5 RR3"
+  },
+  {
+    "n_trades": 27,
+    "wins": 12,
+    "win_rate": 44.44444444444444,
+    "profit_factor": 0.6488351032778455,
+    "net_return_pct": -26.439813196932562,
+    "max_drawdown_pct": 36.41980334153279,
+    "expectancy": -0.9745037360644624,
+    "name": "D72 ATR2.0 RR3"
+  },
+  {
+    "n_trades": 67,
+    "wins": 33,
+    "win_rate": 49.25373134328358,
+    "profit_factor": 0.8820324279002432,
+    "net_return_pct": -15.007189330309103,
+    "max_drawdown_pct": 33.50655817446102,
+    "expectancy": -0.1883426366251904,
+    "name": "D24 ATR1.5 RR2"
+  }
+]
