@@ -104,24 +104,31 @@ window.addEventListener("unhandledrejection", (e) => errorReport.capture(e.reaso
 });
 
 /* ---------- Theme ---------- */
-const C = {
-  bg: "#131722",
-  panel2: "#181c25",
-  border: "#2a2e39",
-  text: "#d1d4dc",
-  dim: "#787b86",
-  up: "#26a69a",
-  down: "#ef5350",
-  ema50: "#ffd479",
-  ema200: "#2962ff",
-  rsi: "#9b59b6",
-  macd: "#2962ff",
-  signal: "#f39c12",
-  accent: "#2962ff",
-  purple: "#9b59b6",
-  yellow: "#ffd479",
-  orange: "#f39c12",
-};
+function getThemeColors() {
+  const s = getComputedStyle(document.documentElement);
+  return {
+    bg: s.getPropertyValue("--bg").trim() || "#131722",
+    panel2: s.getPropertyValue("--panel2").trim() || "#181c25",
+    border: s.getPropertyValue("--border").trim() || "#2a2e39",
+    text: s.getPropertyValue("--text").trim() || "#d1d4dc",
+    dim: s.getPropertyValue("--dim").trim() || "#787b86",
+    up: s.getPropertyValue("--green").trim() || "#26a69a",
+    down: s.getPropertyValue("--red").trim() || "#ef5350",
+    ema50: s.getPropertyValue("--yellow").trim() || "#ffd479",
+    ema200: s.getPropertyValue("--accent").trim() || "#2962ff",
+    rsi: s.getPropertyValue("--purple").trim() || "#9b59b6",
+    macd: s.getPropertyValue("--accent").trim() || "#2962ff",
+    signal: s.getPropertyValue("--orange").trim() || "#f39c12",
+    accent: s.getPropertyValue("--accent").trim() || "#2962ff",
+    purple: s.getPropertyValue("--purple").trim() || "#9b59b6",
+    yellow: s.getPropertyValue("--yellow").trim() || "#ffd479",
+    orange: s.getPropertyValue("--orange").trim() || "#f39c12",
+  };
+}
+let C = getThemeColors();
+// Refresh colors when theme changes
+const _themeObserver = new MutationObserver(() => { C = getThemeColors(); });
+_themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
 
 /* ---------- State ---------- */
 const state = {
