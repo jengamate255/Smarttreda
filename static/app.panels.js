@@ -16,16 +16,18 @@ async function loadSummary() {
   showSkeleton($("trades-body"), "rows", 5);
   showSkeleton($("risk-body"), "bars", 4);
   try {
-    const [acc, pos, hist] = await Promise.all([
+    const [acc, pos, hist, risk] = await Promise.all([
       api("/api/account"),
       api("/api/positions"),
       api("/api/history?days=30"),
+      api("/api/risk"),
     ]);
     setStatus(true, "Connected");
     applyAccount(acc);
     renderPositions(pos.positions);
     renderStats(hist.stats);
     renderTrades(hist.recent);
+    renderCorrelationRisk(risk);
   } catch (e) {
     errorReport.capture(e.message || String(e), "loadSummary", 0, 0, e);
     const msg = e && e.message ? e.message : "";
@@ -33,6 +35,22 @@ async function loadSummary() {
     else if (/no rates|not found|symbol/i.test(msg)) setStatus(false, "Data unavailable: " + msg);
     else setStatus(false, "Offline");
   }
+}
+
+/* ---------- Correlation Risk ---------- */
+function renderCorrelationRisk(risk) {
+  const el = $("corr-risk");
+  if (!el) return;
+  const groups = risk && risk.correlation_groups;
+  if (!groups || Object.keys(groups).length === 0) {
+    el.classList.add("hidden");
+    return;
+  }
+  el.classList.remove("hidden");
+  const tags = Object.entries(groups).map(([g, v]) =>
+    `<span class="corr-tag">${esc(g)}: ${fmtMoney(v)}</span>`
+  ).join("");
+  el.innerHTML = `<span class="corr-label">Correlation Risk:</span> ${tags}`;
 }
 
 function _positionsSignature(positions) {

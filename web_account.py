@@ -83,6 +83,35 @@ def risk():
         from tools.risk import risk_report
 
         report = risk_report()
+        # Correlation risk: group open positions by correlated pairs
+        try:
+            from mt5_mcp.client import get_client
+            client = get_client()
+            client.ensure_connected()
+            positions = client.positions()
+            # Correlation groups (same currency basket)
+            corr_groups = {
+                "EURX": ["EURUSD", "EURJPY", "EURGBP"],
+                "USDJPX": ["USDJPY", "EURJPY", "JP225"],
+                "XAUAG": ["XAUUSD", "XAGUSD"],
+                "SPXNDX": ["SPX500", "NAS100", "US30"],
+                "BTCETH": ["BTCUSD", "ETHUSD"],
+                "GBPX": ["GBPUSD", "GBPJPY"],
+            }
+            group_risk: dict[str, float] = {}
+            for pos in positions:
+                sym = pos.get("symbol", "")
+                risk_val = abs(float(pos.get("volume", 0)) * float(pos.get("sl_pips", 0) or 0))
+                for gname, syms in corr_groups.items():
+                    if sym in syms:
+                        group_risk[gname] = group_risk.get(gname, 0) + risk_val
+            report["correlation_groups"] = {
+                k: round(v, 2) for k, v in group_risk.items() if v > 0
+            }
+        except Exception as exc:  # noqa: BLE001 - correlation is best-effort
+            logger.debug("correlation risk merge failed: %s", exc)
+            report["correlation_groups"] = {}
+
         # Merge the watcher compliance state (mode, trade slots) so the UI
         # can show "slots left today" next to the loss buffers.
         try:

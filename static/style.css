@@ -1390,3 +1390,49 @@ a:focus-visible {
   * { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
   .skeleton { animation: none; background: var(--panel2); }
 }
+
+/* ML Ranker */
+.ml-rank-panel .panel-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.ml-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+
+/* Pattern Win Rates */
+.pattern-panel .data-table {
+  width: 100%;
+}
+
+/* Correlation Risk */
+.corr-risk {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: var(--panel2);
+  border-radius: 6px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.corr-risk.hidden { display: none; }
+.corr-label {
+  font-weight: 600;
+  color: var(--dim);
+}
+.corr-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: var(--border);
+  color: var(--text);
+  font-size: 11px;
+}

@@ -977,3 +977,83 @@ function initWalkForward() {
 }
 
 initWalkForward();
+
+/* ---------- ML Ranker ---------- */
+async function loadMLRankInfo() {
+  try {
+    const info = await api("/api/ml-rank/info");
+    const el = $("ml-rank-info");
+    if (!el) return;
+    if (!info.trained) {
+      el.innerHTML = '<span class="dim">No model trained yet</span>';
+      return;
+    }
+    el.innerHTML = `
+      <span class="stat-label">Trained</span> <span class="stat-value">${info.trained_at ? new Date(info.trained_at).toLocaleDateString() : "?"}</span>
+      <span class="stat-label" style="margin-left:12px">Trades</span> <span class="stat-value">${info.n_trades}</span>
+      <span class="stat-label" style="margin-left:12px">CV AUC</span> <span class="stat-value ${info.cv_auc >= 0.6 ? 'pos' : 'text-yellow'}">${info.cv_auc}</span>
+    `;
+  } catch (e) { /* ignore */ }
+}
+
+async function retrainMLRank() {
+  const btn = $("ml-retrain-btn");
+  if (!btn) return;
+  btn.disabled = true;
+  btn.textContent = "Training…";
+  try {
+    const r = await apiPost("/api/ml-rank/retrain");
+    if (r.error) {
+      toast("Retrain failed: " + r.error, "down");
+    } else {
+      toast(`Model retrained: AUC=${r.cv_auc}, accuracy=${r.cv_accuracy}, ${r.n_trades} trades (${r.elapsed_s}s)`, "up");
+      await loadMLRankInfo();
+    }
+  } catch (e) {
+    toast("Retrain error: " + e.message, "down");
+  }
+  btn.disabled = false;
+  btn.textContent = "Retrain Model";
+}
+
+function initMLRank() {
+  loadMLRankInfo();
+  const btn = $("ml-retrain-btn");
+  if (btn) btn.addEventListener("click", retrainMLRank);
+}
+
+/* ---------- Pattern Win Rates ---------- */
+async function loadPatternWinRates() {
+  const el = $("pattern-winrates-body");
+  if (!el) return;
+  try {
+    const data = await api("/api/pattern-win-rates");
+    const patterns = data.patterns || [];
+    if (!patterns.length) {
+      el.innerHTML = '<tr class="empty-row"><td colspan="7">No pattern data yet — trades need journaled setup types</td></tr>';
+      return;
+    }
+    el.innerHTML = patterns.map(p => {
+      const wrClass = p.win_rate >= 60 ? "pos" : p.win_rate >= 40 ? "text-yellow" : "neg";
+      const pnlClass = p.total_pnl >= 0 ? "pos" : "neg";
+      return `<tr>
+        <td><b>${esc(p.setup)}</b></td>
+        <td>${p.trades}</td>
+        <td class="${wrClass}">${p.win_rate}%</td>
+        <td class="pos">${p.wins}</td>
+        <td class="neg">${p.losses}</td>
+        <td class="${pnlClass}">${fmtMoney(p.total_pnl)}</td>
+        <td class="${p.avg_pnl >= 0 ? 'pos' : 'neg'}">${fmtMoney(p.avg_pnl)}</td>
+      </tr>`;
+    }).join("");
+  } catch (e) {
+    el.innerHTML = '<tr class="empty-row"><td colspan="7">Failed to load pattern data</td></tr>';
+  }
+}
+
+function initPatternWinRates() {
+  loadPatternWinRates();
+}
+
+initMLRank();
+initPatternWinRates();

@@ -145,6 +145,7 @@
           <tbody id="positions-body"></tbody>
         </table>
       </div>
+      <div id="corr-risk" class="corr-risk hidden"></div>
     </section>
 
     <section class="panel">
@@ -409,6 +410,27 @@
   </div>
   <div id="aid-body">
     <div class="plan-empty">Loading...</div>
+  </div>
+</section>
+
+<section class="panel ml-rank-panel">
+  <div class="panel-title">ML Signal Ranker <span class="sub">Logistic regression model auto-trained on backtest outcomes</span>
+    <span class="ml-actions">
+      <span id="ml-rank-info"></span>
+      <button id="ml-retrain-btn" class="btn small">Retrain Model</button>
+    </span>
+  </div>
+</section>
+
+<section class="panel pattern-panel">
+  <div class="panel-title">Pattern Win Rates <span class="sub">Win rate & P&L by setup type from journal</span></div>
+  <div class="table-wrap">
+    <table class="data-table">
+      <thead><tr><th>Setup</th><th>Trades</th><th>Win Rate</th><th>Wins</th><th>Losses</th><th>Total P&L</th><th>Avg P&L</th></tr></thead>
+      <tbody id="pattern-winrates-body">
+        <tr><td colspan="7" class="dim">Loading...</td></tr>
+      </tbody>
+    </table>
   </div>
 </section>
 

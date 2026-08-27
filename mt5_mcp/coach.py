@@ -143,6 +143,31 @@ def _thresholds() -> dict[str, float]:
     }
 
 
+def _pattern_win_rates(target: dict) -> dict | None:
+    """Win rate of trades sharing the same setup type as target."""
+    setup = target.get("setup")
+    if not setup:
+        return None
+    journal = get_journal()
+    pool = [
+        t for t in journal.list_trades(limit=5000)
+        if t.get("setup") == setup and t.get("pnl") is not None
+    ]
+    if len(pool) < 3:
+        return None
+    pnls = [_num(t.get("pnl")) for t in pool]
+    pnls = [p for p in pnls if p is not None]
+    if not pnls:
+        return None
+    wins = len([p for p in pnls if p > 0])
+    return {
+        "setup": setup,
+        "n": len(pnls),
+        "wr": round(wins / len(pnls) * 100, 1),
+        "avg_pnl": round(sum(pnls) / len(pnls), 2),
+    }
+
+
 def _evidence(trade: dict, thresholds: dict[str, float]) -> tuple[list[str], list[str]]:
     for_evidence: list[str] = []
     against: list[str] = []
@@ -266,6 +291,22 @@ def coach_review(ticket: int | None = None) -> dict:
     for_evidence, against = _evidence(trade, thresholds)
     improvement = _improvement(trade, similar)
 
+    # Pattern win-rate tracking for self-calibration
+    pattern_stats = _pattern_win_rates(trade)
+    if pattern_stats:
+        if pattern_stats["wr"] < 40 and pattern_stats["n"] >= 5:
+            against.append(
+                f"pattern '{pattern_stats['setup']}' historically wins only "
+                f"{pattern_stats['wr']:.0f}% across {pattern_stats['n']} trades — "
+                "consider filtering or sizing down"
+            )
+        elif pattern_stats["wr"] >= 60 and pattern_stats["n"] >= 5:
+            for_evidence.append(
+                f"pattern '{pattern_stats['setup']}' historically wins "
+                f"{pattern_stats['wr']:.0f}% across {pattern_stats['n']} trades — "
+                "high-confidence setup family"
+            )
+
     outcome = trade.get("outcome") or ("win" if _num(trade.get("pnl")) and _num(trade.get("pnl")) > 0 else "loss")
     session = (
         f"{int(trade['session_hour']):02d}:00 UTC"
@@ -311,5 +352,6 @@ def coach_review(ticket: int | None = None) -> dict:
         "evidence_against": against,
         "improvement": improvement,
         "similar_trades": similar,
+        "pattern_stats": pattern_stats,
         "reviewed_at": datetime.now(timezone.utc).isoformat(),
     }
