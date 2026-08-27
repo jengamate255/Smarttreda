@@ -1055,5 +1055,126 @@ function initPatternWinRates() {
   loadPatternWinRates();
 }
 
+/* ---------- Sensitivity Analysis ---------- */
+async function runSensitivity() {
+  const body = $("sens-body");
+  if (!body) return;
+  body.innerHTML = '<div class="plan-empty">Running sensitivity analysis...</div>';
+  const symbol = $("sens-symbol")?.value || "EURUSD";
+  const bars = parseInt($("sens-bars")?.value || "3000", 10);
+  try {
+    const r = await apiPost("/api/backtest/sensitivity", { symbol, bars, sweep_params: [
+      "min_zone_score", "tp_min", "sl_min", "min_rr",
+      "trailing_arm_r", "trailing_atr_mult", "partial_tp_r",
+    ]});
+    if (r.error) { body.innerHTML = `<div class="error-state">${esc(r.error)}</div>`; return; }
+    renderSensitivity(r, body);
+  } catch (e) {
+    body.innerHTML = `<div class="error-state">${esc(e.message)}</div>`;
+  }
+}
+
+function renderSensitivity(r, body) {
+  const params = r.params || {};
+  const rows = Object.entries(params).map(([name, data]) => {
+    const s = data.sensitivity || {};
+    const stable = s.stable;
+    const cls = stable ? "pos" : "neg";
+    const sweepRows = (data.sweep || []).map(sw => {
+      const marker = sw.pct_change === 0 ? " style='font-weight:700'" : "";
+      return `<tr${marker}>
+        <td>${sw.pct_change > 0 ? "+" : ""}${sw.pct_change}%</td>
+        <td>${sw.value}</td>
+        <td class="${sw.pf >= 1 ? 'pos' : 'neg'}">${sw.pf.toFixed(3)}</td>
+        <td class="${sw.wr >= 50 ? 'pos' : 'neg'}">${sw.wr.toFixed(1)}%</td>
+        <td class="${sw.net_pnl >= 0 ? 'pos' : 'neg'}">${fmtMoney(sw.net_pnl)}</td>
+        <td class="neg">${sw.max_dd.toFixed(1)}%</td>
+      </tr>`;
+    }).join("");
+    return `<tr><td colspan="6" style="padding:0">
+      <details style="width:100%">
+        <summary style="cursor:pointer;padding:6px 0;font-weight:600">
+          ${esc(name)} <span class="dim">(base: ${data.base_value})</span>
+          — PF range: ${s.min_pf ?? "?"}–${s.max_pf ?? "?"}
+          <span class="${cls}" style="margin-left:8px">${stable ? "ROBUST" : "FRAGILE"}</span>
+          <span class="dim"> max degradation: ${s.max_degradation_pct ?? "?"}%</span>
+        </summary>
+        <table class="data-table" style="margin:4px 0 8px">
+          <thead><tr><th>Change</th><th>Value</th><th>PF</th><th>WR</th><th>P&L</th><th>Max DD</th></tr></thead>
+          <tbody>${sweepRows}</tbody>
+        </table>
+      </details>
+    </td></tr>`;
+  }).join("");
+
+  body.innerHTML = `
+    <div class="stats-grid" style="margin-bottom:10px">
+      <div class="stat"><div class="stat-label">Base PF</div><div class="stat-value">${r.base_pf.toFixed(3)}</div></div>
+      <div class="stat"><div class="stat-label">Base WR</div><div class="stat-value">${r.base_wr.toFixed(1)}%</div></div>
+      <div class="stat"><div class="stat-label">Trades</div><div class="stat-value">${r.base_trades}</div></div>
+      <div class="stat"><div class="stat-label">Time</div><div class="stat-value">${r.elapsed_s}s</div></div>
+    </div>
+    <table class="data-table"><tbody>${rows}</tbody></table>
+    <div style="margin-top:8px;font-size:11px;color:var(--dim)">
+      <b>ROBUST</b> = PF drops <20% when param varies ±20%. <b>FRAGILE</b> = PF drops ≥20%.
+    </div>`;
+}
+
+/* ---------- Trailing/Partial Sweep ---------- */
+async function runSweep() {
+  const body = $("sweep-body");
+  if (!body) return;
+  body.innerHTML = '<div class="plan-empty">Running trailing/partial sweep...</div>';
+  const symbol = $("sweep-symbol")?.value || "EURUSD";
+  const bars = parseInt($("sweep-bars")?.value || "3000", 10);
+  try {
+    const r = await apiPost("/api/backtest/sweep", { symbol, bars });
+    if (r.error) { body.innerHTML = `<div class="error-state">${esc(r.error)}</div>`; return; }
+    renderSweep(r, body);
+  } catch (e) {
+    body.innerHTML = `<div class="error-state">${esc(e.message)}</div>`;
+  }
+}
+
+function renderSweep(r, body) {
+  const results = r.results || [];
+  const rows = results.slice(0, 20).map(s => {
+    const tMark = s.trail ? "Y" : "N";
+    const pMark = s.partial ? "Y" : "N";
+    return `<tr>
+      <td>${tMark}</td><td>${s.trail_arm}</td><td>${s.trail_atr}</td>
+      <td>${pMark}</td><td>${s.partial_r}</td><td>${s.partial_pct}</td>
+      <td class="${s.pf >= 1 ? 'pos' : 'neg'}">${s.pf.toFixed(3)}</td>
+      <td class="${s.wr >= 50 ? 'pos' : 'neg'}">${s.wr.toFixed(1)}%</td>
+      <td class="${s.net_pnl >= 0 ? 'pos' : 'neg'}">${fmtMoney(s.net_pnl)}</td>
+      <td>${s.trades}</td>
+      <td class="neg">${s.max_dd.toFixed(1)}%</td>
+      <td class="${s.expectancy >= 0 ? 'pos' : 'neg'}">${fmtMoney(s.expectancy)}</td>
+      <td class="dim">${s.partial_count}p ${s.trail_count}t</td>
+    </tr>`;
+  }).join("");
+  body.innerHTML = `
+    <div class="stats-grid" style="margin-bottom:10px">
+      <div class="stat"><div class="stat-label">Symbol</div><div class="stat-value">${esc(r.symbol)}</div></div>
+      <div class="stat"><div class="stat-label">Combos</div><div class="stat-value">${r.combos}</div></div>
+      <div class="stat"><div class="stat-label">Time</div><div class="stat-value">${r.elapsed_s}s</div></div>
+    </div>
+    <div class="table-wrap"><table class="data-table">
+      <thead><tr><th>Trail</th><th>ArmR</th><th>TrailATR</th><th>Part</th><th>PartR</th><th>Part%</th>
+        <th>PF</th><th>WR</th><th>P&L</th><th>Trades</th><th>MaxDD</th><th>Exp</th><th>Stats</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table></div>
+    <div style="margin-top:8px;font-size:11px;color:var(--dim)">
+      Top 20 combos sorted by Profit Factor. <b>Trail</b>=trailing stop active, <b>Part</b>=partial TP active.
+      <b>p</b>=partial TP count, <b>t</b>=trailing stop count.
+    </div>`;
+}
+
+function initSensitivity() {
+  $("sens-run")?.addEventListener("click", runSensitivity);
+  $("sweep-run")?.addEventListener("click", runSweep);
+}
+
 initMLRank();
 initPatternWinRates();
+initSensitivity();

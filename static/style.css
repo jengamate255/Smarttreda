@@ -1436,3 +1436,24 @@ a:focus-visible {
   color: var(--text);
   font-size: 11px;
 }
+
+/* Sensitivity / Sweep panels */
+.sens-panel .panel-title,
+.sweep-panel .panel-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.sens-actions,
+.sweep-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+.sens-panel details summary::-webkit-details-marker,
+.sweep-panel details summary::-webkit-details-marker { display: none; }
+.sens-panel details[open] > summary,
+.sweep-panel details[open] > summary { border-bottom: 1px solid var(--border); padding-bottom: 6px; }

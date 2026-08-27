@@ -6,6 +6,7 @@ Self-contained FastAPI APIRouter covering:
     GET  /api/backtest/run      - saved run detail
     POST /api/backtest/run      - run + save a backtest
     POST /api/backtest/forward  - windowed forward test vs full backtest
+    POST /api/backtest/sensitivity - parameter sensitivity analysis
 """
 
 from __future__ import annotations
@@ -30,6 +31,9 @@ from backtest import (
     load_frames,
     rebuild_summary,
     save_result,
+    sensitivity_analysis,
+    sensitivity_variants,
+    correlation_overlay,
 )
 from monte_carlo import build_day_pool, load_trades, simulate_month
 
@@ -228,6 +232,17 @@ def _bt_params_from(payload: dict) -> tuple[BacktestParams, str | None]:
         risk_percent=number("risk", 0.5, 0.01, 10.0),
         start_balance=number("start_balance", 10000.0, 100.0, 1e9),
         bars=bars,
+        use_trailing_stop=bool(payload.get("use_trailing_stop", True)),
+        trailing_arm_r=number("trailing_arm_r", 1.0, 0.1, 5.0),
+        trailing_atr_mult=number("trailing_atr_mult", 1.2, 0.3, 5.0),
+        use_partial_tp=bool(payload.get("use_partial_tp", True)),
+        partial_tp_r=number("partial_tp_r", 1.0, 0.1, 5.0),
+        partial_tp_pct=number("partial_tp_pct", 0.5, 0.1, 0.9),
+        use_adaptive_timeout=bool(payload.get("use_adaptive_timeout", True)),
+        use_vol_spread=bool(payload.get("use_vol_spread", True)),
+        regime_filter=str(payload.get("regime_filter", "")),
+        sizing=str(payload.get("sizing", "fixed")),
+        max_consecutive_losses=int(payload.get("max_consecutive_losses", 0)),
     )
     if params.tp_max < params.tp_min:
         raise HTTPException(status_code=400, detail="tp_max must be >= tp_min")
@@ -380,3 +395,103 @@ def backtest_walk_forward(payload: dict):
     out = _asdict(result)
     out["elapsed_s"] = round(time.perf_counter() - started, 1)
     return out
+
+
+@router.post("/api/backtest/sensitivity")
+def backtest_sensitivity(payload: dict):
+    """Parameter sensitivity analysis: sweep each param ±20%, report PF stability."""
+    params, _since = _bt_params_from(payload)
+    sweep_params = payload.get("sweep_params") or [
+        "min_zone_score", "min_trade_score", "min_confidence_percent",
+        "tp_min", "sl_min", "min_rr",
+        "trailing_arm_r", "trailing_atr_mult", "partial_tp_r",
+    ]
+    pct_range = float(payload.get("pct_range") or 0.20)
+    steps = int(payload.get("steps") or 5)
+
+    started = time.perf_counter()
+    frames = load_frames(
+        params.symbol,
+        sorted(set([params.trend_timeframe, params.confirmation_timeframe] + params.zone_timeframes)),
+        params.bars,
+        use_cache=True, allow_mt5=True, ttl=900,
+    )
+    from mt5_mcp.client import get_client
+    info = {}
+    try:
+        info = get_client().symbol_info(params.symbol)
+    except Exception:
+        pass
+    result = sensitivity_analysis(params, frames, info, sweep_params, pct_range, steps)
+    result["elapsed_s"] = round(time.perf_counter() - started, 1)
+    return result
+
+
+@router.post("/api/backtest/sweep")
+def backtest_sweep(payload: dict):
+    """Trailing/partial parameter sweep: test all combos of trailing+partial TP settings."""
+    symbol = (payload.get("symbol") or "EURUSD").upper().strip()
+    bars = int(payload.get("bars") or 3000)
+    started = time.perf_counter()
+    variants = sensitivity_variants(symbol, bars=bars)
+    frames = load_frames(symbol, ["H1", "H4", "D1"], bars, use_cache=True, allow_mt5=True, ttl=900)
+    from mt5_mcp.client import get_client
+    info = {}
+    try:
+        info = get_client().symbol_info(symbol)
+    except Exception:
+        pass
+    results = []
+    for p in variants:
+        bt = Backtester(p, frames, info)
+        r = bt.run()
+        results.append({
+            "trail": p.use_trailing_stop,
+            "trail_arm": p.trailing_arm_r,
+            "trail_atr": p.trailing_atr_mult,
+            "partial": p.use_partial_tp,
+            "partial_r": p.partial_tp_r,
+            "partial_pct": p.partial_tp_pct,
+            "pf": r.profit_factor,
+            "wr": r.win_rate,
+            "net_pnl": r.net_pnl,
+            "trades": r.n_trades,
+            "max_dd": r.max_drawdown_pct,
+            "expectancy": r.expectancy,
+            "sharpe": r.sharpe_ratio,
+            "partial_count": r.partial_tp_count,
+            "trail_count": r.trailing_stop_count,
+        })
+    results.sort(key=lambda x: x["pf"], reverse=True)
+    return {
+        "symbol": symbol,
+        "combos": len(results),
+        "results": results,
+        "elapsed_s": round(time.perf_counter() - started, 1),
+    }
+
+
+@router.post("/api/backtest/correlation")
+def backtest_correlation(payload: dict):
+    """Run backtests for correlated symbols and combine into portfolio view."""
+    symbols = [s.strip().upper() for s in str(payload.get("symbols", "")).split(",") if s.strip()]
+    if len(symbols) < 2:
+        raise HTTPException(status_code=400, detail="at least 2 symbols required")
+    bars = int(payload.get("bars") or 3000)
+    started = time.perf_counter()
+    all_results = []
+    for sym in symbols:
+        params = BacktestParams(symbol=sym, bars=bars)
+        frames = load_frames(sym, ["H1", "H4"], bars, use_cache=True, allow_mt5=True, ttl=900)
+        from mt5_mcp.client import get_client
+        info = {}
+        try:
+            info = get_client().symbol_info(sym)
+        except Exception:
+            pass
+        bt = Backtester(params, frames, info)
+        r = bt.run()
+        all_results.append(r)
+    combined = correlation_overlay(all_results, symbols)
+    combined["elapsed_s"] = round(time.perf_counter() - started, 1)
+    return combined

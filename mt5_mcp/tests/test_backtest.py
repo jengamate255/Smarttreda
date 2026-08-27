@@ -125,11 +125,11 @@ class TestBacktester:
 
     def test_forced_timeout_exit_uses_close(self) -> None:
         df = _bullish_frame(1200)
-        params = BacktestParams(symbol="EURUSD", bars=200, timeout_bars=5)
+        params = BacktestParams(symbol="EURUSD", bars=200, timeout_bars=5, use_adaptive_timeout=False)
         frames = {"H1": df, "H4": _frame_for_tfs(df, "4h")}
         bt = Backtester(params, frames, _info())
         base_times = df["time"].values.astype("datetime64[s]")
-        price, (kind, _ts) = bt._simulate_exit(df, base_times, 100, "BUY", 1.1, 0.5, 5.0)
+        price, kind, _ts, _bars, _partial, _trail = bt._simulate_exit(df, base_times, 100, "BUY", 1.1, 0.5, 5.0, zone_atr=0.01)
         assert kind == "timeout"
         assert price == float(df.iloc[104].close)
 

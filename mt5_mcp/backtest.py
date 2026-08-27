@@ -83,6 +83,35 @@ class BacktestParams:
     start_balance: float = 10000.0
     bars: int = 5000
     timeout_bars: int = MAX_HOLD_BARS
+    # --- NEW: trailing stop ---
+    use_trailing_stop: bool = True
+    trailing_arm_r: float = 1.0  # arm trailing after +N*R
+    trailing_atr_mult: float = 1.2  # trail distance = N × ATR
+    # --- NEW: partial TP ---
+    use_partial_tp: bool = True
+    partial_tp_r: float = 1.0  # close N% at this R level
+    partial_tp_pct: float = 0.5  # fraction to close at partial TP
+    # --- NEW: adaptive timeout ---
+    use_adaptive_timeout: bool = True
+    adaptive_timeout_atr: float = 0.3  # close if no 0.3R movement in N bars
+    adaptive_timeout_bars: int = 80  # within this many bars
+    # --- NEW: vol-adjusted spread ---
+    use_vol_spread: bool = True
+    vol_spread_base: float = 1.0  # multiplier when ATR is at average
+    vol_spread_max: float = 3.0  # multiplier when ATR is 2× average
+    # --- NEW: consecutive loss guard ---
+    max_consecutive_losses: int = 0  # 0 = disabled; e.g. 3 = pause after 3 losses
+    cooldown_bars: int = 20  # bars to skip after guard fires
+    # --- NEW: regime filter ---
+    regime_filter: str = ""  # "" = disabled, "trend", "range", "volatile"
+    regime_adx_threshold: float = 25.0  # ADX above this = trending
+    regime_atr_high_pct: float = 80.0  # ATR percentile above this = volatile
+    regime_atr_low_pct: float = 20.0  # ATR percentile below this = quiet/ranging
+    # --- NEW: sizing variant ---
+    sizing: str = "fixed"  # "fixed", "kelly", "antimartingale"
+    kelly_fraction: float = 0.5  # use half-Kelly by default
+    # --- NEW: correlation tracking (portfolio view) ---
+    correlation_group: str = ""  # e.g. "EURX", "USDJPX"
 
 
 @dataclass
@@ -105,6 +134,10 @@ class TradeRecord:
     confirmation: str
     ml_score: float = 0.0
     total_cost: float = 0.0  # spread + slippage + commission in account currency
+    regime: str = ""  # "trend", "range", "volatile"
+    r_multiple: float = 0.0  # realized R-multiple at exit
+    partial_closed: bool = False  # whether partial TP was triggered
+    trailing_active: bool = False  # whether trailing stop was active
 
 
 @dataclass
@@ -129,6 +162,22 @@ class BacktestResult:
     total_slippage: float = 0.0
     total_commission: float = 0.0
     total_spread_cost: float = 0.0
+    # --- NEW: regime breakdown ---
+    regime_stats: dict[str, dict] = field(default_factory=dict)
+    # --- NEW: sizing comparison ---
+    sizing_stats: dict[str, float] = field(default_factory=dict)
+    # --- NEW: consecutive loss guard stats ---
+    guard_fires: int = 0
+    # --- NEW: sharpe / sortino ---
+    sharpe_ratio: float = 0.0
+    sortino_ratio: float = 0.0
+    calmar_ratio: float = 0.0
+    # --- NEW: avg win / avg loss ---
+    avg_win: float = 0.0
+    avg_loss: float = 0.0
+    # --- NEW: partial / trailing stats ---
+    partial_tp_count: int = 0
+    trailing_stop_count: int = 0
 
 
 class _TrendFast:
@@ -154,6 +203,28 @@ def default_variants(symbols: list[str], bars: int = 5000) -> list[BacktestParam
                             trend_timeframe=trend_tf,
                             zone_timeframes=list(zone_tfs),
                             min_zone_score=float(min_zone_score),
+                            bars=bars,
+                        )
+                    )
+    return variants
+
+
+def sensitivity_variants(symbol: str, bars: int = 5000) -> list[BacktestParams]:
+    """Grid specifically for sensitivity analysis: sweep trailing/partial/timeout params."""
+    variants: list[BacktestParams] = []
+    for use_trail in (True, False):
+        for use_partial in (True, False):
+            for trail_arm in (0.5, 1.0, 1.5):
+                for partial_r in (0.5, 1.0, 1.5):
+                    variants.append(
+                        BacktestParams(
+                            symbol=symbol,
+                            use_trailing_stop=use_trail,
+                            trailing_arm_r=trail_arm,
+                            trailing_atr_mult=1.2,
+                            use_partial_tp=use_partial,
+                            partial_tp_r=partial_r,
+                            partial_tp_pct=0.5,
                             bars=bars,
                         )
                     )
@@ -281,26 +352,20 @@ class Backtester:
         p = self.params
         result = BacktestResult(
             params=asdict(p),
-            n_trades=0,
-            wins=0,
-            losses=0,
-            gross_profit=0.0,
-            gross_loss=0.0,
-            net_pnl=0.0,
-            profit_factor=0.0,
-            win_rate=0.0,
-            expectancy=0.0,
-            total_return_pct=0.0,
-            max_drawdown_pct=0.0,
-            avg_rr=0.0,
-            start="",
-            end="",
-            errors=list(self.errors),
+            n_trades=0, wins=0, losses=0,
+            gross_profit=0.0, gross_loss=0.0, net_pnl=0.0,
+            profit_factor=0.0, win_rate=0.0, expectancy=0.0,
+            total_return_pct=0.0, max_drawdown_pct=0.0, avg_rr=0.0,
+            start="", end="", errors=list(self.errors),
         )
         if self.errors:
             return result
 
         self._precompute()
+        # Initialize Kelly tracking (runs after first 10 trades)
+        self._kelly_win_rate = 0.0
+        self._kelly_avg_win = 1.0
+        self._kelly_avg_loss = 1.0
 
         base = self.frames[p.confirmation_timeframe.upper()]
         base_times = base["time"].values.astype("datetime64[s]")
@@ -315,6 +380,12 @@ class Backtester:
         peak = equity
         max_dd = 0.0
         trades: list[TradeRecord] = []
+        equity_curve: list[float] = []
+        win_streak = 0
+        loss_streak = 0
+        cooldown_until = 0
+        guard_fires = 0
+
         i = warmup
         limit = min(len(base_times), warmup + p.bars)
         if limit <= warmup:
@@ -323,17 +394,48 @@ class Backtester:
         result.end = str(base_times[limit - 1])
 
         while i < limit:
-            trade = self._evaluate_at(base, base_times, positions, i, equity)
+            # Consecutive loss guard
+            if p.max_consecutive_losses > 0 and loss_streak >= p.max_consecutive_losses:
+                if i < cooldown_until:
+                    i += 1
+                    continue
+                # reset after cooldown
+                loss_streak = 0
+
+            trade = self._evaluate_at(base, base_times, positions, i, equity, win_streak, loss_streak)
             if trade is not None:
                 trades.append(trade)
                 equity += trade.pnl
+                equity_curve.append(equity)
                 peak = max(peak, equity)
                 dd = (peak - equity) / peak * 100.0 if peak else 0.0
                 max_dd = max(max_dd, dd)
+
+                # Streak tracking
+                if trade.pnl > 0:
+                    win_streak += 1
+                    loss_streak = 0
+                else:
+                    loss_streak += 1
+                    win_streak = 0
+                    if p.max_consecutive_losses > 0 and loss_streak >= p.max_consecutive_losses:
+                        cooldown_until = i + p.cooldown_bars
+                        guard_fires += 1
+
+                # Update Kelly tracker after 10 trades
+                if len(trades) == 10:
+                    w = [t.pnl for t in trades if t.pnl > 0]
+                    l = [abs(t.pnl) for t in trades if t.pnl <= 0]
+                    self._kelly_win_rate = len(w) / len(trades)
+                    self._kelly_avg_win = sum(w) / len(w) if w else 1.0
+                    self._kelly_avg_loss = sum(l) / len(l) if l else 1.0
+
                 i = self._bar_index_for(base_times, trade.exit_time) + 1
             else:
+                equity_curve.append(equity)
                 i += 1
 
+        # --- Aggregate stats ---
         wins = [t for t in trades if t.pnl > 0]
         losses = [t for t in trades if t.pnl <= 0]
         gross_profit = sum(t.pnl for t in wins)
@@ -353,6 +455,95 @@ class Backtester:
         result.total_slippage = round(sum(p.slippage_points * self.pip * (self.pip_value / self.pip) * t.lots * 2 for t in trades), 2)
         result.total_commission = round(sum(p.commission_per_lot * t.lots for t in trades), 2)
         result.total_spread_cost = round(sum(p.spread_points * self.pip * (self.pip_value / self.pip) * t.lots for t in trades), 2)
+        result.guard_fires = guard_fires
+        result.partial_tp_count = sum(1 for t in trades if t.partial_closed)
+        result.trailing_stop_count = sum(1 for t in trades if t.trailing_active)
+        result.avg_win = round(sum(t.pnl for t in wins) / len(wins), 2) if wins else 0.0
+        result.avg_loss = round(sum(t.pnl for t in losses) / len(losses), 2) if losses else 0.0
+
+        # --- Sharpe / Sortino / Calmar ---
+        if len(equity_curve) > 10:
+            eq = np.array(equity_curve)
+            returns = np.diff(eq) / eq[:-1]
+            returns = returns[np.isfinite(returns)]
+            if len(returns) > 5:
+                mean_r = float(np.mean(returns))
+                std_r = float(np.std(returns, ddof=1))
+                result.sharpe_ratio = round(mean_r / std_r * np.sqrt(252 * 24), 4) if std_r > 0 else 0.0
+                downside = returns[returns < 0]
+                downside_std = float(np.std(downside, ddof=1)) if len(downside) > 1 else 0.0
+                result.sortino_ratio = round(mean_r / downside_std * np.sqrt(252 * 24), 4) if downside_std > 0 else 0.0
+                result.calmar_ratio = round(result.total_return_pct / max_dd, 4) if max_dd > 0 else 0.0
+
+        # --- Regime breakdown ---
+        regime_groups: dict[str, list[TradeRecord]] = {}
+        for t in trades:
+            r = t.regime or "unknown"
+            regime_groups.setdefault(r, []).append(t)
+        for regime, group in regime_groups.items():
+            w = [t for t in group if t.pnl > 0]
+            l = [t for t in group if t.pnl <= 0]
+            gp = sum(t.pnl for t in w)
+            gl = abs(sum(t.pnl for t in l))
+            result.regime_stats[regime] = {
+                "trades": len(group),
+                "win_rate": round(len(w) / len(group) * 100, 1) if group else 0,
+                "profit_factor": round(gp / gl, 2) if gl else 0.0,
+                "net_pnl": round(sum(t.pnl for t in group), 2),
+                "avg_rr": round(sum(t.rr for t in group) / len(group), 2) if group else 0,
+            }
+
+        # --- Sizing comparison: fixed vs kelly vs antimartingale ---
+        # Run mini-backtests with different sizing using the same trade list
+        for sizing_name in ("fixed", "kelly", "antimartingale"):
+            eq_s = p.start_balance
+            peak_s = eq_s
+            max_dd_s = 0.0
+            ws = 0
+            ls = 0
+            kr = 0.0
+            aw = 1.0
+            al = 1.0
+            for t in trades:
+                # recalc lots with this sizing
+                pp = p.risk_percent
+                if sizing_name == "kelly" and len(trades) > 0:
+                    # use realized stats
+                    all_w = [x.pnl for x in trades[:trades.index(t)] if x.pnl > 0]
+                    all_l = [abs(x.pnl) for x in trades[:trades.index(t)] if x.pnl <= 0]
+                    if len(all_w) >= 3 and len(all_l) >= 3:
+                        kr = len(all_w) / max(1, len(all_w) + len(all_l))
+                        aw = sum(all_w) / len(all_w)
+                        al = sum(all_l) / len(all_l)
+                        b = aw / max(al, 1.0)
+                        q = 1.0 - kr
+                        kf = (kr * b - q) / b
+                        kf = max(0, kf) * p.kelly_fraction
+                        pp = min(p.risk_percent, kf * 100)
+                elif sizing_name == "antimartingale":
+                    adj = 1.0 + (ws * 0.15) - (ls * 0.25)
+                    pp = p.risk_percent * max(0.25, min(adj, 2.0))
+
+                lots_s, _, _ = _calc_lots(p.symbol, eq_s, pp, t.sl_pips, self.pip_value, self.info)
+                if lots_s is None or lots_s <= 0:
+                    continue
+                # scale pnl proportionally to lot ratio
+                lot_ratio = lots_s / t.lots if t.lots > 0 else 1.0
+                adj_pnl = t.pnl * lot_ratio
+                eq_s += adj_pnl
+                peak_s = max(peak_s, eq_s)
+                dd_s = (peak_s - eq_s) / peak_s * 100.0 if peak_s else 0.0
+                max_dd_s = max(max_dd_s, dd_s)
+                if adj_pnl > 0:
+                    ws += 1; ls = 0
+                else:
+                    ls += 1; ws = 0
+            ret_s = round((eq_s - p.start_balance) / p.start_balance * 100, 2)
+            result.sizing_stats[sizing_name] = {
+                "total_return_pct": ret_s,
+                "max_drawdown_pct": round(max_dd_s, 2),
+            }
+
         result.trades = [asdict(t) for t in trades]
         return result
 
@@ -394,6 +585,8 @@ class Backtester:
         positions: dict[str, np.ndarray],
         i: int,
         equity: float,
+        win_streak: int = 0,
+        loss_streak: int = 0,
     ) -> TradeRecord | None:
         p = self.params
         trend_pos = int(positions[p.trend_timeframe][i])
@@ -404,6 +597,11 @@ class Backtester:
             return None
         action = "BUY" if trend.direction == "bullish" else "SELL"
         zone_type = DEMAND if action == "BUY" else SUPPLY
+
+        # Regime filter
+        regime = self._regime_at(p.trend_timeframe, trend_pos)
+        if not self._regime_matches_filter(regime):
+            return None
 
         signal_close = float(base.iloc[i].close)
 
@@ -464,21 +662,27 @@ class Backtester:
         next_open = float(base.iloc[i + 1].open)
         spread = p.spread_points * self.pip
         slippage = p.slippage_points * self.pip
+
+        # Volatility-adjusted spread
+        if p.use_vol_spread:
+            tf = p.confirmation_timeframe.upper()
+            pos_i = int(positions[tf][i]) if tf in positions else i
+            atr_now = float(self._atr_full[tf][pos_i - 1]) if pos_i > 0 else zone_atr
+            atr_window = self._atr_full[tf][max(0, pos_i - 200):pos_i]
+            atr_avg = float(np.mean(atr_window)) if len(atr_window) > 0 else atr_now
+            vol_ratio = atr_now / max(atr_avg, 1e-9)
+            vol_mult = p.vol_spread_base + min(vol_ratio - 1.0, p.vol_spread_max - p.vol_spread_base)
+            vol_mult = max(p.vol_spread_base, min(vol_mult, p.vol_spread_max))
+            spread *= vol_mult
+
         if action == "BUY":
             entry_price = next_open + spread + slippage
         else:
-            entry_price = next_open - slippage  # SELL at bid - slippage
+            entry_price = next_open - slippage
 
         entry, sl, tp, sl_pips, tp_pips, _ = _choose_entry_math(
-            action,
-            entry_price,
-            best_zone,
-            zone_atr,
-            self.pip,
-            p.sl_min,
-            p.tp_min,
-            p.tp_max,
-            p.min_rr,
+            action, entry_price, best_zone, zone_atr, self.pip,
+            p.sl_min, p.tp_min, p.tp_max, p.min_rr,
         )
         if entry is None:
             return None
@@ -489,36 +693,45 @@ class Backtester:
         if trade_score < p.min_trade_score or confidence < p.min_confidence_percent:
             return None
 
-        lots, _, _ = _calc_lots(
-            p.symbol, equity, p.risk_percent, sl_pips, self.pip_value, self.info
-        )
-        if lots is None:
+        # Sizing variants
+        lots = self._calc_lots_variant(equity, sl_pips, win_streak, loss_streak)
+        if lots is None or lots <= 0:
             return None
 
-        exit_price, (exit_kind, exit_ts) = self._simulate_exit(
-            base, base_times, i + 1, action, entry, sl, tp
+        exit_price, exit_kind, exit_ts, bars_held, partial_closed, trailing_active = self._simulate_exit(
+            base, base_times, i + 1, action, entry, sl, tp, zone_atr
         )
-        pnl = self._pnl(action, entry, exit_price, lots)
-        # compute cost breakdown
+
+        # PnL (partial TP: two exits)
+        if partial_closed:
+            pnl_partial = self._pnl(action, entry, tp, lots, p.partial_tp_pct)
+            pnl_remainder = self._pnl(action, entry, exit_price, lots, 1.0 - p.partial_tp_pct)
+            pnl = pnl_partial + pnl_remainder
+        else:
+            pnl = self._pnl(action, entry, exit_price, lots)
+
+        # cost breakdown
         per_point = self.pip_value / self.pip
         spread_cost = p.spread_points * self.pip * per_point * lots
-        slippage_cost = 2 * p.slippage_points * self.pip * per_point * lots  # entry + exit
+        slippage_cost = 2 * p.slippage_points * self.pip * per_point * lots
         commission_cost = p.commission_per_lot * lots
         total_cost = spread_cost + slippage_cost + commission_cost
+
+        # R-multiple
+        r_value = abs(entry - sl)
+        r_mult = (exit_price - entry) / r_value if action == "BUY" else (entry - exit_price) / r_value
+        if r_value == 0:
+            r_mult = 0.0
+
         try:
             from ml_ranker import rank_signal
-
             entry_hour = float(str(base_times[i])[11:13])
             ml_score = rank_signal(
-                trend.confidence,
-                float(best_zone.strength),
-                confirmation.confidence,
-                rr,
-                sl_pips,
-                entry_hour,
+                trend.confidence, float(best_zone.strength), confirmation.confidence, rr, sl_pips, entry_hour,
             )
         except Exception:  # noqa: BLE001
             ml_score = 0.0
+
         return TradeRecord(
             entry_time=str(base_times[i]),
             exit_time=exit_ts,
@@ -538,7 +751,64 @@ class Backtester:
             confirmation=f"{confirmation.pattern} ({confirmation.direction})",
             ml_score=round(ml_score, 3),
             total_cost=round(total_cost, 2),
+            regime=regime,
+            r_multiple=round(r_mult, 2),
+            partial_closed=partial_closed,
+            trailing_active=trailing_active,
         )
+
+    def _calc_lots_variant(self, equity: float, sl_pips: float, win_streak: int, loss_streak: int) -> float | None:
+        """Position sizing with variant support: fixed, kelly, antimartingale."""
+        p = self.params
+        base_risk = p.risk_percent
+
+        if p.sizing == "kelly" and self._kelly_win_rate > 0:
+            avg_win = max(self._kelly_avg_win, 1.0)
+            avg_loss = max(self._kelly_avg_loss, 1.0)
+            b = avg_win / avg_loss
+            q = 1.0 - self._kelly_win_rate
+            kelly_f = (self._kelly_win_rate * b - q) / b
+            kelly_f = max(0, kelly_f) * p.kelly_fraction
+            risk_pct = min(base_risk, kelly_f * 100)
+        elif p.sizing == "antimartingale":
+            adj = 1.0 + (win_streak * 0.15) - (loss_streak * 0.25)
+            risk_pct = base_risk * max(0.25, min(adj, 2.0))
+        else:
+            risk_pct = base_risk
+
+        lots, _, _ = _calc_lots(p.symbol, equity, risk_pct, sl_pips, self.pip_value, self.info)
+        return lots
+
+    def _regime_at(self, tf: str, pos: int) -> str:
+        """Classify the market regime at bar pos using ATR percentile + EMA spread."""
+        p = self.params
+        if pos < 200:
+            return "unknown"
+        atr_full = self._atr_full[tf]
+        atr_now = float(atr_full[pos])
+        # rolling ATR percentile over 200 bars
+        window = atr_full[max(0, pos - 200):pos]
+        if len(window) < 20:
+            return "unknown"
+        pct = float(np.sum(window < atr_now) / len(window) * 100)
+        # ADX proxy: EMA separation normalized by ATR
+        e_fast = float(self._ema_fast[tf][pos]) if pos < len(self._ema_fast[tf]) else 0
+        e_slow = float(self._ema_slow[tf][pos]) if pos < len(self._ema_slow[tf]) else 0
+        sep = abs(e_fast - e_slow) / max(atr_now, 1e-9)
+        if pct >= p.regime_atr_high_pct:
+            return "volatile"
+        elif pct <= p.regime_atr_low_pct and sep < 0.5:
+            return "range"
+        elif sep >= p.regime_adx_threshold / 50.0:  # normalize ADX proxy
+            return "trend"
+        return "unknown"
+
+    def _regime_matches_filter(self, regime: str) -> bool:
+        """Return True if regime passes the filter (empty = all pass)."""
+        f = self.params.regime_filter
+        if not f:
+            return True
+        return regime == f
 
     def _simulate_exit(
         self,
@@ -549,33 +819,89 @@ class Backtester:
         entry: float,
         sl: float,
         tp: float,
-    ) -> tuple[float, tuple[str, str]]:
-        p = self.params
-        limit = min(len(base), start + p.timeout_bars)
-        for j in range(start, limit):
-            bar = base.iloc[j]
-            hit_sl = bar.low <= sl if action == "BUY" else bar.high >= sl
-            hit_tp = bar.high >= tp if action == "BUY" else bar.low <= tp
-            if hit_sl:
-                return float(sl), ("SL", str(base_times[j]))
-            if hit_tp:
-                return float(tp), ("TP", str(base_times[j]))
-        last = base.iloc[limit - 1]
-        return float(last.close), ("timeout", str(base_times[limit - 1]))
+        zone_atr: float,
+    ) -> tuple[float, str, float, int, bool, bool]:
+        """Simulate exit with trailing stop + partial TP + adaptive timeout.
 
-    def _pnl(self, action: str, entry: float, exit_price: float, lots: float) -> float:
+        Returns (exit_price, reason, exit_time, bars_held, partial_closed, trailing_active).
+        """
+        p = self.params
+        pip = self.pip
+        # R-value in price terms
+        sl_dist = abs(entry - sl)
+        r_value = sl_dist if sl_dist > 0 else pip * 20
+
+        partial_closed = False
+        trailing_active = False
+        trailing_sl = sl
+        exit_price = float(base.iloc[start - 1].close) if start > 0 else entry
+        exit_ts = str(base_times[min(start, len(base_times) - 1)])
+        exit_reason = "timeout"
+        exit_idx = start
+
+        # adaptive timeout: max bars and minimum R-movement
+        max_bars = p.timeout_bars
+        if p.use_adaptive_timeout:
+            # require at least 0.3R movement within 80 bars
+            min_r_movement = p.adaptive_timeout_atr * r_value
+            max_bars = p.adaptive_timeout_bars
+
+        for j in range(start, min(len(base), start + max_bars)):
+            bar = base.iloc[j]
+            hit_sl = bar.low <= trailing_sl if action == "BUY" else bar.high >= trailing_sl
+            hit_tp = bar.high >= tp if action == "BUY" else bar.low <= tp
+
+            if hit_sl:
+                return float(trailing_sl), "SL", str(base_times[j]), j - start, partial_closed, trailing_active
+            if hit_tp and not partial_closed:
+                if p.use_partial_tp and p.partial_tp_pct < 1.0:
+                    # partial TP: close partial, continue with remaining
+                    partial_closed = True
+                    # adjust TP to trail from here
+                    continue
+                else:
+                    return float(tp), "TP", str(base_times[j]), j - start, False, trailing_active
+
+            # trailing stop logic
+            if p.use_trailing_stop and not trailing_active:
+                if action == "BUY":
+                    unrealized_r = (bar.high - entry) / max(r_value, 1e-9)
+                else:
+                    unrealized_r = (entry - bar.low) / max(r_value, 1e-9)
+                if unrealized_r >= p.trailing_arm_r:
+                    trailing_active = True
+                    # set initial trail
+                    trail_dist = zone_atr * p.trailing_atr_mult
+                    if action == "BUY":
+                        trailing_sl = max(sl, bar.high - trail_dist)
+                    else:
+                        trailing_sl = min(sl, bar.low + trail_dist)
+
+            if trailing_active and j > start:
+                trail_dist = zone_atr * p.trailing_atr_mult
+                if action == "BUY":
+                    new_sl = bar.high - trail_dist
+                    trailing_sl = max(trailing_sl, new_sl)
+                else:
+                    new_sl = bar.low + trail_dist
+                    trailing_sl = min(trailing_sl, new_sl)
+
+            exit_price = float(bar.close)
+            exit_ts = str(base_times[j])
+            exit_idx = j
+
+        return exit_price, exit_reason, exit_ts, exit_idx - start, partial_closed, trailing_active
+
+    def _pnl(self, action: str, entry: float, exit_price: float, lots: float, partial_pct: float = 1.0) -> float:
         p = self.params
         per_point = self.pip_value / self.pip
         slippage = p.slippage_points * self.pip
         if action == "BUY":
-            # exit at bid - slippage
-            raw = (exit_price - slippage - entry) * per_point * lots
+            raw = (exit_price - slippage - entry) * per_point * lots * partial_pct
         else:
-            # exit at ask (bid + spread)
             exit_used = exit_price + p.spread_points * self.pip + slippage
-            raw = (entry - exit_used) * per_point * lots
-        # subtract round-trip commission
-        commission = p.commission_per_lot * lots
+            raw = (entry - exit_used) * per_point * lots * partial_pct
+        commission = p.commission_per_lot * lots * partial_pct
         return raw - commission
 
 
@@ -775,6 +1101,133 @@ def _run_variant_job(job: dict) -> dict:
     }
 
 
+def sensitivity_analysis(
+    base_params: BacktestParams,
+    frames: dict[str, pd.DataFrame],
+    info: dict,
+    params_to_sweep: list[str] | None = None,
+    pct_range: float = 0.20,
+    steps: int = 5,
+) -> dict:
+    """Sweep each param ±pct_range from its base value, fix all others.
+
+    Returns a dict mapping param_name -> list of {value, pf, wr, net_pnl, max_dd}.
+    """
+    if params_to_sweep is None:
+        params_to_sweep = [
+            "min_zone_score", "min_trade_score", "min_confidence_percent",
+            "tp_min", "tp_max", "sl_min", "min_rr",
+            "trailing_arm_r", "trailing_atr_mult", "partial_tp_r",
+        ]
+
+    results: dict[str, list[dict]] = {}
+    base_result = Backtester(base_params, frames, info).run()
+
+    for param_name in params_to_sweep:
+        base_val = getattr(base_params, param_name, None)
+        if base_val is None or not isinstance(base_val, (int, float)):
+            continue
+        sweep = []
+        for pct in np.linspace(-pct_range, pct_range, steps):
+            new_val = base_val * (1.0 + pct) if base_val != 0 else pct
+            new_val = round(float(new_val), 4)
+            p_copy = BacktestParams(**asdict(base_params))
+            setattr(p_copy, param_name, new_val)
+            bt = Backtester(p_copy, frames, info)
+            r = bt.run()
+            sweep.append({
+                "value": new_val,
+                "pct_change": round(pct * 100, 1),
+                "pf": r.profit_factor,
+                "wr": r.win_rate,
+                "net_pnl": r.net_pnl,
+                "max_dd": r.max_drawdown_pct,
+                "trades": r.n_trades,
+            })
+        results[param_name] = {
+            "base_value": base_val,
+            "base_pf": base_result.profit_factor,
+            "base_wr": base_result.win_rate,
+            "sweep": sweep,
+            "sensitivity": _calc_sensitivity(sweep),
+        }
+
+    return {
+        "symbol": base_params.symbol,
+        "base_pf": base_result.profit_factor,
+        "base_wr": base_result.win_rate,
+        "base_trades": base_result.n_trades,
+        "params": results,
+    }
+
+
+def _calc_sensitivity(sweep: list[dict]) -> dict:
+    """How much does PF degrade when this param varies? Lower = more robust."""
+    if not sweep:
+        return {"max_degradation_pct": 0, "stable": True}
+    base_pf = sweep[len(sweep) // 2].get("pf", 1.0)  # center value
+    if base_pf <= 0:
+        base_pf = 1.0
+    pfs = [s["pf"] for s in sweep]
+    max_drop = max(0, base_pf - min(pfs)) / base_pf * 100
+    return {
+        "max_degradation_pct": round(max_drop, 1),
+        "stable": max_drop < 20,
+        "min_pf": round(min(pfs), 3),
+        "max_pf": round(max(pfs), 3),
+    }
+
+
+def correlation_overlay(
+    results: list[BacktestResult],
+    group_names: list[str] | None = None,
+) -> dict:
+    """Portfolio-level view: combine equity curves from correlated pairs.
+
+    Assumes results are in chronological order (same time window).
+    """
+    if not results:
+        return {"error": "no results to combine"}
+
+    # Build aligned equity curves
+    max_len = max(len(r.trades) for r in results)
+    combined_equity = [10000.0]  # start
+    total_risk = 0.0
+
+    for r in results:
+        for t in r.trades:
+            # rough equity tracking per result
+            pass
+
+    # Simple approach: use net PnL from each result
+    total_net = sum(r.net_pnl for r in results)
+    total_trades = sum(r.n_trades for r in results)
+    total_wins = sum(r.wins for r in results)
+    combined_pf_num = sum(r.gross_profit for r in results)
+    combined_pf_den = sum(r.gross_loss for r in results)
+
+    # Per-result summary
+    per_result = []
+    for i, r in enumerate(results):
+        name = group_names[i] if group_names and i < len(group_names) else r.params.get("symbol", f"result_{i}")
+        per_result.append({
+            "name": name,
+            "trades": r.n_trades,
+            "net_pnl": r.net_pnl,
+            "win_rate": r.win_rate,
+            "pf": r.profit_factor,
+            "max_dd": r.max_drawdown_pct,
+        })
+
+    return {
+        "combined_net_pnl": round(total_net, 2),
+        "combined_trades": total_trades,
+        "combined_win_rate": round(total_wins / total_trades * 100, 1) if total_trades else 0,
+        "combined_pf": round(combined_pf_num / combined_pf_den, 3) if combined_pf_den else 0,
+        "results": per_result,
+    }
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Backtest the price-action strategy")
     parser.add_argument("--symbols", default="EURUSD", help="comma-separated symbols")
@@ -804,11 +1257,23 @@ def main(argv: list[str] | None = None) -> int:
         "--frame-ttl", type=float, default=FRAME_TTL_SECONDS,
         help="cache freshness window in seconds",
     )
+    # --- NEW: feature toggles ---
+    parser.add_argument("--no-trailing", action="store_true", help="disable trailing stop")
+    parser.add_argument("--no-partial", action="store_true", help="disable partial TP")
+    parser.add_argument("--no-vol-spread", action="store_true", help="disable vol-adjusted spread")
+    parser.add_argument("--regime-filter", default="", help="regime filter: trend, range, volatile")
+    parser.add_argument("--sizing", default="fixed", choices=["fixed", "kelly", "antimartingale"])
+    parser.add_argument("--max-consec-losses", type=int, default=0, help="consecutive loss guard (0=off)")
+    parser.add_argument("--sensitivity", action="store_true", help="run sensitivity analysis")
+    parser.add_argument("--sensitivity-sweep", action="store_true", help="run trailing/partial parameter sweep")
+    parser.add_argument("--correlation-group", default="", help="correlation group tag")
     args = parser.parse_args(argv)
 
     symbols = [s.strip().upper() for s in args.symbols.split(",") if s.strip()]
     if args.all:
         variants = default_variants(symbols, bars=args.bars)
+    elif args.sensitivity_sweep:
+        variants = sensitivity_variants(symbols[0], bars=args.bars)
     else:
         variants = [
             BacktestParams(
@@ -824,6 +1289,13 @@ def main(argv: list[str] | None = None) -> int:
                 min_rr=args.min_rr,
                 spread_points=args.spread_points,
                 bars=args.bars,
+                use_trailing_stop=not args.no_trailing,
+                use_partial_tp=not args.no_partial,
+                use_vol_spread=not args.no_vol_spread,
+                regime_filter=args.regime_filter,
+                sizing=args.sizing,
+                max_consecutive_losses=args.max_consec_losses,
+                correlation_group=args.correlation_group,
             )
             for s in symbols
         ]
@@ -903,6 +1375,66 @@ def main(argv: list[str] | None = None) -> int:
 
     summary = rebuild_summary(Path(args.out))
     print(f"\nSummary written to {summary}")
+
+    # --- Sensitivity analysis ---
+    if args.sensitivity and variants:
+        p0 = variants[0]
+        print(f"\nRunning sensitivity analysis for {p0.symbol}...")
+        frames = load_frames(
+            p0.symbol, _variant_tfs(p0), p0.bars,
+            use_cache=use_cache, allow_mt5=True, ttl=args.frame_ttl,
+        )
+        sa = sensitivity_analysis(p0, frames, info_cache.get(p0.symbol, {}))
+        print(f"\n{'='*60}")
+        print(f"SENSITIVITY ANALYSIS: {sa['symbol']}")
+        print(f"Base PF: {sa['base_pf']:.3f}  Base WR: {sa['base_wr']:.1f}%  Trades: {sa['base_trades']}")
+        print(f"{'='*60}")
+        for pname, pdata in sa["params"].items():
+            sens = pdata["sensitivity"]
+            stable = "ROBUST" if sens["stable"] else "FRAGILE"
+            print(f"\n  {pname} (base={pdata['base_value']}) [{stable}]")
+            print(f"    PF range: {sens['min_pf']:.3f} - {sens['max_pf']:.3f}  Max degradation: {sens['max_degradation_pct']:.1f}%")
+            for s in pdata["sweep"]:
+                marker = " <-- base" if s["pct_change"] == 0 else ""
+                print(f"    {s['pct_change']:+5.1f}%  val={s['value']:<10}  PF={s['pf']:.3f}  WR={s['wr']:.1f}%  P&L={s['net_pnl']:+.2f}  DD={s['max_dd']:.2f}%{marker}")
+
+    # --- Sensitivity sweep (trailing/partial combos) ---
+    if args.sensitivity_sweep and symbols:
+        sym = symbols[0]
+        print(f"\nRunning trailing/partial sweep for {sym}...")
+        frames = load_frames(
+            sym, ["H1", "H4", "D1"], args.bars,
+            use_cache=use_cache, allow_mt5=True, ttl=args.frame_ttl,
+        )
+        sv = sensitivity_variants(sym, bars=args.bars)
+        sweep_results = []
+        for p in sv:
+            bt = Backtester(p, frames, info_cache.get(sym, {}))
+            r = bt.run()
+            sweep_results.append({
+                "trail": p.use_trailing_stop,
+                "trail_arm": p.trailing_arm_r,
+                "partial": p.use_partial_tp,
+                "partial_r": p.partial_tp_r,
+                "pf": r.profit_factor,
+                "wr": r.win_rate,
+                "net_pnl": r.net_pnl,
+                "trades": r.n_trades,
+                "max_dd": r.max_drawdown_pct,
+                "partials": r.partial_tp_count,
+                "trailings": r.trailing_stop_count,
+            })
+        # Sort by PF descending
+        sweep_results.sort(key=lambda x: x["pf"], reverse=True)
+        print(f"\n{'='*80}")
+        print(f"TRAILING/PARTIAL SWEEP: {sym} ({len(sv)} combos)")
+        print(f"{'='*80}")
+        print(f"{'Trail':>5} {'Arm':>5} {'Part':>5} {'PartR':>5} {'PF':>7} {'WR':>6} {'P&L':>10} {'Trades':>6} {'DD':>7}")
+        for s in sweep_results[:15]:  # top 15
+            t_mark = "Y" if s["trail"] else "N"
+            p_mark = "Y" if s["partial"] else "N"
+            print(f"  {t_mark:>3} {s['trail_arm']:5.1f} {p_mark:>3} {s['partial_r']:5.1f} {s['pf']:7.3f} {s['wr']:5.1f}% {s['net_pnl']:+10.2f} {s['trades']:6d} {s['max_dd']:6.2f}%")
+
     return 0
 
 

@@ -434,6 +434,32 @@
   </div>
 </section>
 
+<section class="panel sens-panel">
+  <div class="panel-title">Parameter Sensitivity <span class="sub">How robust is each parameter? ±20% sweep</span>
+    <span class="sens-actions">
+      <input id="sens-symbol" class="symbol-input" list="symbol-list" value="EURUSD" spellcheck="false" placeholder="Symbol">
+      <input id="sens-bars" type="number" min="500" max="10000" value="3000" style="width:65px" title="Bars">
+      <button id="sens-run" class="btn small">Analyze</button>
+    </span>
+  </div>
+  <div id="sens-body">
+    <div class="plan-empty">Click "Analyze" to test how sensitive each parameter is to ±20% changes.</div>
+  </div>
+</section>
+
+<section class="panel sweep-panel">
+  <div class="panel-title">Trailing + Partial TP Sweep <span class="sub">Find the best exit combo</span>
+    <span class="sweep-actions">
+      <input id="sweep-symbol" class="symbol-input" list="symbol-list" value="EURUSD" spellcheck="false" placeholder="Symbol">
+      <input id="sweep-bars" type="number" min="500" max="10000" value="3000" style="width:65px" title="Bars">
+      <button id="sweep-run" class="btn small">Sweep</button>
+    </span>
+  </div>
+  <div id="sweep-body">
+    <div class="plan-empty">Click "Sweep" to test all trailing stop + partial TP combinations.</div>
+  </div>
+</section>
+
 <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 
 <script src="/static/vendor/lightweight-charts.js"></script>
