@@ -315,6 +315,25 @@
   </div>
 </section>
 
+<section class="panel walk-forward-panel">
+  <div class="panel-title">Walk-Forward Validation <span class="sub">Out-of-sample overfitting detection</span>
+    <span class="wf-actions">
+      <input id="wf-symbol" class="symbol-input" list="symbol-list" value="EURUSD" spellcheck="false" placeholder="Symbol">
+      <input id="wf-train" type="number" min="500" max="10000" value="2000" style="width:70px" title="Training bars">
+      <input id="wf-test" type="number" min="100" max="5000" value="500" style="width:60px" title="Test bars">
+      <input id="wf-step" type="number" min="100" max="2000" value="500" style="width:60px" title="Step size">
+      <select id="wf-trend"><option>H4</option><option>H1</option><option>D1</option></select>
+      <input id="wf-zones" value="H1,H4" title="Zone timeframes" style="width:80px">
+      <input id="wf-slip" type="number" min="0" max="10" step="0.5" value="1.0" style="width:55px" title="Slippage points">
+      <input id="wf-comm" type="number" min="0" max="50" step="1" value="7" style="width:50px" title="Commission per lot">
+      <button id="wf-run" class="btn small">Run Walk-Forward</button>
+    </span>
+  </div>
+  <div id="wf-body">
+    <div class="plan-empty">Click "Run Walk-Forward" to validate out-of-sample performance and detect overfitting.</div>
+  </div>
+</section>
+
 <section class="panel market-intel-panel">
   <div class="panel-title">Market Intelligence <span class="sub">Market Health Score & regime scan</span>
     <span class="mi-actions">

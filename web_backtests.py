@@ -335,3 +335,48 @@ def backtest_forward(payload: dict):
         "full": _bt_detail(full, full_saved),
         "elapsed_s": round(time.perf_counter() - started, 1),
     }
+
+
+@router.post("/api/backtest/walk-forward")
+def backtest_walk_forward(payload: dict):
+    """Walk-forward optimization: rolling train/test windows with grid sweep."""
+    from walk_forward import WalkForwardEngine, WalkForwardParams
+
+    symbol = (payload.get("symbol") or "EURUSD").upper().strip()
+    train_bars = int(payload.get("train_bars") or 2000)
+    test_bars = int(payload.get("test_bars") or 500)
+    step_bars = int(payload.get("step_bars") or 500)
+    trend_tf = payload.get("trend_tf", "H4")
+    zone_tfs = payload.get("zone_tfs", "H1,H4")
+    if isinstance(zone_tfs, str):
+        zone_tfs = [t.strip().upper() for t in zone_tfs.split(",") if t.strip()]
+    min_zone_scores = payload.get("min_zone_scores", [40.0, 70.0])
+    min_rrs = payload.get("min_rrs", [2.0, 3.0])
+    risk_pct = float(payload.get("risk") or 0.5)
+    slippage = float(payload.get("slippage_points") or 1.0)
+    commission = float(payload.get("commission_per_lot") or 7.0)
+    spread = float(payload.get("spread_points") or 15.0)
+    bars_total = int(payload.get("bars_total") or 10000)
+
+    started = time.perf_counter()
+    wf_params = WalkForwardParams(
+        symbol=symbol,
+        train_bars=train_bars,
+        test_bars=test_bars,
+        step_bars=step_bars,
+        trend_timeframe=trend_tf,
+        zone_timeframes=zone_tfs,
+        min_zone_scores=min_zone_scores,
+        min_rrs=min_rrs,
+        risk_percent=risk_pct,
+        slippage_points=slippage,
+        commission_per_lot=commission,
+        spread_points=spread,
+        bars_total=bars_total,
+    )
+    engine = WalkForwardEngine(wf_params)
+    result = engine.run()
+    from dataclasses import asdict as _asdict
+    out = _asdict(result)
+    out["elapsed_s"] = round(time.perf_counter() - started, 1)
+    return out

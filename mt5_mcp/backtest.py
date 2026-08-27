@@ -78,6 +78,8 @@ class BacktestParams:
     sl_max: float = 30.0
     min_rr: float = 3.0
     spread_points: float = 15.0
+    slippage_points: float = 1.0  # per-side slippage in price-action points
+    commission_per_lot: float = 7.0  # round-trip commission in account currency per lot
     start_balance: float = 10000.0
     bars: int = 5000
     timeout_bars: int = MAX_HOLD_BARS
@@ -102,6 +104,7 @@ class TradeRecord:
     zone_strength: float
     confirmation: str
     ml_score: float = 0.0
+    total_cost: float = 0.0  # spread + slippage + commission in account currency
 
 
 @dataclass
@@ -123,6 +126,9 @@ class BacktestResult:
     end: str
     trades: list[dict] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
+    total_slippage: float = 0.0
+    total_commission: float = 0.0
+    total_spread_cost: float = 0.0
 
 
 class _TrendFast:
@@ -344,6 +350,9 @@ class Backtester:
         result.total_return_pct = round((equity - p.start_balance) / p.start_balance * 100.0, 2)
         result.max_drawdown_pct = round(max_dd, 2)
         result.avg_rr = round(sum(t.rr for t in trades) / len(trades), 2) if trades else 0.0
+        result.total_slippage = round(sum(p.slippage_points * self.pip * (self.pip_value / self.pip) * t.lots * 2 for t in trades), 2)
+        result.total_commission = round(sum(p.commission_per_lot * t.lots for t in trades), 2)
+        result.total_spread_cost = round(sum(p.spread_points * self.pip * (self.pip_value / self.pip) * t.lots for t in trades), 2)
         result.trades = [asdict(t) for t in trades]
         return result
 
@@ -454,7 +463,11 @@ class Backtester:
             return None
         next_open = float(base.iloc[i + 1].open)
         spread = p.spread_points * self.pip
-        entry_price = next_open + spread if action == "BUY" else next_open
+        slippage = p.slippage_points * self.pip
+        if action == "BUY":
+            entry_price = next_open + spread + slippage
+        else:
+            entry_price = next_open - slippage  # SELL at bid - slippage
 
         entry, sl, tp, sl_pips, tp_pips, _ = _choose_entry_math(
             action,
@@ -486,6 +499,12 @@ class Backtester:
             base, base_times, i + 1, action, entry, sl, tp
         )
         pnl = self._pnl(action, entry, exit_price, lots)
+        # compute cost breakdown
+        per_point = self.pip_value / self.pip
+        spread_cost = p.spread_points * self.pip * per_point * lots
+        slippage_cost = 2 * p.slippage_points * self.pip * per_point * lots  # entry + exit
+        commission_cost = p.commission_per_lot * lots
+        total_cost = spread_cost + slippage_cost + commission_cost
         try:
             from ml_ranker import rank_signal
 
@@ -518,6 +537,7 @@ class Backtester:
             zone_strength=float(best_zone.strength),
             confirmation=f"{confirmation.pattern} ({confirmation.direction})",
             ml_score=round(ml_score, 3),
+            total_cost=round(total_cost, 2),
         )
 
     def _simulate_exit(
@@ -546,10 +566,17 @@ class Backtester:
     def _pnl(self, action: str, entry: float, exit_price: float, lots: float) -> float:
         p = self.params
         per_point = self.pip_value / self.pip
+        slippage = p.slippage_points * self.pip
         if action == "BUY":
-            return (exit_price - entry) * per_point * lots
-        exit_used = exit_price - p.spread_points * self.pip
-        return (entry - exit_used) * per_point * lots
+            # exit at bid - slippage
+            raw = (exit_price - slippage - entry) * per_point * lots
+        else:
+            # exit at ask (bid + spread)
+            exit_used = exit_price + p.spread_points * self.pip + slippage
+            raw = (entry - exit_used) * per_point * lots
+        # subtract round-trip commission
+        commission = p.commission_per_lot * lots
+        return raw - commission
 
 
 def _cache_paths(symbol: str, tf: str, bars: int) -> tuple[Path, Path]:

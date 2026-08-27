@@ -974,6 +974,29 @@ header {
 .bt-item-meta span { display: flex; align-items: center; gap: 4px; }
 .bt-empty { color: var(--dim); font-size: 12px; text-align: center; padding: 20px; }
 
+/* ---------- Walk-Forward Panel ---------- */
+.walk-forward-panel .wf-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.walk-forward-panel .wf-actions input,
+.walk-forward-panel .wf-actions select {
+  background: var(--panel2); border: 1px solid var(--border); color: var(--text);
+  font-size: 11px; padding: 3px 6px; border-radius: 3px;
+}
+.walk-forward-panel .wf-actions input { width: 70px; }
+#wf-symbol { width: 90px; text-transform: uppercase; }
+#wf-zones { width: 80px; }
+#wf-slip, #wf-comm { width: 55px; }
+.walk-forward-panel .stats-grid { grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); }
+.walk-forward-panel .wf-verdict { background: var(--panel2); border-radius: 4px; }
+@media (max-width: 700px) {
+  .walk-forward-panel .wf-actions { flex-wrap: wrap; }
+  .walk-forward-panel .wf-actions input,
+  .walk-forward-panel .wf-actions select { min-width: 0; }
+}
+@media (max-width: 480px) {
+  .walk-forward-panel .wf-actions { gap: 4px; }
+  .walk-forward-panel .wf-actions input { width: 60px; font-size: 10px; }
+}
+
 /* ---------- Alerts Panel ---------- */
 .alerts-panel .alert-actions { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .alerts-panel .alert-actions select,

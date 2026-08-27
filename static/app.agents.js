@@ -867,4 +867,113 @@ function init() {
   setInterval(tick(loadSummary), POLL_MS);
 }
 
-init();
+/* ---------- Walk-Forward Validation ---------- */
+let wfRunning = false;
+
+async function runWalkForward() {
+  if (wfRunning) return;
+  const body = $("wf-body");
+  const btn = $("wf-run");
+  wfRunning = true;
+  btn.disabled = true;
+  btn.textContent = "Running...";
+  showSkeleton(body, "cards", 1);
+
+  try {
+    const payload = {
+      symbol: $("wf-symbol").value.trim().toUpperCase() || "EURUSD",
+      train_bars: parseInt($("wf-train").value, 10) || 2000,
+      test_bars: parseInt($("wf-test").value, 10) || 500,
+      step_bars: parseInt($("wf-step").value, 10) || 500,
+      trend_tf: $("wf-trend").value,
+      zone_tfs: $("wf-zones").value.trim(),
+      slippage_points: parseFloat($("wf-slip").value) || 1.0,
+      commission_per_lot: parseFloat($("wf-comm").value) || 7.0,
+    };
+    const result = await apiPost("/api/backtest/walk-forward", payload);
+    renderWalkForward(result);
+    toast(`Walk-forward done in ${result.elapsed_s}s (${result.n_folds} folds)`);
+  } catch (e) {
+    body.innerHTML = `<div class="plan-empty">Walk-forward failed: ${esc(e.message || String(e))}</div>`;
+    toast("Walk-forward failed: " + e.message, "error");
+  } finally {
+    wfRunning = false;
+    btn.disabled = false;
+    btn.textContent = "Run Walk-Forward";
+  }
+}
+
+function renderWalkForward(r) {
+  const body = $("wf-body");
+  if (!r || r.error || !r.folds || !r.folds.length) {
+    body.innerHTML = `<div class="plan-empty">${esc(r?.errors?.join("; ") || r?.error || "No walk-forward results")}</div>`;
+    return;
+  }
+
+  // overfitting verdict
+  let verdictColor = C.dim, verdictText = "Unknown";
+  if (r.consistency_score >= 60 && r.is_ratio >= 0.6) {
+    verdictColor = C.up; verdictText = "LOW OVERFIT";
+  } else if (r.consistency_score >= 40 && r.is_ratio >= 0.4) {
+    verdictColor = C.yellow; verdictText = "MODERATE OVERFIT";
+  } else {
+    verdictColor = C.down; verdictText = "HIGH OVERFIT";
+  }
+
+  const stats = [
+    { label: "OOS Trades", val: r.oos_trades },
+    { label: "OOS Win Rate", val: r.oos_win_rate + "%", cls: r.oos_win_rate >= 50 ? "pos" : "neg" },
+    { label: "OOS Profit Factor", val: r.oos_profit_factor, cls: r.oos_profit_factor >= 1 ? "pos" : "neg" },
+    { label: "OOS Net P&L", val: fmtMoney(r.oos_net_pnl), cls: r.oos_net_pnl >= 0 ? "pos" : "neg" },
+    { label: "OOS Expectancy", val: fmtMoney(r.oos_expectancy), cls: r.oos_expectancy >= 0 ? "pos" : "neg" },
+    { label: "OOS Max DD", val: r.oos_max_drawdown_pct + "%", cls: "neg" },
+    { label: "IS/OOS PF Ratio", val: r.is_ratio, cls: r.is_ratio >= 0.6 ? "pos" : r.is_ratio >= 0.4 ? "text-yellow" : "neg" },
+    { label: "Degradation", val: r.degradation_pct + "%", cls: r.degradation_pct <= 30 ? "pos" : r.degradation_pct <= 60 ? "text-yellow" : "neg" },
+    { label: "Consistency", val: r.consistency_score + "%", cls: r.consistency_score >= 60 ? "pos" : "neg" },
+    { label: "Cost: Slippage", val: fmtMoney(r.oos_total_slippage) },
+    { label: "Cost: Commission", val: fmtMoney(r.oos_total_commission) },
+    { label: "Folds", val: r.n_folds },
+  ];
+
+  // fold table
+  const foldHead = `<tr><th>Fold</th><th>Train Trades</th><th>Train WR</th><th>Train PF</th><th>Train P&L</th><th>Test Trades</th><th>Test WR</th><th>Test PF</th><th>Test P&L</th><th>Params</th></tr>`;
+  const foldRows = r.folds.map((f) => {
+    const tp = f.train_net >= 0, tep = f.test_net >= 0;
+    return `<tr>
+      <td>${f.fold + 1}</td>
+      <td>${f.train_trades}</td>
+      <td class="${f.train_wr >= 50 ? 'pos' : 'neg'}">${f.train_wr}%</td>
+      <td class="${f.train_pf >= 1 ? 'pos' : 'neg'}">${f.train_pf}</td>
+      <td class="${tp ? 'pos' : 'neg'}">${fmtMoney(f.train_net)}</td>
+      <td>${f.test_trades}</td>
+      <td class="${f.test_wr >= 50 ? 'pos' : 'neg'}">${f.test_wr}%</td>
+      <td class="${f.test_pf >= 1 ? 'pos' : 'neg'}">${f.test_pf}</td>
+      <td class="${tep ? 'pos' : 'neg'}">${fmtMoney(f.test_net)}</td>
+      <td class="dim">z${f.best_params.min_zone_score ?? '--'} rr${f.best_params.min_rr ?? '--'}</td>
+    </tr>`;
+  }).join("");
+
+  body.innerHTML = `
+    <div class="wf-verdict" style="border-left:3px solid ${verdictColor};padding:8px 12px;margin-bottom:10px">
+      <span style="color:${verdictColor};font-weight:700;font-size:14px">${esc(verdictText)}</span>
+      <span class="dim" style="margin-left:8px">${r.n_folds} folds in ${r.elapsed_s}s</span>
+    </div>
+    <div class="stats-grid">${stats.map((s) =>
+      `<div class="stat"><div class="stat-label">${s.label}</div><div class="stat-value ${s.cls || ''}">${s.val}</div></div>`
+    ).join("")}</div>
+    <div class="table-wrap" style="margin-top:10px"><table class="data-table">
+      <thead>${foldHead}</thead>
+      <tbody>${foldRows}</tbody>
+    </table></div>
+    <div style="margin-top:8px;font-size:11px;color:var(--dim)">
+      <b>IS/OOS Ratio</b> = avg in-sample PF / avg out-of-sample PF. Closer to 1.0 = less overfitting.
+      <b>Consistency</b> = % of folds with positive OOS P&L. Above 60% is healthy.
+      <b>Degradation</b> = how much OOS PF drops vs IS PF. Below 30% is excellent.
+    </div>`;
+}
+
+function initWalkForward() {
+  $("wf-run").addEventListener("click", runWalkForward);
+}
+
+initWalkForward();

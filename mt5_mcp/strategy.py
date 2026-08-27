@@ -334,6 +334,24 @@ def evaluate_strategy(
     plan.htf_trend = trend.direction
     plan.confidence = round(trend.confidence * 100.0, 1)
 
+    # --- Multi-timeframe confluence ---
+    mtf_aligned = 0
+    mtf_total = 0
+    mtf_trend = trend.direction
+    for extra_tf in ["H1", "H4", "D1"]:
+        if extra_tf.upper() == trend_tf.upper():
+            continue  # already counted
+        try:
+            extra_frame = client.rates(symbol, extra_tf, max(candles, 200))
+            extra_trend = analyze_trend(
+                extra_frame, strategy_cfg.trend_fast_ema, strategy_cfg.trend_slow_ema
+            )
+            mtf_total += 1
+            if extra_trend.direction == mtf_trend and mtf_trend in ("bullish", "bearish"):
+                mtf_aligned += 1
+        except Exception:
+            pass  # skip if data unavailable
+
     if trend.direction == "bullish":
         action = "BUY"
         zone_type = DEMAND
@@ -437,16 +455,20 @@ def evaluate_strategy(
         )
 
     rr_score = min(1.0, risk_reward / min_rr) if min_rr else 1.0
+    # MTF confluence bonus: +10% per aligned timeframe (max +15%)
+    mtf_bonus = min(0.15, mtf_aligned * 0.10) if mtf_total > 0 else 0.0
     trade_score = (
         trend.confidence * 0.25
         + (best_zone.strength / 100.0) * 0.35
         + confirmation.confidence * 0.25
         + rr_score * 0.15
+        + mtf_bonus
     ) * 100.0
     confidence_pct = (
         trend.confidence * 0.3
         + (best_zone.strength / 100.0) * 0.35
         + confirmation.confidence * 0.35
+        + mtf_bonus * 0.5
     ) * 100.0
 
     plan.action = action
@@ -469,6 +491,8 @@ def evaluate_strategy(
         f"confirmation: {confirmation.pattern} ({confirmation.direction}, {confirmation.confidence:.0%})",
         f"RR {risk_reward:.2f} (min {min_rr:.1f}), risk {risk_percent:.1f}% = {risk_amount:.2f} {account.get('currency', '')}",
     ]
+    if mtf_total > 0:
+        reasons.append(f"MTF confluence: {mtf_aligned}/{mtf_total} timeframes aligned with {mtf_trend} (+{mtf_bonus*100:.0f}% bonus)")
     plan.reason = "; ".join(reasons)
 
     if _ML_AVAILABLE:
