@@ -37,8 +37,8 @@ class DojoConfig:
     learning_rate: float = 0.001
     gamma: float = 0.99
     initial_balance: float = 10000.0
-    risk_per_trade: float = 0.01
-    max_position_size: float = 0.1
+    risk_per_trade: float = 0.05
+    max_position_size: float = 0.2
     episodes: int = 100
     max_steps: int = 500
     save_every: int = 10
@@ -495,7 +495,7 @@ class ForexDojo:
         if action == 0 and prev_position == 0:
             return 0.0
         if action == 1 and prev_position == 0:
-            return 0.05
+            return 0.01  # minimal reward for holding — must trade to learn
 
         reward = 0.0
 
@@ -521,7 +521,7 @@ class ForexDojo:
     # -- Skill level -------------------------------------------------------
 
     @staticmethod
-    def _skill_level(episode_pnls: list[float], max_dd: float) -> tuple[str, float, float, float]:
+    def _skill_level(episode_pnls: list[float], max_dd: float, total_trades: int = 0, total_episodes: int = 1) -> tuple[str, float, float, float]:
         """Sharpe-ratio based skill scorer. Returns (level, score, sharpe, profit_factor)."""
         if len(episode_pnls) >= 2:
             mean_pnl = float(np.mean(episode_pnls))
@@ -532,12 +532,18 @@ class ForexDojo:
 
         winning = [p for p in episode_pnls if p > 0]
         losing = [p for p in episode_pnls if p < 0]
-        profit_factor = sum(winning) / (abs(sum(losing)) + 1e-8)
+        raw_pf = sum(winning) / (abs(sum(losing)) + 1e-8) if losing else 0.0
+        profit_factor = min(raw_pf, 10.0)  # cap at 10 to prevent inflation
+
+        # Trade activity: penalize if avg trades per episode < 3
+        avg_trades_per_ep = total_trades / max(total_episodes, 1)
+        activity_bonus = min(avg_trades_per_ep / 5.0, 1.0)  # 0-1 scale, peaks at 5 trades/ep
 
         score = 0.0
         score += min(sharpe * 20, 40)
         score += min(profit_factor * 10, 30)
         score += max(0, 30 - max_dd * 2)
+        score *= (0.5 + 0.5 * activity_bonus)  # scale by activity
 
         if score >= 70:
             level = "Master"
@@ -732,6 +738,10 @@ class ForexDojo:
                 gross_loss += abs(pnl)
 
         win_rate = wins / max(trades, 1)
+
+        # Penalize 0-trade episodes — must take positions to learn
+        if trades == 0:
+            total_pnl -= 50.0  # flat penalty for inaction
 
         # Compute PF from gross win/loss
         pf = gross_win / (gross_loss + 1e-8) if gross_loss > 0 else (99.99 if gross_win > 0 else 0.0)
@@ -955,8 +965,9 @@ class ForexDojo:
         overall_wr = sum(e.wins for e in episodes) / max(sum(e.trades for e in episodes), 1)
         overall_pnl = sum(e.pnl for e in episodes)
         overall_dd = max(e.max_drawdown for e in episodes)
+        overall_trades = sum(e.trades for e in episodes)
         all_pnls = [e.pnl for e in episodes]
-        final_skill, final_score, final_sharpe, final_pf = self._skill_level(all_pnls, overall_dd)
+        final_skill, final_score, final_sharpe, final_pf = self._skill_level(all_pnls, overall_dd, overall_trades, len(episodes))
 
         self.progress = DojoProgress(
             symbol=self.config.symbol,
@@ -1071,8 +1082,9 @@ class ForexDojo:
         overall_wr = sum(e.wins for e in episodes) / max(sum(e.trades for e in episodes), 1)
         overall_pnl = sum(e.pnl for e in episodes)
         overall_dd = max(e.max_drawdown for e in episodes)
+        overall_trades = sum(e.trades for e in episodes)
         all_pnls = [e.pnl for e in episodes]
-        final_skill, final_score, final_sharpe, final_pf = self._skill_level(all_pnls, overall_dd)
+        final_skill, final_score, final_sharpe, final_pf = self._skill_level(all_pnls, overall_dd, overall_trades, len(episodes))
 
         return DojoProgress(
             symbol=symbol,
