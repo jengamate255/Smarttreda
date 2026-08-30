@@ -794,6 +794,7 @@ class ForexDojo:
             self.nn = SimpleNN(n_features + 4 + extra_features, self.config.hidden_size, 3, self.config.learning_rate)
 
         # Warm-start from checkpoint
+        self._prior_episodes = 0  # cumulative episodes from prior training
         if self.config.warm_start:
             prog_path = self._save_dir / f"{self.config.symbol}_{self.config.timeframe}" / "progress.json"
             model_path = self._save_dir / f"{self.config.symbol}_{self.config.timeframe}" / "model.json"
@@ -806,6 +807,7 @@ class ForexDojo:
                     if prog_path.exists():
                         prog = json.loads(prog_path.read_text(encoding="utf-8"))
                         saved_features = prog.get("config", {}).get("features", [])
+                        self._prior_episodes = prog.get("episode", 0)
                         if saved_features and saved_features != self.config.features:
                             pass  # skip -- incompatible features
                         elif saved_input_size == expected_input_size and len(data["b2"]) == 3:
@@ -841,7 +843,7 @@ class ForexDojo:
         for ep in range(1, self.config.episodes + 1):
             start = random.randint(100, train_max_start)
             result, trajectory = self._run_episode(features, start, step_callback=step_callback)
-            result.episode = ep
+            result.episode = ep + self._prior_episodes  # cumulative episode number
             episodes.append(result)
             equity_curve.append(result.final_balance)
 
@@ -925,8 +927,8 @@ class ForexDojo:
                 eps_per_sec = 1.0 / avg_ep_time if avg_ep_time > 0 else 0
                 remaining = (self.config.episodes - ep) * avg_ep_time
                 callback(result, episode_history=episode_history, speed={
-                    "episodes_done": ep,
-                    "episodes_total": self.config.episodes,
+                    "episodes_done": ep + self._prior_episodes,
+                    "episodes_total": self.config.episodes + self._prior_episodes,
                     "avg_episode_seconds": round(avg_ep_time, 2),
                     "episodes_per_second": round(eps_per_sec, 4),
                     "eta_seconds": round(remaining, 1),
@@ -936,10 +938,10 @@ class ForexDojo:
 
             # Save checkpoint
             if ep % self.config.save_every == 0:
-                self._save_checkpoint(ep, episodes, equity_curve)
+                self._save_checkpoint(ep + self._prior_episodes, episodes, equity_curve)
 
         # Final save
-        self._save_checkpoint(self.config.episodes, episodes, equity_curve)
+        self._save_checkpoint(self.config.episodes + self._prior_episodes, episodes, equity_curve)
 
         # Evaluation on test set (5 episodes, no policy updates)
         test_episodes: list[DojoResult] = []
@@ -1275,7 +1277,7 @@ def list_trained_models() -> list[dict]:
                 results.append({
                     "symbol": data.get("symbol", model_dir.name),
                     "timeframe": data.get("timeframe", "H1"),
-                    "episodes": len(episodes),
+                    "episodes": data.get("episode", len(episodes)),  # total episodes, not just stored window
                     "skill_level": last.get("skill_level", "Unknown"),
                     "win_rate": last.get("win_rate", 0),
                     "pnl": last.get("pnl", 0),
