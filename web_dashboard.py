@@ -13,6 +13,7 @@ import glob
 import json
 import logging
 import os
+import re
 import sys
 import threading
 import time
@@ -37,20 +38,33 @@ from starlette.responses import Response
 _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, _BASE_DIR)
 sys.path.append(os.path.join(_BASE_DIR, "mt5_mcp"))
-from client import get_client
-from memory.trade_journal import get_journal
-from price_action import detect_patterns
-from strategy import analyze_trend as bot_trend
-from strategy import evaluate_strategy, market_structure
-from supply_demand import detect_zones
-from tools.trades import close_position, modify_sl_tp, open_market
 
-from mt5_mcp.market_intel import market_health, scan_markets
-from mt5_mcp.chart_patterns import analyze_chart
-from mt5_mcp.tools.boom_crash_strategy import detect_spike
+# Import from canonical config/client
+from mt5_mcp.config import MT5Config
 
-sys.path.insert(0, _BASE_DIR)
-sys.path.append(os.path.join(_BASE_DIR, "mt5_mcp"))
+# Local utilities
+from web_dashboard_utils import (
+    logger,
+    TIMEFRAMES,
+    CLOSED_ENTRY,
+    _cached_tick,
+    _tick_quote,
+    _TTLCache,
+    _cache_key,
+    _scan_cache,
+    _server_now,
+    _server_epoch,
+    _server_midnight_epoch,
+    _pad_front,
+    _deals_since,
+    _ema,
+    _rsi,
+    _macd,
+    _health_check_loop,
+    _sanitize,
+)
+
+# MT5-MCP modules
 from client import get_client
 from memory.learning import best_pairs, best_sessions, best_setups
 from memory.trade_journal import get_journal
@@ -63,6 +77,13 @@ from tools.news import news_filter
 from tools.risk import risk_report
 from tools.trades import close_position, modify_sl_tp, open_market
 
+from mt5_mcp.chart_patterns import analyze_chart
+from mt5_mcp.coach import coach_review
+from mt5_mcp.market_intel import market_health, scan_markets
+from mt5_mcp.research import report as research_report
+from mt5_mcp.research import weekly_report
+from mt5_mcp.tools.boom_crash_strategy import detect_spike
+
 from backtest import (
     Backtester,
     BacktestParams,
@@ -71,15 +92,16 @@ from backtest import (
     rebuild_summary,
     save_result,
 )
-from mt5_mcp.coach import coach_review
+from web_dojo import router as dojo_router
 
-# New agents
-from mt5_mcp.market_intel import market_health, scan_markets
-from mt5_mcp.research import report as research_report
-from mt5_mcp.research import weekly_report
 
-sys.path.insert(0, _BASE_DIR)  # mt5_mcp modules may reorder sys.path; keep root server first
-from server import MT5Config, _ema, _macd, _rsi, mt5_connection
+def _pad_front(arr: np.ndarray, target_len: int) -> np.ndarray:
+    """Pad array front with first value to reach target_len."""
+    if len(arr) >= target_len:
+        return arr[-target_len:]
+    pad = np.full(target_len - len(arr), arr[0] if len(arr) > 0 else 0.0)
+    return np.concatenate([pad, arr])
+
 
 BASE_DIR = _BASE_DIR
 STATIC_DIR = os.path.join(BASE_DIR, "static")
@@ -87,63 +109,9 @@ PORT = int(os.getenv("WEB_PORT", "8050"))
 HOST = os.getenv("WEB_HOST", "127.0.0.1")
 HEALTH_INTERVAL = int(os.getenv("WEB_HEALTH_INTERVAL", "15"))
 
-_lock = threading.Lock()
-
-WEB_AUTH_TOKEN = os.getenv("WEB_AUTH_TOKEN", "")
-
 _lock = threading.RLock()
 
-
-class _TTLCache:
-    """Simple in-memory TTL cache."""
-
-    def __init__(self, ttl_seconds: int):
-        self._ttl = ttl_seconds
-        self._data: dict = {}
-
-    def get(self, key):
-        hit = self._data.get(key)
-        if not hit:
-            return None
-        ts, value = hit
-        if time.time() > ts:
-            del self._data[key]
-            return None
-        return value
-
-    def set(self, key, value) -> None:
-        self._data[key] = (time.time() + self._ttl, value)
-
-
-_scan_cache = _TTLCache(ttl_seconds=30)
-
-
-def _cache_key(*args, **kwargs) -> tuple:
-    return (args, tuple(sorted(kwargs.items())))
-
-
-
-def _setup_logging() -> logging.Logger:
-    log_dir = os.path.join(BASE_DIR, "logs")
-    os.makedirs(log_dir, exist_ok=True)
-    logger = logging.getLogger("web_dashboard")
-    if logger.handlers:
-        return logger
-    logger.setLevel(logging.INFO)
-    handler = RotatingFileHandler(
-        os.path.join(log_dir, "web_dashboard.log"),
-        maxBytes=5 * 1024 * 1024,
-        backupCount=3,
-        encoding="utf-8",
-    )
-    handler.setFormatter(
-        logging.Formatter("%(asctime)s | %(levelname)s | %(name)s | %(message)s")
-    )
-    logger.addHandler(handler)
-    return logger
-
-
-logger = _setup_logging()
+WEB_AUTH_TOKEN = os.getenv("WEB_AUTH_TOKEN", "")
 
 TIMEFRAMES = {
     "M1": mt5.TIMEFRAME_M1,
@@ -194,12 +162,13 @@ def _health_check_loop(stop: threading.Event):
     """Background watchdog: reconnect if the MT5 connection drops."""
     while not stop.is_set():
         try:
-            if mt5_connection.is_connected():
-                info = mt5.account_info()
-                if info is None and not mt5_connection.reconnect():
-                    logger.error("Health check: reconnect failed: %s", mt5.last_error())
-            elif not mt5_connection.reconnect():
-                logger.error("Health check: reconnect failed: %s", mt5.last_error())
+            client = get_client()
+            if client.is_connected():
+                info = client.account_info()
+                if info is None and not client.reconnect():
+                    logger.error("Health check: reconnect failed")
+            elif not client.reconnect():
+                logger.error("Health check: reconnect failed")
         except Exception as exc:  # noqa: BLE001 - watchdog must never die
             logger.error("Health check error: %s", exc)
         stop.wait(HEALTH_INTERVAL)
@@ -207,9 +176,48 @@ def _health_check_loop(stop: threading.Event):
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    config = MT5Config()
-    if not mt5_connection.connect(config):
-        logger.error("Initial MT5 connect failed: %s", mt5.last_error())
+    logger.info("=" * 60)
+    logger.info("MT5 Dashboard starting up...")
+    logger.info("Python %s | PID %d", sys.version.split()[0], os.getpid())
+
+    # Determine account mode: PROP (default) or DERIV
+    is_deriv = os.getenv("MT5_MCP_ACCOUNT", "PROP").upper() == "DERIV"
+    prefix = "DERIV_MT5" if is_deriv else "MT5"
+
+    # Read CLI args from environment (set by __main__ before uvicorn.run)
+    login = os.getenv(f"{prefix}_LOGIN") or os.getenv(f"MT5_MCP_{prefix}_LOGIN")
+    password = os.getenv(f"{prefix}_PASSWORD") or os.getenv(f"MT5_MCP_{prefix}_PASSWORD")
+    server = os.getenv(f"{prefix}_SERVER") or os.getenv(f"MT5_MCP_{prefix}_SERVER")
+    path = os.getenv(f"{prefix}_TERMINAL_PATH") or os.getenv(f"MT5_MCP_{prefix}_TERMINAL_PATH")
+    
+    # Build MT5Config (Pydantic model) with keyword args
+    config_kwargs = {}
+    if login:
+        config_kwargs["login"] = int(login)
+    if password:
+        config_kwargs["password"] = password
+    if server:
+        config_kwargs["server"] = server
+    if path:
+        config_kwargs["terminal_path"] = path
+    config = MT5Config(**config_kwargs)
+
+    logger.info("Config: login=%s server=%s terminal_path=%s configured=%s mode=%s",
+                config.login, config.server, config.terminal_path, config.is_configured, "DERIV" if is_deriv else "PROP")
+    
+    import asyncio
+    loop = asyncio.get_event_loop()
+
+    try:
+        client = get_client()
+        connected = await loop.run_in_executor(None, lambda: client.connect(config))
+    except Exception as exc:
+        logger.error("MT5 connect raised: %s", exc, exc_info=True)
+        connected = False
+    if connected:
+        logger.info("MT5 connected successfully (login=%s)", config.login)
+    else:
+        logger.error("Initial MT5 connect FAILED — will retry via health check")
     stop = threading.Event()
     threading.Thread(target=_health_check_loop, args=(stop,), daemon=True).start()
     ws_task = asyncio.create_task(_ws_broadcast_loop())
@@ -219,11 +227,13 @@ async def lifespan(app: FastAPI):
     finally:
         stop.set()
         ws_task.cancel()
-        mt5_connection.disconnect()
+        client = get_client()
+        client.shutdown()
         logger.info("Dashboard stopped")
 
 
 app = FastAPI(title="MT5 Web Dashboard", lifespan=lifespan)
+app.include_router(dojo_router)
 
 
 class NoCacheJS(BaseHTTPMiddleware):
@@ -282,9 +292,23 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
-def _require_connected():
-    if not mt5_connection.is_connected():
-        raise HTTPException(status_code=503, detail="MT5 terminal not connected")
+@app.get("/sw.js")
+async def service_worker():
+    """Serve the service worker at root scope. The frontend registers
+    "/sw.js"; a /static/sw.js URL would cap the worker's scope at /static/
+    and it could never control the "/" app page."""
+    return FileResponse(
+        os.path.join(STATIC_DIR, "sw.js"),
+        media_type="application/javascript",
+        headers={"Cache-Control": "no-cache"},
+    )
+
+
+def _has_exposure(client, symbol: str) -> bool:
+    """Check if there are any positions or pending orders for a symbol."""
+    positions = client.positions(symbol) or []
+    orders = client.pending_orders(symbol) or []
+    return bool(positions or orders)
 
 
 def _server_now() -> datetime.datetime:
@@ -333,9 +357,14 @@ async def index():
         try:
             with open(html_path, encoding="utf-8") as fh:
                 html = fh.read()
-            meta = f'<meta name="auth-token" content="{WEB_AUTH_TOKEN}">'
-            if "</head>" in html:
-                html = html.replace("</head>", meta + "</head>", 1)
+            # Replace placeholder meta token with actual token (keeps single tag)
+            import re
+            html = re.sub(
+                r'<meta name="auth-token" content="[^"]*">',
+                f'<meta name="auth-token" content="{WEB_AUTH_TOKEN}">',
+                html,
+                count=1,
+            )
             return HTMLResponse(content=html)
         except OSError:
             pass
@@ -351,24 +380,38 @@ def _server_offset() -> int:
 
 
 @app.get("/api/health")
-def health():
-    terminal = None
+async def health():
+    """Health check - MT5 status via thread pool (non-blocking)."""
+    import asyncio
+    loop = asyncio.get_event_loop()
     try:
-        info = mt5.terminal_info()
-        if info is not None:
-            terminal = {
-                "company": info.company,
-                "build": info.build,
-                "connected": bool(info.connected),
-                "name": info.name,
-            }
-    except Exception as exc:  # noqa: BLE001 - terminal info is best-effort
-        logger.debug("terminal_info unavailable: %s", exc)
+        client = get_client()
+        connected = await asyncio.wait_for(
+            loop.run_in_executor(None, lambda: client.is_connected()), timeout=5.0
+        )
+    except Exception:
+        connected = False
+    terminal = None
+    if connected:
+        try:
+            info = await asyncio.wait_for(
+                loop.run_in_executor(None, lambda: client.terminal_info()), timeout=5.0
+            )
+            if info is not None:
+                terminal = {"company": info.company, "build": info.build, "connected": bool(info.connected), "name": info.name}
+        except Exception:
+            pass
     return {
-        "connected": mt5_connection.is_connected(),
-        "server_time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),  # noqa: DTZ005
+        "connected": bool(connected),
+        "server_time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "terminal": terminal,
     }
+
+
+@app.get("/api/ping")
+def ping():
+    """Simple ping endpoint that doesn't touch MT5."""
+    return {"status": "ok", "time": datetime.datetime.now().isoformat()}
 
 
 @app.get("/api/account")
@@ -501,18 +544,27 @@ def symbols():
 def _fetch_rates_raw(symbol: str, tf_key: str, count: int):
     """Fetch OHLCV bars for symbol/timeframe. Must be called under _lock."""
     _require_connected()
-    data = mt5.copy_rates_from_pos(symbol, TIMEFRAMES[tf_key], 0, count)
-    if data is None or len(data) == 0:
-        if not mt5_connection.is_connected():
+    client = get_client()
+    try:
+        data = client.rates(symbol, tf_key, count)
+    except Exception as e:
+        if not client.is_connected():
             raise HTTPException(status_code=503, detail="MT5 terminal not connected")
-        raise HTTPException(status_code=404, detail=f"no rates for {symbol}: {mt5.last_error()}")
+        raise HTTPException(status_code=404, detail=f"no rates for {symbol}: {e}")
 
-    times = [int(r[0]) for r in data]
-    opens = [r[1] for r in data]
-    highs = [r[2] for r in data]
-    lows = [r[3] for r in data]
-    closes = [r[4] for r in data]
-    volumes = [int(r[5]) for r in data]
+    if data is None or len(data) == 0:
+        if not client.is_connected():
+            raise HTTPException(status_code=503, detail="MT5 terminal not connected")
+        raise HTTPException(status_code=404, detail=f"no rates for {symbol}: {client.last_error()}")
+
+    # client.rates() returns a pandas DataFrame with columns: time, open, high, low, close, tick_volume, spread
+    df = data
+    times = df["time"].astype("int64").values.astype(int).tolist()  # convert to Python int list
+    opens = df["open"].values.tolist()
+    highs = df["high"].values.tolist()
+    lows = df["low"].values.tolist()
+    closes = df["close"].values.tolist()
+    volumes = df["tick_volume"].astype(int).values.tolist()
     return times, opens, highs, lows, closes, volumes
 
 
@@ -538,6 +590,40 @@ def _rates_cache_key(symbol: str, timeframe: str, count: int):
     return _make_cache_key(symbol, timeframe, count)
 
 
+@app.get("/api/quote")
+def quote(symbol: str = "EURUSD"):
+    """Live top-of-book quote for the chart tick line: bid/ask/spread.
+
+    The chart polls this every second to update the last candle; the same
+    bid/ask/spread shape the /api/rates tick block produces is returned so
+    the frontend can use both interchangeably."""
+    try:
+        tick = _cached_tick(symbol)
+    except Exception:
+        tick = None
+    if tick is None or not tick.bid or not tick.ask:
+        raise HTTPException(status_code=502, detail=f"no tick data for {symbol}")
+    point = 0.0
+    try:
+        info = mt5.symbol_info(symbol)
+        point = float(info.point) if info else 0.0
+    except Exception:
+        point = 0.0
+    spread = 0
+    if point > 0:
+        try:
+            spread = round((tick.ask - tick.bid) / point)
+        except Exception:
+            spread = 0
+    return {
+        "symbol": symbol.upper(),
+        "bid": float(tick.bid),
+        "ask": float(tick.ask),
+        "spread": spread,
+        "time": int(tick.time) if tick.time else None,
+    }
+
+
 @app.get("/api/rates")
 def rates(symbol: str = "EURUSD", timeframe: str = "H1", count: int = Query(300, ge=20, le=1000)):
     if timeframe not in TIMEFRAMES:
@@ -556,13 +642,22 @@ def rates(symbol: str = "EURUSD", timeframe: str = "H1", count: int = Query(300,
 
         close_arr = np.array(closes, dtype=float)
 
-        ema50 = _pad_front(_ema(close_arr, 50), n).tolist()
-        ema200 = _pad_front(_ema(close_arr, 200), n).tolist()
-        rsi_vals = _pad_front(_rsi(close_arr, 14), n).tolist()
+        ema50 = _sanitize(_pad_front(_ema(close_arr, 50), n))
+        ema200 = _sanitize(_pad_front(_ema(close_arr, 200), n))
+        rsi_vals = _sanitize(_pad_front(_rsi(close_arr, 14), n))
         macd_line, macd_signal, macd_hist = _macd(close_arr)
+        macd_line = _sanitize(_pad_front(macd_line, n))
+        macd_signal = _sanitize(_pad_front(macd_signal, n))
+        macd_hist = _sanitize(_pad_front(macd_hist, n))
 
         tick = mt5.symbol_info_tick(symbol)
         point = mt5.symbol_info(symbol).point if mt5.symbol_info(symbol) else 0.0
+        spread = 0
+        if tick and point and point > 0:
+            try:
+                spread = round((tick.ask - tick.bid) / point)
+            except Exception:
+                spread = 0
 
         result = {
             "symbol": symbol,
@@ -577,15 +672,49 @@ def rates(symbol: str = "EURUSD", timeframe: str = "H1", count: int = Query(300,
             "ema50": ema50,
             "ema200": ema200,
             "rsi": rsi_vals,
-            "macd": macd_line.tolist(),
-            "macd_signal": macd_signal.tolist(),
-            "macd_hist": macd_hist.tolist(),
+            "macd": macd_line,
+            "macd_signal": macd_signal,
+            "macd_hist": macd_hist,
             "tick": (
-                {"bid": tick.bid, "ask": tick.ask, "spread": round((tick.ask - tick.bid) / point) if point else 0}
+                {"bid": tick.bid, "ask": tick.ask, "spread": spread}
                 if tick
                 else {"bid": closes[-1], "ask": closes[-1], "spread": 0}
             ),
         }
+        # Final comprehensive sanitization
+        def _sanitize_any(obj):
+            """Recursively sanitize any object for JSON serialization."""
+            import numpy as np
+            if isinstance(obj, dict):
+                return {k: _sanitize_any(v) for k, v in obj.items()}
+            elif isinstance(obj, (list, tuple)):
+                return [_sanitize_any(v) for v in obj]
+            elif isinstance(obj, (np.floating, np.integer)):
+                val = float(obj) if np.isfinite(obj) else None
+                return val
+            elif isinstance(obj, float):
+                return obj if np.isfinite(obj) else None
+            else:
+                return obj
+        
+        # Sanitize result before caching/returning
+        def _deep_sanitize(obj):
+            import numpy as np
+            if isinstance(obj, dict):
+                return {k: _deep_sanitize(v) for k, v in obj.items()}
+            elif isinstance(obj, (list, tuple)):
+                return [_deep_sanitize(v) for v in obj]
+            elif isinstance(obj, np.ndarray):
+                return [_deep_sanitize(v) for v in obj.tolist()]
+            elif isinstance(obj, (np.floating, np.integer)):
+                val = float(obj) if np.isfinite(obj) else None
+                return val
+            elif isinstance(obj, float):
+                return obj if np.isfinite(obj) else None
+            else:
+                return obj
+        
+        result = _deep_sanitize(result)
         _rates_cache[key] = (time.monotonic(), result)
         return result
 
@@ -714,6 +843,12 @@ def _compute_bot_analysis(symbol: str, tf_key: str, count: int) -> dict:
         "symbol": symbol,
         "timeframe": tf_key,
         "count": count,
+        # Bar-open epoch seconds for the analysis window (frame_win). The
+        # chart window can be shorter than this window because the
+        # time-anchored /api/rates fetch loses bars to market gaps
+        # (weekends), so clients must align bot bar indices to chart bars
+        # via these times instead of assuming index equality.
+        "times": [int(t) for t in times[-count:]],
         "trend": trend,
         "zones": zones,
         "swings": {"highs": swings_h, "lows": swings_l},
@@ -1170,9 +1305,16 @@ from web_research import router as research_router  # noqa: E402
 app.include_router(backtests_router)
 app.include_router(research_router)
 
+# ForexDojo RL training engine
+try:
+    from web_dojo import router as dojo_router  # noqa: E402
+    app.include_router(dojo_router)
+except ImportError:
+    pass
+
 
 def _require_connected():
-    if not mt5_connection.is_connected():
+    if not get_client().is_connected():
         raise HTTPException(status_code=503, detail="MT5 terminal not connected")
 
 
@@ -1676,15 +1818,32 @@ def _summary_snapshot() -> dict:
         info = client.account_info()
         if info is None:
             return {"type": "summary", "connected": False}
-        positions = client.positions_get() or []
-        floating = round(sum(p.profit + p.swap for p in positions), 2)
+        # MT5Client uses positions() not positions_get(), returns list[dict]
+        try:
+            positions = client.positions() or []
+        except AttributeError:
+            positions = getattr(client, "positions_get", lambda: [])() or []
+
+        def _get(obj, key, default=None):
+            if isinstance(obj, dict):
+                return obj.get(key, default)
+            return getattr(obj, key, default)
+
+        floating = round(sum(float(_get(p, "profit", 0) or 0) + float(_get(p, "swap", 0) or 0) for p in positions), 2)
 
         now = time.time()
         if now - _deals_cache["ts"] >= _DEALS_CACHE_TTL:
-            deals = client.history_deals_get(_server_midnight_epoch(), _server_epoch()) or []
+            # MT5Client: deals_since(epoch) ; fallback to history_deals_get
+            try:
+                deals = client.deals_since(_server_midnight_epoch()) or []
+            except AttributeError:
+                try:
+                    deals = client.history_deals_get(_server_midnight_epoch(), _server_epoch()) or []
+                except Exception:
+                    deals = []
             _deals_cache["ts"] = now
-            _deals_cache["realized"] = round(sum(d.profit + d.swap + d.fee for d in deals), 2)
-            _deals_cache["count"] = sum(1 for d in deals if d.entry == CLOSED_ENTRY)
+            _deals_cache["realized"] = round(sum(float(_get(d, "profit", 0) or 0) + float(_get(d, "swap", 0) or 0) + float(_get(d, "fee", 0) or 0) for d in deals), 2)
+            _deals_cache["count"] = sum(1 for d in deals if _get(d, "entry", None) == CLOSED_ENTRY)
         realized = _deals_cache["realized"]
         trade_count = _deals_cache["count"]
 
@@ -1706,15 +1865,15 @@ def _summary_snapshot() -> dict:
                 },
                 "positions": [
                     {
-                        "ticket": p.ticket,
-                        "symbol": p.symbol,
-                        "type": "BUY" if p.type == mt5.ORDER_TYPE_BUY else "SELL",
-                        "volume": p.volume,
-                        "price_open": p.price_open,
-                        "sl": p.sl,
-                        "tp": p.tp,
-                        "price_current": p.price_current,
-                        "total": round(p.profit + p.swap, 2),
+                        "ticket": _get(p, "ticket"),
+                        "symbol": _get(p, "symbol"),
+                        "type": "BUY" if _get(p, "type") == 0 else "SELL",
+                        "volume": _get(p, "volume"),
+                        "price_open": _get(p, "price_open"),
+                        "sl": _get(p, "sl"),
+                        "tp": _get(p, "tp"),
+                        "price_current": _get(p, "price_current"),
+                        "total": round(float(_get(p, "profit", 0) or 0) + float(_get(p, "swap", 0) or 0), 2),
                     }
                     for p in positions
                 ],
@@ -1891,6 +2050,12 @@ async def ws_endpoint(ws: WebSocket):
         _ws_clients.add(ws)
         _ws_subscriptions[ws] = set()
     logger.info("ws client connected (%d total)", len(_ws_clients))
+    # Send immediate snapshot so the UI doesn't wait for the next broadcast tick
+    try:
+        snapshot = await asyncio.to_thread(_summary_snapshot)
+        await ws.send_json(snapshot)
+    except Exception as exc:
+        logger.debug("ws initial snapshot failed: %s", exc)
     try:
         while True:
             msg = await ws.receive_text()
@@ -1952,5 +2117,17 @@ if __name__ == "__main__":
     PORT = args.port
     HOST = args.host
 
-    print(f"MT5 Web Dashboard -> http://{HOST}:{PORT}")
+    logger.info("MT5 Web Dashboard -> http://%s:%s", HOST, PORT)
+
+    # Install global exception hook so uncaught errors appear in log
+    import traceback as _tb
+    _orig_hook = sys.excepthook
+    def _log_exception(exc_type, exc_value, exc_tb):
+        if issubclass(exc_type, KeyboardInterrupt):
+            sys.__excepthook__(exc_type, exc_value, exc_tb)
+            return
+        logger.critical("Uncaught exception:\n%s", "".join(_tb.format_exception(exc_type, exc_value, exc_tb)))
+        _orig_hook(exc_type, exc_value, exc_tb)
+    sys.excepthook = _log_exception
+
     uvicorn.run(app, host=HOST, port=PORT)

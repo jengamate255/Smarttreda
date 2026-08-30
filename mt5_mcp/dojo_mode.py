@@ -53,10 +53,12 @@ def _last_close_time(trade: dict) -> Optional[datetime]:
     except (ValueError, TypeError):
         return None
 
-def _trades_since(journal, since: datetime, only_watcher: bool = True) -> List[dict]:
+def _trades_since(journal, since: datetime, only_watcher: bool = True, symbol: str = None) -> List[dict]:
     rows = []
     for t in journal.list_trades(limit=5000):
         if _is_watcher_trade(t) != only_watcher:
+            continue
+        if symbol and t.get("symbol", "") != symbol:
             continue
         ct = _last_close_time(t)
         if ct is None or ct < since:
@@ -135,7 +137,7 @@ def simulate_scenario(
 
     # Pull recent qualifying signals from the journal (simulated "recent market")
     # We use the guard's evaluate logic but on journal data rather than live.
-    trades = _trades_since(journal, since)
+    trades = _trades_since(journal, since, symbol=symbol)
     qualifying = 0
     wins = 0
     losses = 0
@@ -224,7 +226,8 @@ class DojoMode:
         # If >60% of sessions preserved edge, loosen parameters; if <40%, tighten.
         # We'll update the JSON config file so the guard/watchers pick it up.
         config_path = Path(__file__).parent / "memory" / "learned_config.json"
-        config = json.load(open(config_path, encoding="utf-8"))
+        with open(config_path, encoding="utf-8") as f:
+            config = json.load(f)
 
         sym_key = self.symbol
         current_cfg = config.get("symbols", {}).get(sym_key, {"enabled": True, "pf": 1.0, "avg_r": 0.0})
@@ -248,7 +251,6 @@ class DojoMode:
         }
         config["symbols"][sym_key] = current_cfg
         config["updated_at"] = datetime.now(timezone.utc).isoformat()
-        Path(__file__).parent.parent / "memory" / "learned_config.json".parent.mkdir(parents=True, exist_ok=True)
         Path(__file__).parent.parent / "memory" / "learned_config.json".parent.mkdir(parents=True, exist_ok=True)
         # Actually write to the project's learned_config.json
         project_config_path = Path(__file__).parent.parent / "memory" / "learned_config.json"

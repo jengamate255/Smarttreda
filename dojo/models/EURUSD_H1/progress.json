@@ -1,0 +1,138 @@
+{
+  "symbol": "EURUSD",
+  "timeframe": "H1",
+  "episode": 3,
+  "equity_curve": [
+    10000.0,
+    9999.582076926365,
+    10000.36294812363,
+    9998.471610377068
+  ],
+  "episodes": [
+    {
+      "episode": 1,
+      "total_reward": -2.369057802909633,
+      "trades": 26,
+      "wins": 6,
+      "losses": 20,
+      "win_rate": 0.23076923076923078,
+      "pnl": -0.4179230736305285,
+      "max_drawdown": 0.018608001254078785,
+      "final_balance": 9999.582076926365,
+      "skill_level": "Novice",
+      "actions_taken": {
+        "BUY": 37,
+        "SELL": 51,
+        "HOLD": 112
+      },
+      "duration_bars": 200,
+      "sharpe_ratio": 0.0,
+      "profit_factor": 0.816999621741912
+    },
+    {
+      "episode": 2,
+      "total_reward": -0.05233626028895699,
+      "trades": 16,
+      "wins": 9,
+      "losses": 7,
+      "win_rate": 0.5625,
+      "pnl": 0.36294812362997864,
+      "max_drawdown": 0.011173117426038121,
+      "final_balance": 10000.36294812363,
+      "skill_level": "Advanced",
+      "actions_taken": {
+        "BUY": 180,
+        "SELL": 15,
+        "HOLD": 5
+      },
+      "duration_bars": 200,
+      "sharpe_ratio": 0.0,
+      "profit_factor": 1.2119762548943187
+    },
+    {
+      "episode": 3,
+      "total_reward": -1.787423045113551,
+      "trades": 8,
+      "wins": 3,
+      "losses": 5,
+      "win_rate": 0.375,
+      "pnl": -1.5283896229324525,
+      "max_drawdown": 0.017458452606533684,
+      "final_balance": 9998.471610377068,
+      "skill_level": "Novice",
+      "actions_taken": {
+        "BUY": 192,
+        "SELL": 7,
+        "HOLD": 1
+      },
+      "duration_bars": 200,
+      "sharpe_ratio": 0.0,
+      "profit_factor": 0.26052455861950574
+    }
+  ],
+  "config": {
+    "symbol": "EURUSD",
+    "timeframe": "H1",
+    "lookback": 5000,
+    "features": [
+      "returns",
+      "atr",
+      "rsi",
+      "ema_fast",
+      "momentum",
+      "macd",
+      "bb_position",
+      "volume_ratio",
+      "hour_sin",
+      "hour_cos"
+    ],
+    "hidden_size": 64,
+    "learning_rate": 0.001,
+    "gamma": 0.99,
+    "initial_balance": 10000.0,
+    "risk_per_trade": 0.01,
+    "max_position_size": 0.1,
+    "episodes": 3,
+    "max_steps": 200,
+    "save_every": 10,
+    "seed": null,
+    "spread_pips": 1.5,
+    "slippage_pips": 0.5,
+    "train_ratio": 0.8,
+    "entropy_coeff": 0.01,
+    "warm_start": false,
+    "algorithm": "ppo",
+    "clip_epsilon": 0.2,
+    "gae_lambda": 0.95,
+    "ppo_epochs": 4,
+    "multi_timeframe": true
+  },
+  "metadata": {
+    "timestamp": "2026-08-30T14:53:46",
+    "features": [
+      "returns",
+      "atr",
+      "rsi",
+      "ema_fast",
+      "momentum",
+      "macd",
+      "bb_position",
+      "volume_ratio",
+      "hour_sin",
+      "hour_cos"
+    ],
+    "symbol": "EURUSD",
+    "timeframe": "H1",
+    "learning_rate": 0.001,
+    "hidden_size": 64,
+    "entropy_coeff": 0.01,
+    "spread_pips": 1.5,
+    "slippage_pips": 0.5,
+    "data_bars": 5000,
+    "data_start": "2025-11-07 18:00:00",
+    "data_end": "2026-08-28 23:00:00",
+    "episodes_trained": 3,
+    "final_sharpe": 0.0,
+    "final_pf": 0.26052455861950574
+  }
+}

@@ -7,6 +7,7 @@ const errorReport = {
   maxQueue: 50,
   endpoint: "/api/client-error",
   flushTimer: null,
+  _rawConsole: { log: console.log, warn: console.warn, error: console.error },
 
   capture(message, source, lineno, colno, error) {
     const entry = {
@@ -58,7 +59,9 @@ const errorReport = {
 
   log(level, ...args) {
     const entry = { timestamp: new Date().toISOString(), level, args: args.map(a => this.serialize(a)) };
-    console[level](...args);
+    // Use raw console to avoid infinite loop when console is patched
+    const raw = this._rawConsole[level];
+    if (raw) raw.call(console, ...args);
     this.queue.push({ ...entry, type: "log" });
     if (this.queue.length > this.maxQueue) this.queue.shift();
   },
@@ -317,19 +320,52 @@ function registerShortcuts() {
   });
 }
 
+let _lastFocusedElement = null;
+
 function showHelp() {
   const el = $("help-modal") || createHelpModal();
+  _lastFocusedElement = document.activeElement;
   el.classList.remove("hidden");
   document.body.style.overflow = "hidden";
+  // Focus first focusable element
+  setTimeout(() => {
+    const focusable = el.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+    focusable?.focus();
+  }, 0);
+  // Trap focus
+  el.addEventListener('keydown', trapFocus);
 }
 
 function closeModals() {
-  document.querySelectorAll(".modal:not(.hidden)").forEach((m) => m.classList.add("hidden"));
+  document.querySelectorAll(".modal:not(.hidden)").forEach((m) => {
+    m.classList.add("hidden");
+    m.removeEventListener('keydown', trapFocus);
+  });
   document.body.style.overflow = "";
   const sb = $("sidebar");
   if (sb && sb.classList.contains("open")) {
     sb.classList.remove("open");
     $("sidebar-backdrop")?.classList.add("hidden");
+  }
+  // Restore focus
+  if (_lastFocusedElement) {
+    _lastFocusedElement.focus();
+    _lastFocusedElement = null;
+  }
+}
+
+function trapFocus(e) {
+  if (e.key !== 'Tab') return;
+  const modal = e.currentTarget;
+  const focusable = modal.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (e.shiftKey && document.activeElement === first) {
+    e.preventDefault();
+    last.focus();
+  } else if (!e.shiftKey && document.activeElement === last) {
+    e.preventDefault();
+    first.focus();
   }
 }
 
@@ -363,6 +399,15 @@ function fmtPrice(p) {
   const a = Math.abs(p);
   const d = a >= 1000 ? 2 : a >= 100 ? 3 : 5;
   return p.toFixed(d);
+}
+
+/* Null-safe fixed-decimal formatter. /api/rates returns JSON null for
+   indicator warm-up bars (backend _sanitize maps NaN -> null), so values
+   from d.rsi/d.macd/etc. can be null. Global isNaN(null) is false, so
+   the explicit null check is required here. */
+function fmtNum(v, digits) {
+  if (v == null || isNaN(v)) return "--";
+  return v.toFixed(digits);
 }
 
 function fmtMoney(v) {

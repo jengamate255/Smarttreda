@@ -1,4 +1,5 @@
 /* Split from app.js - loaded in order; shared global scope. */
+let lastImminent = false;
 /* ---------- Health ---------- */
 async function loadHealth() {
   try {

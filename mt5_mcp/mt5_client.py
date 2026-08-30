@@ -100,54 +100,64 @@ class MT5Client:
             self._load_module()
             mt5 = self._mt5
             attempts = max(1, self._config.reconnect_attempts)
-            for attempt in range(1, attempts + 1):
-                try:
-                    kwargs: dict[str, Any] = {
-                        "timeout": self._config.connect_timeout_seconds
-                    }
-                    if self._config.terminal_path:
-                        kwargs["path"] = self._config.terminal_path
-                    if self._config.is_configured:
-                        kwargs.update(
-                            login=self._config.login,
-                            password=self._config.password,
-                            server=self._config.server,
-                        )
-                    if not mt5.initialize(**kwargs):
-                        self._last_error = f"{mt5.last_error()}"
-                        logger.warning(
-                            "MT5 initialize failed (attempt %d/%d): %s",
-                            attempt,
-                            attempts,
-                            self._last_error,
-                        )
-                    else:
-                        account = mt5.account_info()
-                        if account is None:
-                            self._last_error = "account_info() returned None"
+
+            # Try connection strategies: FIRST try the configured terminal path (if any),
+            # then fall back to any existing terminal (path=none).
+            strategies = []
+            if self._config.terminal_path:
+                strategies.append({"path": self._config.terminal_path})
+            strategies.append({})  # fallback to any existing terminal
+
+            for strategy in strategies:
+                for attempt in range(1, attempts + 1):
+                    try:
+                        kwargs: dict[str, Any] = {
+                            "timeout": self._config.connect_timeout_seconds
+                        }
+                        kwargs.update(strategy)
+                        if self._config.is_configured:
+                            kwargs.update(
+                                login=self._config.login,
+                                password=self._config.password,
+                                server=self._config.server,
+                            )
+                        if not mt5.initialize(**kwargs):
+                            self._last_error = f"{mt5.last_error()}"
                             logger.warning(
-                                "MT5 initialize ok but account_info failed (attempt %d/%d)",
+                                "MT5 initialize failed (attempt %d/%d, path=%s): %s",
                                 attempt,
                                 attempts,
+                                strategy.get("path", "none"),
+                                self._last_error,
                             )
                         else:
-                            self._connected = True
-                            self._connected_at = time.time()
-                            self._connect_count += 1
-                            logger.info(
-                                "Connected to MT5 (login=%s server=%s attempts=%d)",
-                                getattr(account, "login", "?"),
-                                getattr(account, "server", "?"),
-                                attempt,
-                            )
-                            return True
-                except Exception as exc:
-                    self._last_error = str(exc)
-                    logger.warning(
-                        "MT5 connect raised (attempt %d/%d): %s", attempt, attempts, exc
-                    )
-                if attempt < attempts:
-                    time.sleep(self._config.reconnect_delay_seconds)
+                            account = mt5.account_info()
+                            if account is None:
+                                self._last_error = "account_info() returned None"
+                                logger.warning(
+                                    "MT5 initialize ok but account_info failed (attempt %d/%d)",
+                                    attempt,
+                                    attempts,
+                                )
+                            else:
+                                self._connected = True
+                                self._connected_at = time.time()
+                                self._connect_count += 1
+                                logger.info(
+                                    "Connected to MT5 (login=%s server=%s attempts=%d path=%s)",
+                                    getattr(account, "login", "?"),
+                                    getattr(account, "server", "?"),
+                                    attempt,
+                                    strategy.get("path", "none"),
+                                )
+                                return True
+                    except Exception as exc:
+                        self._last_error = str(exc)
+                        logger.warning(
+                            "MT5 connect raised (attempt %d/%d): %s", attempt, attempts, exc
+                        )
+                    if attempt < attempts:
+                        time.sleep(self._config.reconnect_delay_seconds)
             self._connected = False
             return False
 
@@ -173,11 +183,18 @@ class MT5Client:
             except Exception as exc:
                 ok = False
                 self._last_error = str(exc)
+            # Don't immediately mark disconnected on transient account_info failure
+            # Only mark disconnected after 3 consecutive failures
             if not ok:
-                self._connected = False
-                logger.warning(
-                    "Health check failed, marking disconnected: %s", self._last_error
-                )
+                self._health_failures = getattr(self, '_health_failures', 0) + 1
+                if self._health_failures >= 3:
+                    self._connected = False
+                    logger.warning(
+                        "Health check failed %d times, marking disconnected: %s",
+                        self._health_failures, self._last_error
+                    )
+            else:
+                self._health_failures = 0
             return {
                 "ok": ok,
                 "connected": ok,
@@ -185,6 +202,10 @@ class MT5Client:
                 "uptime_s": time.time() - self._connected_at if ok else 0.0,
                 "connect_count": self._connect_count,
             }
+
+    def is_connected(self) -> bool:
+        """Check if MT5 is connected and healthy."""
+        return self.health()["ok"]
 
     def shutdown(self) -> None:
         with self._lock:
@@ -508,15 +529,18 @@ class MT5Client:
     def _filling(self, symbol: str) -> int:
         info = self._tuple_to_dict(self._call("symbol_info", symbol))
         mode = int(info.get("filling_mode", 0) or 0)
-        if mode & ORDER_FILLING_RETURN:
+        # filling_mode is a bitmask: bit0(1)=FOK, bit1(2)=IOC, bit2(4)=RETURN
+        # The ORDER_FILLING constants (FOK=0, IOC=1, RETURN=2) do NOT match
+        # the bitmask bits, so we must use raw bit values for the check.
+        if mode & 4:  # bit 2 = RETURN supported
             return ORDER_FILLING_RETURN
-        if mode & ORDER_FILLING_IOC:
+        if mode & 2:  # bit 1 = IOC supported
             return ORDER_FILLING_IOC
         return ORDER_FILLING_FOK
 
     def order_send(self, request: dict[str, Any]) -> dict[str, Any]:
-        if "filling" not in request and "symbol" in request:
-            request["filling"] = self._filling(str(request["symbol"]))
+        if "type_filling" not in request and "symbol" in request:
+            request["type_filling"] = self._filling(str(request["symbol"]))
         if "type_time" not in request:
             request["type_time"] = MT5_TIME_GTC_ALIAS
         result = self._tuple_to_dict(self._call("order_send", request))

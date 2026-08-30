@@ -39,10 +39,10 @@ class MT5Config(BaseModel):
     login: int | None = None
     password: str = ""
     server: str = ""
-    connect_timeout_seconds: int = 30
-    reconnect_attempts: int = 5
-    reconnect_delay_seconds: int = 5
-    health_check_interval_seconds: int = 30
+    connect_timeout_seconds: int = 60
+    reconnect_attempts: int = 10
+    reconnect_delay_seconds: int = 10
+    health_check_interval_seconds: int = 60
 
     @property
     def is_configured(self) -> bool:
@@ -159,6 +159,13 @@ def _env_int(name: str, default: int | None = None) -> int | None:
         return default
 
 
+def _env_bool(name: str, default: bool = False) -> bool:
+    raw = os.getenv(name)
+    if raw is None or raw == "":
+        return default
+    return raw.strip().lower() in ("1", "true", "yes", "on")
+
+
 def _env_float(name: str, default: float | None = None) -> float | None:
     raw = os.getenv(name)
     if raw is None or raw == "":
@@ -175,6 +182,16 @@ def _apply_env_overrides(data: dict[str, Any]) -> dict[str, Any]:
         "mt5.login": ("MT5_MCP_MT5_LOGIN", "mt5.login", int),
         "mt5.password": ("MT5_MCP_MT5_PASSWORD", "mt5.password", str),
         "mt5.server": ("MT5_MCP_MT5_SERVER", "mt5.server", str),
+        "deriv.enabled": ("MT5_MCP_DERIV_ENABLED", "deriv.enabled", str),
+        "deriv.api_token": ("MT5_MCP_DERIV_API_TOKEN", "deriv.api_token", str),
+        "deriv_mt5.terminal_path": (
+            "MT5_MCP_DERIV_MT5_TERMINAL_PATH",
+            "deriv_mt5.terminal_path",
+            str,
+        ),
+        "deriv_mt5.login": ("MT5_MCP_DERIV_MT5_LOGIN", "deriv_mt5.login", int),
+        "deriv_mt5.password": ("MT5_MCP_DERIV_MT5_PASSWORD", "deriv_mt5.password", str),
+        "deriv_mt5.server": ("MT5_MCP_DERIV_MT5_SERVER", "deriv_mt5.server", str),
         "risk.default_risk_percent": (
             "MT5_MCP_RISK_DEFAULT",
             "risk.default_risk_percent",
@@ -191,7 +208,10 @@ def _apply_env_overrides(data: dict[str, Any]) -> dict[str, Any]:
             continue
         section, key = path.split(".", 1)
         try:
-            data[section][key] = cast(raw)
+            if cast is str and key == "enabled":
+                data[section][key] = _env_bool(env_name, data[section].get(key, False))
+            else:
+                data[section][key] = cast(raw)
         except (KeyError, TypeError, ValueError):
             continue
     return data
@@ -241,7 +261,7 @@ def setup_logging(settings: Settings | None = None) -> logging.Logger:
     root.setLevel(settings.logging.level.upper())
     root.handlers.clear()
     fmt = logging.Formatter(
-        "%(asctime)s | %(levelname)s | %(name)s | %(message)s",
+        "%(asctime)s | %(levelname)-5s | %(name)s | %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
     file_handler = RotatingFileHandler(
@@ -250,9 +270,21 @@ def setup_logging(settings: Settings | None = None) -> logging.Logger:
         backupCount=settings.logging.backup_count,
         encoding="utf-8",
     )
+    file_handler.setLevel(logging.DEBUG)
     file_handler.setFormatter(fmt)
     stream_handler = logging.StreamHandler()
+    stream_handler.setLevel(logging.INFO)
     stream_handler.setFormatter(fmt)
     root.addHandler(file_handler)
     root.addHandler(stream_handler)
+    # Also add an error-only handler
+    err_handler = RotatingFileHandler(
+        log_dir / "errors.log",
+        maxBytes=2 * 1024 * 1024,
+        backupCount=3,
+        encoding="utf-8",
+    )
+    err_handler.setLevel(logging.WARNING)
+    err_handler.setFormatter(fmt)
+    root.addHandler(err_handler)
     return root

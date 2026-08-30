@@ -94,7 +94,7 @@ def dashboard(start_balance: float = 0.0) -> dict:
     curve = equity_curve(journal, start_balance)
     dd = max_drawdown(curve)
 
-    from memory.learning import best_pairs, best_sessions, best_setups
+    from mt5_mcp.memory.learning import best_pairs, best_sessions, best_setups
 
     return {
         "trades": len(trades),

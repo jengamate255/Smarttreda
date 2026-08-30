@@ -295,6 +295,6 @@ def fake_client() -> FakeClient:
 def client_module():
     import client as client_module
 
-    original = client_module._client
+    original = client_module._clients.copy()
     yield client_module
-    client_module._client = original
+    client_module._clients = original

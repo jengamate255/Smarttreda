@@ -1178,3 +1178,9 @@ function initSensitivity() {
 initMLRank();
 initPatternWinRates();
 initSensitivity();
+// Kick off main initialization (was lost during app.js → split refactor)
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", init);
+} else {
+  init();
+}

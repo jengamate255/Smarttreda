@@ -27,6 +27,10 @@ def test_resolve_paths_makes_absolute(tmp_path):
 def test_get_settings_reads_settings_json(tmp_path, monkeypatch):
     import config
 
+    # Clear env vars that override settings
+    for var in ["MT5_MCP_MT5_LOGIN", "MT5_MCP_MT5_PASSWORD", "MT5_MCP_MT5_SERVER", "MT5_MCP_MT5_TERMINAL_PATH"]:
+        monkeypatch.delenv(var, raising=False)
+
     payload = {"risk": {"default_risk_percent": 0.75}, "mt5": {"login": 123456}}
     (tmp_path / "settings.json").write_text(json.dumps(payload), encoding="utf-8")
     monkeypatch.setattr(config, "BASE_DIR", tmp_path)

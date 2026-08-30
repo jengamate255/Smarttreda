@@ -5,36 +5,40 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MT5 Dashboard</title>
 <meta name="theme-color" content="#111216">
-<link rel="manifest" href="/manifest.webmanifest">
+<link rel="manifest" href="/static/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/static/icons/icon-180.png">
 <link rel="icon" type="image/png" href="/static/icons/icon-192.png">
 <link rel="stylesheet" href="/static/style.css">
+<meta name="auth-token" content="">
 </head>
 <body>
 
-<header>
+<!-- Skip to main content for keyboard users -->
+<a href="#main-content" class="sr-only focus-visible">Skip to main content</a>
+
+<header role="banner">
   <div class="brand">MT5 <span>Dashboard</span></div>
   <div class="status">
-    <span id="status-dot" class="dot off"></span>
-    <span id="status-text">Connecting...</span>
+    <span id="status-dot" class="dot off" aria-hidden="true"></span>
+    <span id="status-text" aria-live="polite">Connecting...</span>
     <div class="status-dropdown">
-      <button id="status-btn" class="status-btn" aria-expanded="false" aria-haspopup="true" title="Connection details">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      <button id="status-btn" class="status-btn" aria-expanded="false" aria-haspopup="true" aria-label="Connection details">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
       </button>
-      <div id="status-menu" class="status-menu hidden" role="menu">
-        <div class="status-menu-item">
+      <div id="status-menu" class="status-menu hidden" role="menu" aria-label="Connection details">
+        <div class="status-menu-item" role="menuitem">
           <span class="status-menu-label">Terminal</span>
           <span id="status-term" class="status-menu-value">--</span>
         </div>
-        <div class="status-menu-item">
+        <div class="status-menu-item" role="menuitem">
           <span class="status-menu-label">Build</span>
           <span id="status-build" class="status-menu-value">--</span>
         </div>
-        <div class="status-menu-item">
+        <div class="status-menu-item" role="menuitem">
           <span class="status-menu-label">Latency</span>
           <span id="status-latency" class="status-menu-value">--</span>
         </div>
-        <div class="status-menu-item">
+        <div class="status-menu-item" role="menuitem">
           <span class="status-menu-label">Last heartbeat</span>
           <span id="status-heartbeat" class="status-menu-value">--</span>
         </div>
@@ -43,32 +47,158 @@
         <button id="status-ws-reconnect" class="status-menu-btn" role="menuitem">Reconnect WebSocket</button>
       </div>
     </div>
-    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme" title="Theme (dark/light/auto)">
-      <svg class="theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-      <svg class="theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-      <svg class="theme-icon-auto" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme (dark/light/auto)">
+      <svg class="theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+      <svg class="theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg class="theme-icon-auto" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
     </button>
   </div>
   <div class="header-right">
-    <span id="h-risk-badge" class="risk-badge hidden" title="Risk warning"></span>
-    <span class="acct-label">Account</span>
-    <select id="h-account-select" class="acct-select" title="Switch account">
+    <span id="h-risk-badge" class="risk-badge hidden" aria-live="assertive" aria-atomic="true"></span>
+    <label for="h-account-select" class="acct-label">Account</label>
+    <select id="h-account-select" class="acct-select" aria-label="Switch trading account">
       <option value="">--</option>
     </select>
-    <span id="h-login" class="acct-active"></span>
+    <span id="h-login" class="acct-active" aria-live="polite"></span>
     <span id="peer-chip" class="peer-chip hidden" title="Other account dashboard"></span>
-    <span class="sep">|</span>
-    <span id="h-server-time">--:--:--</span>
-    <span class="sep">|</span>
-    <span id="h-pos-count">0 positions</span>
-    <span class="sep">|</span>
-    <span id="h-terminal" class="dim">--</span>
+    <span class="sep" aria-hidden="true">|</span>
+    <span id="h-server-time" aria-label="Server time">--:--:--</span>
+    <span class="sep" aria-hidden="true">|</span>
+    <span id="h-pos-count" aria-label="Open positions count">0 positions</span>
+    <span class="sep" aria-hidden="true">|</span>
+    <span id="h-terminal" class="dim" aria-label="Terminal info">--</span>
   </div>
 </header>
 
-<div id="news-banner" class="news-banner hidden">
-  <b>HIGH-IMPACT NEWS</b> <span id="news-banner-text"></span>
+<div id="news-banner" class="news-banner hidden" role="alert" aria-live="assertive">
+  <strong>HIGH-IMPACT NEWS</strong> <span id="news-banner-text"></span>
 </div>
+
+<!-- Hedge Fund Navigation -->
+<nav class="hf-nav" id="hf-nav" role="tablist" aria-label="Main navigation">
+  <button class="hf-nav-btn active" data-section="live" role="tab" aria-selected="true" aria-controls="hf-section-live" id="tab-live">
+    <span class="hf-nav-icon" aria-hidden="true">📈</span> Live Trading
+  </button>
+  <button class="hf-nav-btn" data-section="dojo" role="tab" aria-selected="false" aria-controls="hf-section-dojo" id="tab-dojo" tabindex="-1">
+    <span class="hf-nav-icon" aria-hidden="true">🥋</span> ForexDojo
+  </button>
+  <button class="hf-nav-btn" data-section="portfolio" role="tab" aria-selected="false" aria-controls="hf-section-portfolio" id="tab-portfolio" tabindex="-1">
+    <span class="hf-nav-icon" aria-hidden="true">📊</span> Portfolio
+  </button>
+  <button class="hf-nav-btn" data-section="risk" role="tab" aria-selected="false" aria-controls="hf-section-risk" id="tab-risk" tabindex="-1">
+    <span class="hf-nav-icon" aria-hidden="true">🛡️</span> Risk
+  </button>
+</nav>
+
+<!-- Live Trading Section (default) -->
+<div id="hf-section-live" class="hf-section active" role="tabpanel" aria-labelledby="tab-live" id="main-content"></div>
+
+<!-- ForexDojo Section -->
+<div id="hf-section-dojo" class="hf-section" role="tabpanel" aria-labelledby="tab-dojo" hidden></div>
+
+<!-- Portfolio Section -->
+<div id="hf-section-portfolio" class="hf-section" role="tabpanel" aria-labelledby="tab-portfolio" hidden></div>
+
+<!-- Risk Section -->
+<div id="hf-section-risk" class="hf-section" role="tabpanel" aria-labelledby="tab-risk" hidden></div>
+
+<script>
+// Hedge Fund Tab Controller
+const HedgeFund = (() => {
+  let currentTab = 'live';
+  const sections = {};
+
+  function switchTab(tab) {
+    // Hide current
+    document.querySelectorAll('.hf-section').forEach(s => {
+      s.classList.remove('active');
+      s.hidden = true;
+    });
+    document.querySelectorAll('.hf-nav-btn').forEach(b => {
+      b.classList.remove('active');
+      b.setAttribute('aria-selected', 'false');
+      b.setAttribute('tabindex', '-1');
+    });
+
+    // Show new
+    const newSection = document.getElementById('hf-section-' + tab);
+    newSection.classList.add('active');
+    newSection.hidden = false;
+    const newBtn = document.querySelector(`.hf-nav-btn[data-section="${tab}"]`);
+    newBtn.classList.add('active');
+    newBtn.setAttribute('aria-selected', 'true');
+    newBtn.removeAttribute('tabindex');
+
+    currentTab = tab;
+
+    // Load content if needed
+    if (tab === 'dojo') {
+      const el = document.getElementById('hf-section-dojo');
+      if (!el.innerHTML.trim()) {
+        el.innerHTML = Dojo.render();
+        Dojo.init();
+      }
+    } else if (tab === 'portfolio') {
+      const el = document.getElementById('hf-section-portfolio');
+      if (!el.innerHTML.trim()) {
+        el.innerHTML = Portfolio.render();
+        Portfolio.init();
+      }
+    } else if (tab === 'risk') {
+      const el = document.getElementById('hf-section-risk');
+      if (!el.innerHTML.trim()) {
+        el.innerHTML = Risk.render();
+        Risk.init();
+      }
+    }
+  }
+
+  // Keyboard navigation for tabs
+  function handleTabKeydown(e) {
+    const tabs = Array.from(document.querySelectorAll('.hf-nav-btn'));
+    const currentIndex = tabs.findIndex(t => t.classList.contains('active'));
+    let newIndex = currentIndex;
+    if (e.key === 'ArrowRight') newIndex = (currentIndex + 1) % tabs.length;
+    else if (e.key === 'ArrowLeft') newIndex = (currentIndex - 1 + tabs.length) % tabs.length;
+    else if (e.key === 'Home') newIndex = 0;
+    else if (e.key === 'End') newIndex = tabs.length - 1;
+    else return;
+    e.preventDefault();
+    const tab = tabs[newIndex].dataset.section;
+    switchTab(tab);
+    tabs[newIndex].focus();
+  }
+
+  function init() {
+    // Keyboard navigation for tabs
+    document.getElementById('hf-nav')?.addEventListener('keydown', handleTabKeydown);
+
+    // Mouse click navigation
+    document.querySelectorAll('.hf-nav-btn').forEach(btn => {
+      btn.addEventListener('click', () => switchTab(btn.dataset.section));
+    });
+
+    // Move existing content into Live section
+    const liveSection = document.getElementById('hf-section-live');
+    if (liveSection.children.length > 0) return; // already moved
+    const existingContent = [];
+    // Select all live-trading elements (cards, charts, panels, etc.)
+    document.querySelectorAll('.watchlist-wrap, section.cards, main.grid, section.panel, .sweep-panel, section.trades-panel, section.equity-panel, section.journal-panel').forEach(el => {
+      // Skip if already inside a hf-section
+      if (el.closest('.hf-section')) return;
+      existingContent.push(el);
+    });
+    existingContent.forEach(el => liveSection.appendChild(el));
+    // Also move any remaining loose panels that weren't caught
+    document.querySelectorAll('body > section.panel, body > main').forEach(el => {
+      if (el.closest('.hf-section')) return;
+      liveSection.appendChild(el);
+    });
+  }
+
+  return { switchTab, init };
+})();
+</script>
 
 <div class="watchlist-wrap">
   <span class="wl-label">Watchlist</span>
@@ -88,6 +218,8 @@
   <div class="card"><div class="card-label">Floating P&amp;L</div><div class="card-value" id="c-floating">--</div></div>
 </section>
 
+<!-- ═══ LIVE TAB ═══ -->
+<div id="tab-live">
 <main class="grid">
   <section class="panel chart-panel">
     <div class="panel-head">
@@ -459,13 +591,23 @@
     <div class="plan-empty">Click "Sweep" to test all trailing stop + partial TP combinations.</div>
   </div>
 </section>
+</div><!-- /tab-live -->
 
 <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
 
 <script src="/static/vendor/lightweight-charts.js"></script>
-<script src="/static/app.core.js?v=20260826"></script>
-<script src="/static/app.panels.js?v=20260826"></script>
-<script src="/static/app.chart.js?v=20260826"></script>
-<script src="/static/app.agents.js?v=20260826"></script>
+<script src="/static/app.core.js?v=20260830"></script>
+<script src="/static/app.panels.js?v=20260829"></script>
+<script src="/static/app.chart.js?v=20260830"></script>
+<script src="/static/app.agents.js?v=20260829"></script>
+<script src="/static/app.dojo.js?v=20260830"></script>
+<script src="/static/app.portfolio.js?v=20260829"></script>
+<script src="/static/app.risk.js?v=20260829"></script>
+<script>
+// Initialize Hedge Fund layout after all scripts load
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => HedgeFund.init(), 100);
+});
+</script>
 </body>
 </html>

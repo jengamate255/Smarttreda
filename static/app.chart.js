@@ -104,6 +104,31 @@ function exportJournalCsv() {
   URL.revokeObjectURL(a.href);
 }
 
+function populateJournalFilters() {
+  const entries = state.journal || [];
+  const symbols = [...new Set(entries.map((t) => t.symbol).filter(Boolean))].sort();
+  const setups = [...new Set(entries.map((t) => t.setup || "manual").filter(Boolean))].sort();
+  const outcomes = [...new Set(entries.map((t) => t.outcome).filter(Boolean))].sort();
+  const symSel = $("jf-symbol");
+  const setupSel = $("jf-setup");
+  const outSel = $("jf-outcome");
+  if (symSel) {
+    const cur = symSel.value;
+    symSel.innerHTML = '<option value="">All symbols</option>' + symbols.map((s) => `<option value="${esc(s)}">${esc(s)}</option>`).join("");
+    symSel.value = cur;
+  }
+  if (setupSel) {
+    const cur = setupSel.value;
+    setupSel.innerHTML = '<option value="">All setups</option>' + setups.map((s) => `<option value="${esc(s)}">${esc(s)}</option>`).join("");
+    setupSel.value = cur;
+  }
+  if (outSel) {
+    const cur = outSel.value;
+    outSel.innerHTML = '<option value="">All outcomes</option>' + outcomes.map((s) => `<option value="${esc(s)}">${esc(s)}</option>`).join("");
+    outSel.value = cur;
+  }
+}
+
 function initJournalTools() {
   $("jf-symbol").addEventListener("change", (e) => { state.journalFilters.symbol = e.target.value; renderJournal(); });
   $("jf-setup").addEventListener("change", (e) => { state.journalFilters.setup = e.target.value; renderJournal(); });
@@ -195,6 +220,9 @@ const priceEl = $("price-chart");
 const rsiEl = $("rsi-chart");
 const macdEl = $("macd-chart");
 const tooltip = $("tooltip");
+const chartStatus = document.createElement("div");
+chartStatus.className = "chart-status hidden";
+chartWrap.appendChild(chartStatus);
 
 let priceChart = null, rsiChart = null, macdChart = null;
 let candleSeries = null, ema50Series = null, ema200Series = null;
@@ -203,6 +231,7 @@ let rsiSeries = null, macdLineSeries = null, macdSignalSeries = null, macdHistSe
 let zonePriceLines = [];
 let zoneSeries = [];
 let syncGuard = false;
+let chartLoadSeq = 0;
 
 const CHART_OPTS = {
   layout: { background: { type: "solid", color: C.bg }, textColor: C.dim, fontSize: 11 },
@@ -246,6 +275,23 @@ function layoutPanes() {
   apply(priceChart, priceEl, s.price, false);
   apply(rsiChart, rsiEl, s.rsi, !s.rsi);
   apply(macdChart, macdEl, s.macd, !s.macd);
+}
+
+function showChartStatus(message, kind = "loading") {
+  chartStatus.textContent = message;
+  chartStatus.className = `chart-status ${kind}`;
+}
+
+function hideChartStatus() {
+  chartStatus.className = "chart-status hidden";
+  chartStatus.textContent = "";
+}
+
+async function chartApi(path, timeoutMs = 20000) {
+  const timeout = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error("Chart data request timed out")), timeoutMs);
+  });
+  return Promise.race([api(path), timeout]);
 }
 
 function setupCharts() {
@@ -311,9 +357,18 @@ function setupCharts() {
   window.addEventListener("resize", () => { layoutPanes(); renderEquity(state.equity); });
 }
 
+/* Strict finite-number check for /api/rates indicator arrays. Warm-up bars
+   arrive as JSON null (NaN sanitized server-side); global isNaN(null) is
+   false, so a plain !isNaN() test would push null values into the chart
+   series. Number.isFinite performs no coercion. */
+function isFin(v) {
+  return v != null && Number.isFinite(v);
+}
+
 function setSeriesData() {
   const d = state.data;
   if (!d || !candleSeries) return;
+  state.timeIndex = new Map(d.times.map((t, idx) => [t, idx]));
   const n = d.count;
   const candles = [];
   const ema50 = [], ema200 = [], rsi = [], macdL = [], macdS = [], macdH = [];
@@ -322,16 +377,16 @@ function setSeriesData() {
     const t = d.times[i];
     candles.push({ time: t, open: d.open[i], high: d.high[i], low: d.low[i], close: d.close[i] });
     const e50 = d.ema50[i], e200 = d.ema200[i];
-    if (!isNaN(e50) && !isNaN(e200)) { emaStarted = true; }
+    if (isFin(e50) && isFin(e200)) { emaStarted = true; }
     if (emaStarted) {
-      if (!isNaN(e50)) ema50.push({ time: t, value: e50 });
-      if (!isNaN(e200)) ema200.push({ time: t, value: e200 });
+      if (isFin(e50)) ema50.push({ time: t, value: e50 });
+      if (isFin(e200)) ema200.push({ time: t, value: e200 });
     }
-    if (state.indicators.rsi && !isNaN(d.rsi[i])) rsi.push({ time: t, value: d.rsi[i] });
+    if (state.indicators.rsi && isFin(d.rsi[i])) rsi.push({ time: t, value: d.rsi[i] });
     if (state.indicators.macd) {
-      if (!isNaN(d.macd[i])) macdL.push({ time: t, value: d.macd[i] });
-      if (!isNaN(d.macd_signal[i])) macdS.push({ time: t, value: d.macd_signal[i] });
-      if (!isNaN(d.macd_hist[i])) {
+      if (isFin(d.macd[i])) macdL.push({ time: t, value: d.macd[i] });
+      if (isFin(d.macd_signal[i])) macdS.push({ time: t, value: d.macd_signal[i] });
+      if (isFin(d.macd_hist[i])) {
         macdH.push({ time: t, value: d.macd_hist[i], color: d.macd_hist[i] >= 0 ? "rgba(38,166,154,0.65)" : "rgba(239,83,80,0.65)" });
       }
     }
@@ -346,6 +401,9 @@ function setSeriesData() {
 
   state.lastBar = { time: d.times[n - 1], open: d.open[n - 1], high: d.high[n - 1], low: d.low[n - 1], close: d.close[n - 1] };
   layoutPanes();
+  priceChart.timeScale().fitContent();
+  if (rsiChart) rsiChart.timeScale().fitContent();
+  if (macdChart) macdChart.timeScale().fitContent();
   drawMarkers();
   drawPriceLines();
 }
@@ -354,28 +412,51 @@ function setMarkersCommon(markers) {
   if (candleSeries) candleSeries.setMarkers(markers);
 }
 
+/* Bot-analysis bars can outnumber chart bars: the bot indexes the last
+   `count` bars of a wide 1000-bar fetch, while the time-anchored /api/rates
+   fetch loses bars to market gaps (weekends). Align via bar-open times
+   (bot.times, epoch seconds) so markers/zones land on the correct bar.
+   Returns -1 when the event predates the window or cannot be resolved;
+   callers must skip those. */
+function botChartIndex(i) {
+  const d = state.data, bot = state.bot.data;
+  if (!d || i == null || i < 0) return -1;
+  const t = bot && Array.isArray(bot.times) ? bot.times[i] : null;
+  if (t != null) {
+    const idx = state.timeIndex ? state.timeIndex.get(t) : d.times.indexOf(t);
+    return idx === undefined ? -1 : idx;
+  }
+  return i < d.count ? i : -1; /* legacy response without a times array */
+}
+
 function drawMarkers() {
   const d = state.data, bot = state.bot.data;
   const markers = [];
   if (bot) {
     for (const sw of bot.swings.highs) {
-      markers.push({ time: d.times[sw.index], position: "belowBar", color: sw.label === "H" ? C.dim : C.up, shape: "arrowUp", text: sw.label });
+      const idx = botChartIndex(sw.index);
+      if (idx < 0) continue;
+      markers.push({ time: d.times[idx], position: "belowBar", color: sw.label === "H" ? C.dim : C.up, shape: "arrowUp", text: sw.label });
     }
     for (const sw of bot.swings.lows) {
-      markers.push({ time: d.times[sw.index], position: "aboveBar", color: sw.label === "L" ? C.dim : C.down, shape: "arrowDown", text: sw.label });
+      const idx = botChartIndex(sw.index);
+      if (idx < 0) continue;
+      markers.push({ time: d.times[idx], position: "aboveBar", color: sw.label === "L" ? C.dim : C.down, shape: "arrowDown", text: sw.label });
     }
     const STRUCT_SHORT = { BOS: "BOS", CHOCH: "CH", liquidity_sweep: "SWP", fake_breakout: "FB" };
     const seen = new Set();
     for (const p of bot.patterns) {
       if (p.direction === "neutral" || p.confidence < 0.6) continue;
+      const idx = botChartIndex(p.index);
+      if (idx < 0) continue;
       const isStruct = STRUCT_SHORT[p.pattern];
-      const recent = d.count - p.index <= 25;
+      const recent = d.count - idx <= 25;
       if (!isStruct && !recent) continue;
-      if (seen.has(p.index)) continue;
-      seen.add(p.index);
+      if (seen.has(idx)) continue;
+      seen.add(idx);
       const bullish = p.direction === "bullish";
       markers.push({
-        time: d.times[p.index],
+        time: d.times[idx],
         position: bullish ? "belowBar" : "aboveBar",
         color: bullish ? C.up : C.down,
         shape: "circle",
@@ -534,9 +615,12 @@ function hexToRgba(hex, alpha) {
 function drawZoneRect(z, d) {
   const n = d.count;
   if (n === 0) return;
-  const tFrom = z.formation_index >= 0 && z.formation_index < n ? d.times[z.formation_index] : d.times[0];
+  const fromIdx = botChartIndex(z.formation_index);
+  const tFrom = fromIdx >= 0 ? d.times[fromIdx] : d.times[0];
+  const fromRef = fromIdx >= 0 ? fromIdx : 0;
   let tTo = tFrom;
-  if (z.last_touch_index >= (z.formation_index >= 0 ? z.formation_index : 0) && z.last_touch_index < n) tTo = d.times[z.last_touch_index];
+  const toIdx = botChartIndex(z.last_touch_index);
+  if (toIdx >= fromRef && toIdx < n) tTo = d.times[toIdx];
   else tTo = d.times[n - 1];
   if (tTo < tFrom) tTo = d.times[n - 1];
 
@@ -661,22 +745,22 @@ function updateTooltip(param) {
   if (state.indicators.ema) {
     rows.push(`<div class="tt-row" style="color:${C.ema50}">EMA50 ${fmtPrice(d.ema50[i])}  <span style="color:${C.ema200}">EMA200 ${fmtPrice(d.ema200[i])}</span></div>`);
   }
-  if (state.indicators.rsi) rows.push(`<div class="tt-row" style="color:${C.rsi}">RSI ${d.rsi[i].toFixed(1)}</div>`);
+  if (state.indicators.rsi) rows.push(`<div class="tt-row" style="color:${C.rsi}">RSI ${fmtNum(d.rsi[i], 1)}</div>`);
   if (state.indicators.macd) {
-    rows.push(`<div class="tt-row" style="color:${C.macd}">MACD ${d.macd[i].toFixed(5)}  <span style="color:${C.signal}">Sig ${d.macd_signal[i].toFixed(5)}</span></div>`);
+    rows.push(`<div class="tt-row" style="color:${C.macd}">MACD ${fmtNum(d.macd[i], 5)}  <span style="color:${C.signal}">Sig ${fmtNum(d.macd_signal[i], 5)}</span></div>`);
   }
   const bot = state.bot.data;
   if (bot) {
-    const barPatterns = bot.patterns.filter((p) => p.index === i && p.confidence >= 0.6);
+    const barPatterns = bot.patterns.filter((p) => botChartIndex(p.index) === i && p.confidence >= 0.6);
     if (barPatterns.length) {
       rows.push(`<div class="tt-row" style="color:${C.purple}">` +
-        barPatterns.map((p) => `${p.pattern} ${p.direction} ${(p.confidence * 100).toFixed(0)}%`).join(" | ") + `</div>`);
+        barPatterns.map((p) => `${p.pattern} ${p.direction} ${fmtNum(p.confidence != null ? p.confidence * 100 : null, 0)}%`).join(" | ") + `</div>`);
     }
     const close = d.close[i];
     const covering = bot.zones.filter((z) => close >= z.lower && close <= z.upper);
     if (covering.length) {
       rows.push(`<div class="tt-row" style="color:${C.yellow}">Zone: ` +
-        covering.map((z) => `${z.type} ${z.strength.toFixed(0)}/100 ${z.touches}t${z.broken ? " broken" : ""}`).join(" | ") + `</div>`);
+        covering.map((z) => `${z.type} ${fmtNum(z.strength, 0)}/100 ${z.touches}t${z.broken ? " broken" : ""}`).join(" | ") + `</div>`);
     }
   }
   const plan = state.plan;
@@ -722,13 +806,19 @@ async function loadOverlay() {
 }
 
 async function loadChart() {
+  const seq = ++chartLoadSeq;
   const symbol = state.symbol.trim() || "EURUSD";
+  showChartStatus(`Loading ${symbol} ${state.timeframe} candles...`);
   try {
     const q = `symbol=${encodeURIComponent(symbol)}&timeframe=${state.timeframe}&count=${state.count}`;
     const [d, bot] = await Promise.all([
-      api(`/api/rates?${q}`),
-      api(`/api/bot-analysis?${q}`).catch(() => null),
+      chartApi(`/api/rates?${q}`),
+      chartApi(`/api/bot-analysis?${q}`, 20000).catch(() => null),
     ]);
+    if (seq !== chartLoadSeq) return;
+    if (!d || !d.count || !Array.isArray(d.times) || !d.times.length) {
+      throw new Error(`No candle data returned for ${symbol}`);
+    }
     state.data = d;
     state.bot.data = bot;
     state.symbol = d.symbol;
@@ -753,10 +843,14 @@ async function loadChart() {
     state.signals = sigResp.signals || [];
     setSeriesData();
     drawBtSegments();
+    hideChartStatus();
     loadPlan();
     startQuoteTimer();
   } catch (e) {
+    if (seq !== chartLoadSeq) return;
+    const message = e && e.message ? e.message : String(e);
     $("chart-tick").textContent = "No data for " + symbol;
+    showChartStatus(`${symbol} chart unavailable: ${message}`, "error");
   }
 }
 
@@ -803,7 +897,9 @@ function startQuoteTimer() {
         });
       }
     } catch (e) {
-      $("chart-tick").textContent = "No data for " + state.symbol;
+      /* Transient quote failures (MT5 reconnecting, symbol switch) must not
+         wipe the last known tick - overwriting with "No data for ..." made a
+         healthy chart look broken. The next successful poll refreshes it. */
     }
   }, 3000);
 }
@@ -927,4 +1023,3 @@ function initControls() {
     }
   });
 }
-

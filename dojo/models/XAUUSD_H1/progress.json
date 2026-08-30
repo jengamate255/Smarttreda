@@ -1,0 +1,138 @@
+{
+  "symbol": "XAUUSD",
+  "timeframe": "H1",
+  "episode": 3,
+  "equity_curve": [
+    10000.0,
+    9998.148077379814,
+    9998.65885269836,
+    10004.025101877913
+  ],
+  "episodes": [
+    {
+      "episode": 1,
+      "total_reward": -0.10072456780027036,
+      "trades": 41,
+      "wins": 19,
+      "losses": 22,
+      "win_rate": 0.4634146341463415,
+      "pnl": -1.8519226201811123,
+      "max_drawdown": 0.041044203419499284,
+      "final_balance": 9998.148077379814,
+      "skill_level": "Novice",
+      "actions_taken": {
+        "BUY": 55,
+        "SELL": 66,
+        "HOLD": 79
+      },
+      "duration_bars": 200,
+      "sharpe_ratio": 0.0,
+      "profit_factor": -0.9999997786085093
+    },
+    {
+      "episode": 2,
+      "total_reward": 0.3081109765417591,
+      "trades": 47,
+      "wins": 22,
+      "losses": 25,
+      "win_rate": 0.46808510638297873,
+      "pnl": -1.3411473016329472,
+      "max_drawdown": 0.02149129341851694,
+      "final_balance": 9998.65885269836,
+      "skill_level": "Novice",
+      "actions_taken": {
+        "BUY": 64,
+        "SELL": 70,
+        "HOLD": 66
+      },
+      "duration_bars": 200,
+      "sharpe_ratio": 0.0,
+      "profit_factor": -0.9999996495539046
+    },
+    {
+      "episode": 3,
+      "total_reward": 3.800142239939646,
+      "trades": 43,
+      "wins": 26,
+      "losses": 17,
+      "win_rate": 0.6046511627906976,
+      "pnl": 4.02510187791574,
+      "max_drawdown": 0.027215472943112985,
+      "final_balance": 10004.025101877913,
+      "skill_level": "Advanced",
+      "actions_taken": {
+        "BUY": 59,
+        "SELL": 77,
+        "HOLD": 64
+      },
+      "duration_bars": 200,
+      "sharpe_ratio": 0.0,
+      "profit_factor": 0.9999998931704172
+    }
+  ],
+  "config": {
+    "symbol": "XAUUSD",
+    "timeframe": "H1",
+    "lookback": 5000,
+    "features": [
+      "returns",
+      "atr",
+      "rsi",
+      "ema_fast",
+      "momentum",
+      "macd",
+      "bb_position",
+      "volume_ratio",
+      "hour_sin",
+      "hour_cos"
+    ],
+    "hidden_size": 64,
+    "learning_rate": 0.001,
+    "gamma": 0.99,
+    "initial_balance": 10000.0,
+    "risk_per_trade": 0.01,
+    "max_position_size": 0.1,
+    "episodes": 3,
+    "max_steps": 200,
+    "save_every": 10,
+    "seed": null,
+    "spread_pips": 1.5,
+    "slippage_pips": 0.5,
+    "train_ratio": 0.8,
+    "entropy_coeff": 0.01,
+    "warm_start": false,
+    "algorithm": "ppo",
+    "clip_epsilon": 0.2,
+    "gae_lambda": 0.95,
+    "ppo_epochs": 4,
+    "multi_timeframe": true
+  },
+  "metadata": {
+    "timestamp": "2026-08-30T14:28:45",
+    "features": [
+      "returns",
+      "atr",
+      "rsi",
+      "ema_fast",
+      "momentum",
+      "macd",
+      "bb_position",
+      "volume_ratio",
+      "hour_sin",
+      "hour_cos"
+    ],
+    "symbol": "XAUUSD",
+    "timeframe": "H1",
+    "learning_rate": 0.001,
+    "hidden_size": 64,
+    "entropy_coeff": 0.01,
+    "spread_pips": 1.5,
+    "slippage_pips": 0.5,
+    "data_bars": 5000,
+    "data_start": "2025-10-23 17:00:00",
+    "data_end": "2026-08-28 23:00:00",
+    "episodes_trained": 3,
+    "final_sharpe": 0.0,
+    "final_pf": 0.9999998931704172
+  }
+}

@@ -1,0 +1,227 @@
+{
+  "symbol": "USDJPY",
+  "timeframe": "H1",
+  "episode": 10,
+  "equity_curve": [
+    10000.0,
+    10191.096914751672,
+    10244.36714715404,
+    9916.119393346547,
+    10126.654530163605,
+    10062.54015125206,
+    10124.348553167416,
+    10231.173484477998,
+    10178.129119625504,
+    9755.461888392392,
+    10183.200785969055
+  ],
+  "episodes": [
+    {
+      "episode": 1,
+      "total_reward": 7.50252734017521,
+      "trades": 84,
+      "wins": 45,
+      "losses": 39,
+      "win_rate": 0.5357142857142857,
+      "pnl": 191.0969147516648,
+      "max_drawdown": 0.9217782854976677,
+      "final_balance": 10191.096914751672,
+      "skill_level": "Master",
+      "actions_taken": {
+        "BUY": 194,
+        "SELL": 97,
+        "HOLD": 209
+      },
+      "duration_bars": 500
+    },
+    {
+      "episode": 2,
+      "total_reward": 6.6253746697541125,
+      "trades": 73,
+      "wins": 41,
+      "losses": 32,
+      "win_rate": 0.5616438356164384,
+      "pnl": 244.36714715404284,
+      "max_drawdown": 1.022495280883735,
+      "final_balance": 10244.36714715404,
+      "skill_level": "Master",
+      "actions_taken": {
+        "BUY": 219,
+        "SELL": 87,
+        "HOLD": 194
+      },
+      "duration_bars": 500
+    },
+    {
+      "episode": 3,
+      "total_reward": 1.4708944313431471,
+      "trades": 57,
+      "wins": 26,
+      "losses": 31,
+      "win_rate": 0.45614035087719296,
+      "pnl": -83.88060665345468,
+      "max_drawdown": 1.5462969803712538,
+      "final_balance": 9916.119393346547,
+      "skill_level": "Beginner",
+      "actions_taken": {
+        "BUY": 325,
+        "SELL": 57,
+        "HOLD": 118
+      },
+      "duration_bars": 500
+    },
+    {
+      "episode": 4,
+      "total_reward": 5.165572789599085,
+      "trades": 98,
+      "wins": 52,
+      "losses": 46,
+      "win_rate": 0.5306122448979592,
+      "pnl": 126.65453016360307,
+      "max_drawdown": 0.44623678401987954,
+      "final_balance": 10126.654530163605,
+      "skill_level": "Master",
+      "actions_taken": {
+        "BUY": 248,
+        "SELL": 115,
+        "HOLD": 137
+      },
+      "duration_bars": 500
+    },
+    {
+      "episode": 5,
+      "total_reward": 4.831179044117364,
+      "trades": 101,
+      "wins": 56,
+      "losses": 45,
+      "win_rate": 0.5544554455445545,
+      "pnl": 62.540151252055175,
+      "max_drawdown": 0.6892074945404477,
+      "final_balance": 10062.54015125206,
+      "skill_level": "Master",
+      "actions_taken": {
+        "BUY": 260,
+        "SELL": 110,
+        "HOLD": 130
+      },
+      "duration_bars": 500
+    },
+    {
+      "episode": 6,
+      "total_reward": 5.040096962041915,
+      "trades": 92,
+      "wins": 56,
+      "losses": 36,
+      "win_rate": 0.6086956521739131,
+      "pnl": 124.34855316742227,
+      "max_drawdown": 0.44340003233808295,
+      "final_balance": 10124.348553167416,
+      "skill_level": "Master",
+      "actions_taken": {
+        "BUY": 274,
+        "SELL": 100,
+        "HOLD": 126
+      },
+      "duration_bars": 500
+    },
+    {
+      "episode": 7,
+      "total_reward": 4.405509064178157,
+      "trades": 63,
+      "wins": 32,
+      "losses": 31,
+      "win_rate": 0.5079365079365079,
+      "pnl": 231.173484478003,
+      "max_drawdown": 0.7129189650226708,
+      "final_balance": 10231.173484477998,
+      "skill_level": "Master",
+      "actions_taken": {
+        "BUY": 326,
+        "SELL": 62,
+        "HOLD": 112
+      },
+      "duration_bars": 500
+    },
+    {
+      "episode": 8,
+      "total_reward": 2.793032157842122,
+      "trades": 42,
+      "wins": 25,
+      "losses": 17,
+      "win_rate": 0.5952380952380952,
+      "pnl": 178.12911962550118,
+      "max_drawdown": 1.9057757812784575,
+      "final_balance": 10178.129119625504,
+      "skill_level": "Master",
+      "actions_taken": {
+        "BUY": 378,
+        "SELL": 42,
+        "HOLD": 80
+      },
+      "duration_bars": 500
+    },
+    {
+      "episode": 9,
+      "total_reward": -1.853041683036793,
+      "trades": 45,
+      "wins": 23,
+      "losses": 22,
+      "win_rate": 0.5111111111111111,
+      "pnl": -244.53811160760907,
+      "max_drawdown": 2.700506073320925,
+      "final_balance": 9755.461888392392,
+      "skill_level": "Beginner",
+      "actions_taken": {
+        "BUY": 374,
+        "SELL": 49,
+        "HOLD": 77
+      },
+      "duration_bars": 500
+    },
+    {
+      "episode": 10,
+      "total_reward": -3.754321084387514,
+      "trades": 21,
+      "wins": 12,
+      "losses": 9,
+      "win_rate": 0.5714285714285714,
+      "pnl": 183.20078596905535,
+      "max_drawdown": 2.3965149179075413,
+      "final_balance": 10183.200785969055,
+      "skill_level": "Master",
+      "actions_taken": {
+        "BUY": 420,
+        "SELL": 20,
+        "HOLD": 60
+      },
+      "duration_bars": 500
+    }
+  ],
+  "config": {
+    "symbol": "USDJPY",
+    "timeframe": "H1",
+    "lookback": 5000,
+    "features": [
+      "returns",
+      "atr",
+      "rsi",
+      "ema_fast",
+      "ema_slow",
+      "macd",
+      "bb_position",
+      "volume_ratio",
+      "hour_sin",
+      "hour_cos"
+    ],
+    "hidden_size": 64,
+    "learning_rate": 0.001,
+    "gamma": 0.99,
+    "initial_balance": 10000.0,
+    "risk_per_trade": 0.01,
+    "max_position_size": 0.1,
+    "episodes": 10,
+    "max_steps": 500,
+    "save_every": 10,
+    "seed": null
+  }
+}
