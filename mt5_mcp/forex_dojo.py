@@ -19,6 +19,7 @@ from typing import Any
 
 import MetaTrader5 as mt5
 import numpy as np
+import pandas as pd
 
 
 # -- Data classes ----------------------------------------------------------
@@ -45,6 +46,10 @@ class DojoConfig:
     seed: int | None = None
     spread_pips: float = 1.5
     slippage_pips: float = 0.5
+    sl_stop_atr: float = 2.0       # hard stop-loss at N × ATR
+    tp_target_atr: float = 3.0     # take-profit target at N × ATR
+    trailing_start_atr: float = 1.5  # trailing stop arms at N × ATR in profit
+    trailing_step_atr: float = 0.5  # trailing stop steps by N × ATR
     train_ratio: float = 0.8
     entropy_coeff: float = 0.01
     warm_start: bool = True
@@ -72,6 +77,7 @@ class DojoResult:
     duration_bars: int
     sharpe_ratio: float = 0.0
     profit_factor: float = 0.0
+    stop_losses: int = 0  # number of stop-loss exits
 
 
 @dataclass
@@ -446,8 +452,13 @@ class ForexDojo:
     # -- State extraction --------------------------------------------------
 
     def _get_state(self, features: np.ndarray, step: int, position: int,
-                   entry_price: float, balance: float) -> list[float]:
-        """Build state vector for the NN."""
+                   entry_price: float, balance: float,
+                   current_atr: float = 0.0, bars_in_trade: int = 0) -> list[float]:
+        """Build state vector for the NN.
+
+        Includes risk awareness: ATR-normalized distance to stop-loss and
+        time-in-trade so the agent can learn risk management.
+        """
         bar = features[step]
         state = list(bar)
         state.append(float(position))
@@ -456,13 +467,23 @@ class ForexDojo:
             current_price = self._df["close"].values[step]
             pnl_pct = (current_price - entry_price) / entry_price * position
             state.append(pnl_pct)
+            # Risk awareness: distance to stop as fraction of ATR
+            if current_atr > 0:
+                sl_dist = self.config.sl_stop_atr * current_atr / entry_price
+                dist_to_sl = (sl_dist + pnl_pct) / sl_dist  # 1.0 = at entry, 0.0 = at stop
+                state.append(np.clip(dist_to_sl, -0.5, 1.5))
+            else:
+                state.append(1.0)
+            # Time in trade (normalized to 0-1 over 50 bars)
+            state.append(min(bars_in_trade / 50.0, 1.0))
         else:
             state.append(0.0)
+            state.append(1.0)  # dist_to_sl = neutral when flat
+            state.append(0.0)  # time in trade
         state.append(balance / self.config.initial_balance - 1.0)
-        
+
         # Multi-timeframe trend context
         if self.config.multi_timeframe and hasattr(self, '_multi_tf'):
-            import pandas as pd
             for tf_name in ["H4", "D1"]:
                 tf_data = self._multi_tf.get(tf_name)
                 if tf_data is not None and len(tf_data) > 20:
@@ -481,23 +502,33 @@ class ForexDojo:
             state.append(0.0)
             state.append(0.0)
             state.append(0.0)
-        
+
         return state
 
     # -- Reward function ---------------------------------------------------
 
     def _reward(self, action: int, prev_position: int, prev_entry_price: float,
                 current_price: float, next_price: float,
-                bars_in_trade: int) -> float:
-        """Compute reward -- all components scaled to approximately [-1, +1]."""
-        if action == 2 and prev_position == 0:
-            return 0.0
-        if action == 0 and prev_position == 0:
+                bars_in_trade: int, unrealized_pnl_pct: float = 0.0,
+                stopped_out: bool = False) -> float:
+        """Compute reward -- all components scaled to approximately [-1, +1].
+
+        Args:
+            unrealized_pnl_pct: current unrealized P&L as % of entry (signed).
+            stopped_out: True if the position was force-closed by stop-loss.
+        """
+        # No position: minimal reward for holding, zero otherwise
+        if action in (0, 2) and prev_position == 0:
             return 0.0
         if action == 1 and prev_position == 0:
             return 0.01  # minimal reward for holding — must trade to learn
 
         reward = 0.0
+
+        # --- Trailing stop penalty (softer than hard stop) ---
+        if stopped_out:
+            # Moderate penalty — agent should learn to exit before trailing stop hits
+            return float(np.clip(-0.4 - min(abs(unrealized_pnl_pct) * 20, 0.3), -1.0, 1.0))
 
         if prev_position == 1:
             pnl_pct = (next_price - current_price) / current_price
@@ -505,6 +536,9 @@ class ForexDojo:
             if action == 0:
                 close_pnl = (current_price - prev_entry_price) / prev_entry_price
                 reward += 0.3 if close_pnl > 0 else -0.3
+                # Bonus for quick profitable close (< 10 bars)
+                if close_pnl > 0 and bars_in_trade < 10:
+                    reward += 0.1
 
         elif prev_position == -1:
             pnl_pct = (current_price - next_price) / current_price
@@ -512,9 +546,18 @@ class ForexDojo:
             if action == 2:
                 close_pnl = (prev_entry_price - current_price) / prev_entry_price
                 reward += 0.3 if close_pnl > 0 else -0.3
+                if close_pnl > 0 and bars_in_trade < 10:
+                    reward += 0.1
 
-        if bars_in_trade > 50:
-            reward -= 0.02
+        # --- Time decay: penalty grows after 20 bars ---
+        if bars_in_trade > 20:
+            decay = min((bars_in_trade - 20) * 0.005, 0.15)  # max -0.15
+            reward -= decay
+
+        # --- Trailing stop bonus: reward for locking in profits ---
+        if prev_position != 0 and unrealized_pnl_pct > 0.003:  # > 0.3% in profit
+            # Agent is sitting on profit — small positive nudge
+            reward += 0.02
 
         return float(np.clip(reward, -1.0, 1.0))
 
@@ -609,7 +652,8 @@ class ForexDojo:
         """Run a single episode from the given start bar.
 
         Returns (DojoResult, trajectory) where trajectory is a list of
-        (state, action, reward) tuples.
+        (state, action, reward) tuples. Includes ATR-based stop-loss and
+        trailing stop mechanics.
         """
         if max_steps is None:
             max_steps = self.config.max_steps
@@ -620,11 +664,14 @@ class ForexDojo:
         bars_in_trade = 0
         peak_balance = balance
         max_drawdown = 0.0
+        trailing_stop_price = 0.0  # trailing stop level (0 = inactive)
+        peak_pnl_pct = 0.0  # best unrealized PnL while in trade
 
         actions_count = {"BUY": 0, "SELL": 0, "HOLD": 0}
         trades = 0
         wins = 0
         losses = 0
+        stop_losses = 0  # count of stop-loss exits
         total_pnl = 0.0
         gross_win = 0.0
         gross_loss = 0.0
@@ -633,12 +680,91 @@ class ForexDojo:
         pip_val = self._pip_value(self.config.symbol)
         entry_adj = (self.config.spread_pips / 2 + self.config.slippage_pips) * pip_val
 
+        # Precompute ATR for the window
+        import pandas as pd
+        window_start = max(0, start - 50)
+        window_end = min(start + max_steps + 10, len(self._df))
+        window_df = self._df.iloc[window_start:window_end].copy()
+        window_high = window_df["high"].values.astype(float)
+        window_low = window_df["low"].values.astype(float)
+        window_close = window_df["close"].values.astype(float)
+        tr = np.maximum(
+            window_high - window_low,
+            np.maximum(
+                np.abs(window_high - np.roll(window_close, 1)),
+                np.abs(window_low - np.roll(window_close, 1)),
+            ),
+        )
+        tr[0] = window_high[0] - window_low[0]
+        atr_series = pd.Series(tr).rolling(14, min_periods=1).mean().values
+
         end_step = min(start + max_steps, len(self._df) - 1)
         for step in range(start, end_step):
             current_price = self._df["close"].values[step]
             next_price = self._df["close"].values[step + 1]
 
-            state = self._get_state(features, step, position, entry_price, balance)
+            # Get ATR for this bar
+            atr_idx = step - window_start
+            if 0 <= atr_idx < len(atr_series):
+                current_atr = atr_series[atr_idx]
+            else:
+                current_atr = abs(window_high[atr_idx] - window_low[atr_idx]) if 0 <= atr_idx < len(window_high) else 0.001
+
+            # --- Check trailing stop BEFORE agent acts ---
+            stopped_out = False
+            if position != 0 and entry_price > 0 and current_atr > 0:
+                if position == 1:
+                    unrealized_pnl_pct = (current_price - entry_price) / entry_price
+                else:
+                    unrealized_pnl_pct = (entry_price - current_price) / entry_price
+
+                # Trailing stop only (no hard stop — agent learns via reward)
+                if trailing_stop_price > 0:
+                    if position == 1 and current_price <= trailing_stop_price:
+                        stopped_out = True
+                    elif position == -1 and current_price >= trailing_stop_price:
+                        stopped_out = True
+
+                if stopped_out:
+                    # Force-close at trailing stop level
+                    if position == 1:
+                        pnl_pct = (trailing_stop_price - entry_price) / entry_price
+                    else:
+                        pnl_pct = (entry_price - trailing_stop_price) / entry_price
+
+                    pnl = notional * pnl_pct
+                    balance += pnl
+                    total_pnl += pnl
+                    if pnl > 0:
+                        wins += 1
+                        gross_win += pnl
+                    else:
+                        losses += 1
+                        gross_loss += abs(pnl)
+                    stop_losses += 1
+
+                    # Compute reward for stop event
+                    stop_state = self._get_state(features, step, position, entry_price, balance,
+                                                    current_atr=current_atr, bars_in_trade=bars_in_trade)
+                    reward = self._reward(action, prev_position=position,
+                                          prev_entry_price=entry_price,
+                                          current_price=current_price,
+                                          next_price=next_price,
+                                          bars_in_trade=bars_in_trade,
+                                          unrealized_pnl_pct=unrealized_pnl_pct,
+                                          stopped_out=True)
+                    trajectory.append((stop_state, 1, reward))  # action=1 (HOLD) for stop events
+
+                    position = 0
+                    entry_price = 0.0
+                    bars_in_trade = 0
+                    trailing_stop_price = 0.0
+                    peak_pnl_pct = 0.0
+                    continue  # skip to next bar — agent doesn't act on stop bar
+
+            # --- Agent acts ---
+            state = self._get_state(features, step, position, entry_price, balance,
+                                     current_atr=current_atr, bars_in_trade=bars_in_trade)
             probs = self.nn.forward(state)
 
             rand = random.random()
@@ -661,12 +787,16 @@ class ForexDojo:
                 entry_price = current_price + entry_adj
                 bars_in_trade = 0
                 trades += 1
+                trailing_stop_price = 0.0
+                peak_pnl_pct = 0.0
 
             elif action == 0 and position == 0:
                 position = -1
                 entry_price = current_price - entry_adj
                 bars_in_trade = 0
                 trades += 1
+                trailing_stop_price = 0.0
+                peak_pnl_pct = 0.0
 
             elif action == 0 and position == 1:
                 pnl_pct = (current_price - entry_price) / entry_price
@@ -682,6 +812,8 @@ class ForexDojo:
                 position = 0
                 entry_price = 0.0
                 bars_in_trade = 0
+                trailing_stop_price = 0.0
+                peak_pnl_pct = 0.0
 
             elif action == 2 and position == -1:
                 pnl_pct = (entry_price - current_price) / entry_price
@@ -697,9 +829,46 @@ class ForexDojo:
                 position = 0
                 entry_price = 0.0
                 bars_in_trade = 0
+                trailing_stop_price = 0.0
+                peak_pnl_pct = 0.0
+
+            # --- Update trailing stop ---
+            if position != 0 and entry_price > 0 and current_atr > 0:
+                if position == 1:
+                    unrealized = (current_price - entry_price) / entry_price
+                else:
+                    unrealized = (entry_price - current_price) / entry_price
+
+                peak_pnl_pct = max(peak_pnl_pct, unrealized)
+
+                # Arm trailing stop once price reaches N × ATR in profit
+                arm_threshold = self.config.trailing_start_atr * current_atr / entry_price
+                if peak_pnl_pct > arm_threshold:
+                    # Trail behind price by trailing_step_atr × ATR
+                    trail_dist = self.config.trailing_step_atr * current_atr / entry_price
+                    if position == 1:
+                        new_stop = current_price - trail_dist
+                        if trailing_stop_price == 0 or new_stop > trailing_stop_price:
+                            trailing_stop_price = new_stop
+                    else:
+                        new_stop = current_price + trail_dist
+                        if trailing_stop_price == 0 or new_stop < trailing_stop_price:
+                            trailing_stop_price = new_stop
+            else:
+                trailing_stop_price = 0.0
+
+            # Compute unrealized PnL for reward
+            if position != 0 and entry_price > 0:
+                if position == 1:
+                    unr_pnl = (current_price - entry_price) / entry_price
+                else:
+                    unr_pnl = (entry_price - current_price) / entry_price
+            else:
+                unr_pnl = 0.0
 
             reward = self._reward(action, prev_position, prev_entry_price,
-                                  current_price, next_price, bars_in_trade)
+                                  current_price, next_price, bars_in_trade,
+                                  unrealized_pnl_pct=unr_pnl)
             trajectory.append((state, action, reward))
 
             bars_in_trade += 1
@@ -762,6 +931,7 @@ class ForexDojo:
             duration_bars=max_steps,
             sharpe_ratio=0.0,
             profit_factor=pf,
+            stop_losses=stop_losses,
         )
         return result, trajectory
 
@@ -788,10 +958,10 @@ class ForexDojo:
         # Initialize network
         extra_features = 4 if self.config.multi_timeframe else 0
         if self.config.algorithm == "ppo":
-            self.nn = PPONN(n_features + 4 + extra_features, self.config.hidden_size, 3, self.config.learning_rate,
+            self.nn = PPONN(n_features + 6 + extra_features, self.config.hidden_size, 3, self.config.learning_rate,
                              clip_epsilon=self.config.clip_epsilon, gae_lambda=self.config.gae_lambda)
         else:
-            self.nn = SimpleNN(n_features + 4 + extra_features, self.config.hidden_size, 3, self.config.learning_rate)
+            self.nn = SimpleNN(n_features + 6 + extra_features, self.config.hidden_size, 3, self.config.learning_rate)
 
         # Warm-start from checkpoint
         self._prior_episodes = 0  # cumulative episodes from prior training
@@ -802,7 +972,7 @@ class ForexDojo:
                 try:
                     data = json.loads(model_path.read_text(encoding="utf-8"))
                     saved_input_size = len(data["W1"])
-                    expected_input_size = n_features + 4 + extra_features
+                    expected_input_size = n_features + 6 + extra_features
                     # Check feature compatibility
                     if prog_path.exists():
                         prog = json.loads(prog_path.read_text(encoding="utf-8"))
@@ -1153,10 +1323,10 @@ class ForexDojo:
             win_dojo._df = self._df
             win_dojo._multi_tf = self._multi_tf
             if win_config.algorithm == "ppo":
-                win_dojo.nn = PPONN(n_features + 4 + extra_features, win_config.hidden_size, 3, win_config.learning_rate,
+                win_dojo.nn = PPONN(n_features + 6 + extra_features, win_config.hidden_size, 3, win_config.learning_rate,
                                      clip_epsilon=win_config.clip_epsilon, gae_lambda=win_config.gae_lambda)
             else:
-                win_dojo.nn = SimpleNN(n_features + 4 + extra_features, win_config.hidden_size, 3, win_config.learning_rate)
+                win_dojo.nn = SimpleNN(n_features + 6 + extra_features, win_config.hidden_size, 3, win_config.learning_rate)
 
             # Run training episodes within this window
             train_episodes = []
