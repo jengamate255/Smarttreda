@@ -90,7 +90,7 @@ class BacktestMetrics:
         )
 
         avg_holding = (
-            float(np.mean([t.duration.total_seconds() / 3600 for t in trades]))
+            float(np.mean([t.duration / 24.0 if isinstance(t.duration, (int, float)) else t.duration.total_seconds() / 3600 for t in trades]))
             if trades
             else 0.0
         )

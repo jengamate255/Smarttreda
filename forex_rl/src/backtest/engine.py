@@ -39,10 +39,9 @@ class BacktestEngine:
         self.config = config
 
     def run(self, agent: BaseAgent, env: Any) -> BacktestResult:
-        obs, _ = env.reset()
+        obs, info = env.reset()
         done = False
-        equity = self.config.initial_balance
-        equity_curve = [equity]
+        equity_curve = [info.get("equity", self.config.initial_balance)]
         trades: list[TradeResult] = []
         current_position: Optional[dict] = None
 
@@ -51,8 +50,9 @@ class BacktestEngine:
             obs, reward, terminated, truncated, info = env.step(action)
             done = terminated or truncated
 
-            equity += float(reward) * equity
-            equity_curve.append(equity)
+            # Use actual equity from environment, not reward-derived
+            eq = info.get("equity", equity_curve[-1])
+            equity_curve.append(eq)
 
             if "trade_closed" in info and info["trade_closed"]:
                 tc = info["trade_closed"]
@@ -70,11 +70,6 @@ class BacktestEngine:
                     regime=tc.get("regime", "unknown"),
                 )
                 trades.append(trade)
-
-            if "position" in info and current_position is None and info["position"] != 0:
-                current_position = {"side": info["position"], "entry_equity": equity}
-            elif "position" in info and info["position"] == 0 and current_position is not None:
-                current_position = None
 
         metrics = BacktestMetrics.compute_all(trades, equity_curve)
         return BacktestResult(

@@ -430,6 +430,7 @@ class ForexTradingEnv(gym.Env):
         self.done = False
         self._prev_equity = self.cfg.initial_balance
         self._reward_buffer = []
+        self._last_trade_closed = None
 
         self.current_price = float(self.close[self.current_step])
         self.current_atr = self._get_atr(self.current_step)
@@ -458,6 +459,7 @@ class ForexTradingEnv(gym.Env):
         self._check_positions()
 
         # ── Execute the new action ──────────────────────────────────────
+        self._last_trade_closed = None
         self._execute_action(parsed)
 
         # ── Increment bars held ─────────────────────────────────────────
@@ -477,6 +479,8 @@ class ForexTradingEnv(gym.Env):
         # ── Observation & info ──────────────────────────────────────────
         obs = self._get_observation()
         info = self._build_info()
+        if self._last_trade_closed is not None:
+            info["trade_closed"] = self._last_trade_closed
 
         return obs, reward, terminated, truncated, info
 
@@ -558,6 +562,19 @@ class ForexTradingEnv(gym.Env):
             if pos["side"] == side:
                 exit_px = self.exec_sim.exit_price(self.current_price, side)
                 comm = self.exec_sim.commission(pos["volume"])
+                entry_price = pos["entry_price"]
+                pnl = pos["side"] * (exit_px - entry_price) * pos["volume"] * 100000 - comm
+                self._last_trade_closed = {
+                    "entry_price": entry_price,
+                    "exit_price": exit_px,
+                    "side": "BUY" if side == 1 else "SELL",
+                    "pnl": pnl,
+                    "pnl_pct": pnl / self.portfolio.balance * 100 if self.portfolio.balance > 0 else 0,
+                    "duration": pos.get("bars_held", 0),
+                    "slippage": abs(exit_px - self.current_price),
+                    "spread_cost": self.exec_sim.spread_pips,
+                    "reason": reason,
+                }
                 self.portfolio.close_position(i, exit_px, comm)
                 return
 
@@ -602,6 +619,19 @@ class ForexTradingEnv(gym.Env):
                     exit_px = self.portfolio.positions[idx]["tp"]
                 pos = self.portfolio.positions[idx]
                 comm = self.exec_sim.commission(pos["volume"])
+                entry_price = pos["entry_price"]
+                pnl = pos["side"] * (exit_px - entry_price) * pos["volume"] * 100000 - comm
+                self._last_trade_closed = {
+                    "entry_price": entry_price,
+                    "exit_price": exit_px,
+                    "side": "BUY" if pos["side"] == 1 else "SELL",
+                    "pnl": pnl,
+                    "pnl_pct": pnl / self.portfolio.balance * 100 if self.portfolio.balance > 0 else 0,
+                    "duration": pos.get("bars_held", 0),
+                    "slippage": abs(exit_px - exit_px),  # SL/TP is exact
+                    "spread_cost": self.exec_sim.spread_pips,
+                    "reason": reason,
+                }
                 self.portfolio.close_position(idx, exit_px, comm)
 
     # ═══════════════════════════════════════════════════════════════════════
@@ -707,17 +737,30 @@ class ForexTradingEnv(gym.Env):
         return self._reward_simple(prev_equity, curr_equity)
 
     def _reward_simple(self, prev_eq: float, curr_eq: float) -> float:
-        ret = (curr_eq - prev_eq) / self.cfg.initial_balance
-        return float(np.clip(ret * 100.0, -1.0, 1.0))
+        """Raw P&L reward. No clipping — let the agent see real magnitudes."""
+        pnl = curr_eq - prev_eq
+        # Scale by initial balance so reward is in percentage terms
+        reward = pnl / self.cfg.initial_balance * 100.0
+        # Inaction penalty: must pay a small rent each step
+        if not self.portfolio.positions:
+            reward -= 0.005
+        return float(reward)
 
     def _reward_risk_adjusted(self, prev_eq: float, curr_eq: float) -> float:
-        ret = (curr_eq - prev_eq) / self.cfg.initial_balance
+        """ATR-scaled P&L reward with inaction penalty."""
+        pnl = curr_eq - prev_eq
+        reward = pnl / self.cfg.initial_balance * 100.0
+
+        # Inaction penalty: force exploration
+        if not self.portfolio.positions:
+            reward -= 0.01
+
+        # Large drawdown penalty
         dd = self.portfolio.current_drawdown(self.current_price)
-        penalty = -dd * 2.0 if dd > 0.05 else 0.0
-        reward = ret * 100.0 + penalty
-        # Small time cost to discourage inaction
-        reward -= 0.001
-        return float(np.clip(reward, -1.0, 1.0))
+        if dd > 0.20:
+            reward -= (dd - 0.20) * 5.0
+
+        return float(reward)
 
     def _reward_sharpe(self, prev_eq: float, curr_eq: float) -> float:
         ret = (curr_eq - prev_eq) / self.cfg.initial_balance
