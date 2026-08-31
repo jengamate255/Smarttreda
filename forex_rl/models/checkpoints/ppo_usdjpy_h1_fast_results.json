@@ -1,0 +1,32 @@
+{
+  "symbol": "USDJPY",
+  "features": 52,
+  "train_bars": 3500,
+  "val_reward": 14.966747443327261,
+  "val_sharpe": 7.359264088086439,
+  "val_max_dd": 0.04243083500722501,
+  "test_metrics": {
+    "total_return": 1411407.5862361912,
+    "net_profit": 14114075862.361912,
+    "profit_factor": Infinity,
+    "sharpe_ratio": 11.106369054177776,
+    "sortino_ratio": 67.06951550454085,
+    "calmar_ratio": 17280829.02913331,
+    "max_drawdown": 0.08167476131247726,
+    "avg_drawdown_duration": 2.4649122807017543,
+    "win_rate": 0.0,
+    "loss_rate": 1.0,
+    "avg_win": 0.0,
+    "avg_loss": 0.0,
+    "expectancy": 0.0,
+    "num_trades": 0,
+    "avg_holding_time_hours": 0.0,
+    "largest_win": 0.0,
+    "largest_loss": 0.0,
+    "max_consecutive_wins": 0,
+    "max_consecutive_losses": 0,
+    "gross_profit": 0.0,
+    "gross_loss": 0.0
+  },
+  "elapsed": 194.68373370170593
+}

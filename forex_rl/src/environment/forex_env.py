@@ -42,6 +42,7 @@ class EnvConfig:
     reward_type: str = "risk_adjusted"  # "simple" | "risk_adjusted" | "sharpe"
     normalize_obs: bool = True
     max_episode_steps: int = 1000
+    inaction_penalty: float = 0.05  # penalty per step when flat (0.05 = -$500 over 500 steps at 1.0 scale)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -737,29 +738,22 @@ class ForexTradingEnv(gym.Env):
         return self._reward_simple(prev_equity, curr_equity)
 
     def _reward_simple(self, prev_eq: float, curr_eq: float) -> float:
-        """Raw P&L reward. No clipping — let the agent see real magnitudes."""
+        """Raw P&L reward. No clipping — uses configurable inaction_penalty."""
         pnl = curr_eq - prev_eq
-        # Scale by initial balance so reward is in percentage terms
         reward = pnl / self.cfg.initial_balance * 100.0
-        # Inaction penalty: must pay a small rent each step
         if not self.portfolio.positions:
-            reward -= 0.005
+            reward -= self.cfg.inaction_penalty
         return float(reward)
 
     def _reward_risk_adjusted(self, prev_eq: float, curr_eq: float) -> float:
-        """ATR-scaled P&L reward with inaction penalty."""
+        """ATR-scaled P&L reward with configurable inaction penalty."""
         pnl = curr_eq - prev_eq
         reward = pnl / self.cfg.initial_balance * 100.0
-
-        # Inaction penalty: force exploration
         if not self.portfolio.positions:
-            reward -= 0.01
-
-        # Large drawdown penalty
+            reward -= self.cfg.inaction_penalty
         dd = self.portfolio.current_drawdown(self.current_price)
         if dd > 0.20:
             reward -= (dd - 0.20) * 5.0
-
         return float(reward)
 
     def _reward_sharpe(self, prev_eq: float, curr_eq: float) -> float:

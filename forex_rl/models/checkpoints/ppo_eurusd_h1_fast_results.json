@@ -1,0 +1,32 @@
+{
+  "symbol": "EURUSD",
+  "features": 52,
+  "train_bars": 3500,
+  "val_reward": -4.7855999052998826,
+  "val_sharpe": 0.2386039347792131,
+  "val_max_dd": 4.785599905299884,
+  "test_metrics": {
+    "total_return": -0.0343573721967452,
+    "net_profit": -343.573721967452,
+    "profit_factor": Infinity,
+    "sharpe_ratio": -3.6137546452044567,
+    "sortino_ratio": -2.7574899265393364,
+    "calmar_ratio": 1.0,
+    "max_drawdown": 0.0343573721967452,
+    "avg_drawdown_duration": 497.0,
+    "win_rate": 1.0,
+    "loss_rate": 0.0,
+    "avg_win": 9.544428330150755,
+    "avg_loss": 0.0,
+    "expectancy": 9.544428330150755,
+    "num_trades": 1,
+    "avg_holding_time_hours": 1.4583333333333333,
+    "largest_win": 9.544428330150755,
+    "largest_loss": 9.544428330150755,
+    "max_consecutive_wins": 1,
+    "max_consecutive_losses": 0,
+    "gross_profit": 9.544428330150755,
+    "gross_loss": 0.0
+  },
+  "elapsed": 573.4195928573608
+}

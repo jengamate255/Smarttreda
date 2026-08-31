@@ -1,0 +1,154 @@
+{
+  "symbol": "XAUUSD",
+  "n_bars": 5000,
+  "folds": [
+    {
+      "fold": 0,
+      "train_range": [
+        0,
+        2500
+      ],
+      "test_range": [
+        2500,
+        3500
+      ],
+      "trades": 47,
+      "profit_factor": 1.3377651050901505,
+      "sharpe": -1.5130023169028637,
+      "win_rate": 0.5957446808510638,
+      "win_rate_pct": 59.57446808510638,
+      "net_profit": -1334.5967581864188,
+      "max_drawdown": 0.14134583803425665,
+      "max_drawdown_pct": 14.134583803425665,
+      "sortino": -1.8777205647547015,
+      "total_return": -0.13345967581864188,
+      "metrics_raw": {
+        "total_return": -0.13345967581864188,
+        "net_profit": -1334.5967581864188,
+        "profit_factor": 1.3377651050901505,
+        "sharpe_ratio": -1.5130023169028637,
+        "sortino_ratio": -1.8777205647547015,
+        "calmar_ratio": 0.9442066188485615,
+        "max_drawdown": 0.14134583803425665,
+        "avg_drawdown_duration": 500.0,
+        "win_rate": 0.5957446808510638,
+        "loss_rate": 0.4042553191489362,
+        "avg_win": 303.59218023154295,
+        "avg_loss": -334.4376383747391,
+        "expectancy": 45.66523228432254,
+        "num_trades": 47.0,
+        "avg_holding_time_hours": 0.13120567375886527,
+        "largest_win": 925.1323122746777,
+        "largest_loss": -751.4365558431058,
+        "max_consecutive_wins": 5.0,
+        "max_consecutive_losses": 2.0,
+        "gross_profit": 8500.581046483207,
+        "gross_loss": 6354.315129120042
+      }
+    },
+    {
+      "fold": 1,
+      "train_range": [
+        0,
+        3500
+      ],
+      "test_range": [
+        3500,
+        4250
+      ],
+      "trades": 64,
+      "profit_factor": 2.088635386102224,
+      "sharpe": 0.6522566136442047,
+      "win_rate": 0.5,
+      "win_rate_pct": 50.0,
+      "net_profit": 574.5122254731486,
+      "max_drawdown": 0.03733053771657198,
+      "max_drawdown_pct": 3.733053771657198,
+      "sortino": 1.0486035236875648,
+      "total_return": 0.057451222547314856,
+      "metrics_raw": {
+        "total_return": 0.05745122254731486,
+        "net_profit": 574.5122254731486,
+        "profit_factor": 2.088635386102224,
+        "sharpe_ratio": 0.6522566136442047,
+        "sortino_ratio": 1.0486035236875648,
+        "calmar_ratio": 1.538987275873361,
+        "max_drawdown": 0.03733053771657198,
+        "avg_drawdown_duration": 28.9375,
+        "win_rate": 0.5,
+        "loss_rate": 0.5,
+        "avg_win": 387.3842870432834,
+        "avg_loss": -185.47243315943882,
+        "expectancy": 100.95592694192229,
+        "num_trades": 64.0,
+        "avg_holding_time_hours": 0.13671875,
+        "largest_win": 1096.3891438441858,
+        "largest_loss": -528.476183759671,
+        "max_consecutive_wins": 7.0,
+        "max_consecutive_losses": 6.0,
+        "gross_profit": 12396.297185385072,
+        "gross_loss": 5935.117861102043
+      }
+    },
+    {
+      "fold": 2,
+      "train_range": [
+        0,
+        4250
+      ],
+      "test_range": [
+        4250,
+        5000
+      ],
+      "trades": 46,
+      "profit_factor": 1.2525761670198006,
+      "sharpe": 0.3707206218903234,
+      "win_rate": 0.5869565217391305,
+      "win_rate_pct": 58.69565217391305,
+      "net_profit": 330.03922258750754,
+      "max_drawdown": 0.10658640428597245,
+      "max_drawdown_pct": 10.658640428597245,
+      "sortino": 0.5489891050880021,
+      "total_return": 0.033003922258750755,
+      "metrics_raw": {
+        "total_return": 0.033003922258750755,
+        "net_profit": 330.03922258750754,
+        "profit_factor": 1.2525761670198006,
+        "sharpe_ratio": 0.3707206218903234,
+        "sortino_ratio": 0.5489891050880021,
+        "calmar_ratio": 0.3096447664206861,
+        "max_drawdown": 0.10658640428597245,
+        "avg_drawdown_duration": 53.111111111111114,
+        "win_rate": 0.5869565217391305,
+        "loss_rate": 0.4130434782608695,
+        "avg_win": 207.99539789510615,
+        "avg_loss": -235.9716042166068,
+        "expectancy": 24.617723109833435,
+        "num_trades": 46.0,
+        "avg_holding_time_hours": 0.10144927536231886,
+        "largest_win": 1023.5772355029492,
+        "largest_loss": -652.4627713067224,
+        "max_consecutive_wins": 5.0,
+        "max_consecutive_losses": 4.0,
+        "gross_profit": 5615.875743167864,
+        "gross_loss": 4483.460480115529
+      }
+    }
+  ],
+  "aggregate": {
+    "mean_sharpe": -0.16334169378944519,
+    "mean_pf": 1.559658886070725,
+    "stability_std_sharpe": 0.9612503929259314,
+    "worst_maxdd_pct": 14.134583803425665,
+    "worst_maxdd": 0.14134583803425665,
+    "total_trades": 157,
+    "mean_win_rate_pct": 56.09004008633982,
+    "total_net_profit": -430.0453101257626
+  },
+  "recommendation": "DO_NOT_TRADE",
+  "criteria": {
+    "mean_sharpe_gt_0.5": false,
+    "worst_dd_lt_15pct": true,
+    "stability_lt_1.0": true
+  }
+}

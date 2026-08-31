@@ -1,0 +1,14 @@
+{
+  "EURUSD": {
+    "error": "'int' object has no attribute 'total_seconds'"
+  },
+  "GBPUSD": {
+    "error": "'int' object has no attribute 'total_seconds'"
+  },
+  "USDJPY": {
+    "error": "'int' object has no attribute 'total_seconds'"
+  },
+  "XAUUSD": {
+    "error": "'int' object has no attribute 'total_seconds'"
+  }
+}

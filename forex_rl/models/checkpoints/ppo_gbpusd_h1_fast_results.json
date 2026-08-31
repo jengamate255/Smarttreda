@@ -1,0 +1,32 @@
+{
+  "symbol": "GBPUSD",
+  "features": 52,
+  "train_bars": 3500,
+  "val_reward": -5.5671730928848655,
+  "val_sharpe": 0.4271981380322627,
+  "val_max_dd": 5.58873494499457,
+  "test_metrics": {
+    "total_return": -0.05587493622580805,
+    "net_profit": -558.7493622580805,
+    "profit_factor": Infinity,
+    "sharpe_ratio": -4.268532986732482,
+    "sortino_ratio": -3.691229882258659,
+    "calmar_ratio": 0.9898118392117841,
+    "max_drawdown": 0.056450058498292856,
+    "avg_drawdown_duration": 500.0,
+    "win_rate": 1.0,
+    "loss_rate": 0.0,
+    "avg_win": 4.318634874663895,
+    "avg_loss": 0.0,
+    "expectancy": 4.318634874663895,
+    "num_trades": 1,
+    "avg_holding_time_hours": 0.08333333333333333,
+    "largest_win": 4.318634874663895,
+    "largest_loss": 4.318634874663895,
+    "max_consecutive_wins": 1,
+    "max_consecutive_losses": 0,
+    "gross_profit": 4.318634874663895,
+    "gross_loss": 0.0
+  },
+  "elapsed": 712.8334124088287
+}

@@ -1,0 +1,32 @@
+{
+  "symbol": "XAUUSD",
+  "features": 52,
+  "train_bars": 3500,
+  "val_reward": 22.903169519664157,
+  "val_sharpe": 2.6788982613160095,
+  "val_max_dd": 0.3677279629494086,
+  "test_metrics": {
+    "total_return": 2602.483645627162,
+    "net_profit": 26024836.45627162,
+    "profit_factor": Infinity,
+    "sharpe_ratio": 2.8190431643567324,
+    "sortino_ratio": 5.195118014455982,
+    "calmar_ratio": 2843.334527242014,
+    "max_drawdown": 0.9152928087401404,
+    "avg_drawdown_duration": 11.621621621621621,
+    "win_rate": 0.0,
+    "loss_rate": 1.0,
+    "avg_win": 0.0,
+    "avg_loss": 0.0,
+    "expectancy": 0.0,
+    "num_trades": 0,
+    "avg_holding_time_hours": 0.0,
+    "largest_win": 0.0,
+    "largest_loss": 0.0,
+    "max_consecutive_wins": 0,
+    "max_consecutive_losses": 0,
+    "gross_profit": 0.0,
+    "gross_loss": 0.0
+  },
+  "elapsed": 191.32993865013123
+}
