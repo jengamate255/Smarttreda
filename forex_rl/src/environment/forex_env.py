@@ -101,7 +101,8 @@ class Portfolio:
         total_risk = 0.0
         for p in self.positions:
             if p["sl"] is not None:
-                risk = abs(p["entry_price"] - p["sl"]) * p["volume"] * 10000.0
+                # 1 pip = 0.0001, $10/pip/lot -> x100000 for USD risk
+                risk = abs(p["entry_price"] - p["sl"]) * p["volume"] * 100000.0
                 total_risk += risk
         return min(total_risk / self.initial_balance, 1.0) if self.initial_balance > 0 else 0.0
 
@@ -132,7 +133,9 @@ class Portfolio:
             "open_step": step,
             "bars_held": 0,
         }
-        self.balance -= commission
+        # Commission is round-trip and charged once at close (see
+        # ExecutionSimulator.commission). Do NOT deduct here — it was
+        # previously double-charged (entry + exit).
         self.positions.append(pos)
         return pos
 
@@ -172,7 +175,9 @@ class Portfolio:
     @staticmethod
     def _unrealised_pnl(pos: Dict[str, Any], current_price: float) -> float:
         direction = pos["side"]  # +1 long, -1 short
-        return direction * (current_price - pos["entry_price"]) * pos["volume"] * 10000.0
+        # 1 lot = 100000 units, pip = 0.0001 -> $10/pip/lot (point_value=10).
+        # Was x10000 (understated 10x vs trade log and risk sizing).
+        return direction * (current_price - pos["entry_price"]) * pos["volume"] * 100000.0
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -224,7 +229,12 @@ class ExecutionSimulator:
             return mid_price + (half_spread + slippage) / 10000.0
 
     def commission(self, volume: float) -> float:
-        """Total commission for *volume* lots (round-trip)."""
+        """Round-trip commission for *volume* lots.
+
+        Charged ONCE per trade (at close) to match `close_position`'s
+        `pnl = _unrealised_pnl - commission`. Previously it was deducted at
+        BOTH add_position and close_position (double-charged).
+        """
         return self.commission_per_lot * volume
 
     def adjust_sl(self, sl: float, entry: float, side: int, atr: float) -> Optional[float]:
@@ -477,6 +487,12 @@ class ForexTradingEnv(gym.Env):
         truncated = self.episode_step >= self.cfg.max_episode_steps
         self.done = terminated or truncated
 
+        # On episode end, force-close any open positions at market so the
+        # trade log and equity curve reconcile (previously unrealized P&L
+        # vanished from the trade log on truncation, inflating PF).
+        if self.done and self.portfolio.positions:
+            self._close_all_positions("episode_end")
+
         # ── Observation & info ──────────────────────────────────────────
         obs = self._get_observation()
         info = self._build_info()
@@ -583,11 +599,14 @@ class ForexTradingEnv(gym.Env):
     def _close_all_positions(self, reason: str) -> None:
         if not self.portfolio.positions:
             return
-        # Record each closing trade, then flush the portfolio.
-        # Previously these exits were invisible to the backtest trade log
-        # (equity moved but PF/WR looked better than reality).
-        for pos in list(self.portfolio.positions):
-            exit_px = self.exec_sim.exit_price(self.current_price, pos["side"])
+        # Close each position at ONE deterministic per-position exit price so
+        # the trade record and the portfolio book the same fill. Previously
+        # two different randomised exits were drawn (record vs balance) which
+        # introduced reconciliation drift. Episode-end exits skip slippage
+        # (deterministic mid-fill) for exact reconciliation.
+        while self.portfolio.positions:
+            pos = self.portfolio.positions[0]
+            exit_px = self.current_price
             comm = self.exec_sim.commission(pos["volume"])
             entry_price = pos["entry_price"]
             pnl = pos["side"] * (exit_px - entry_price) * pos["volume"] * 100000 - comm
@@ -598,18 +617,11 @@ class ForexTradingEnv(gym.Env):
                 "pnl": pnl,
                 "pnl_pct": pnl / self.portfolio.balance * 100 if self.portfolio.balance > 0 else 0,
                 "duration": pos.get("bars_held", 0),
-                "slippage": abs(exit_px - self.current_price),
+                "slippage": 0.0,
                 "spread_cost": self.exec_sim.spread_pips,
                 "reason": reason,
             })
-        # Flush every position at the market
-        avg_side = max(
-            set(p["side"] for p in self.portfolio.positions),
-            key=lambda s: sum(1 for p in self.portfolio.positions if p["side"] == s),
-        )
-        exit_px = self.exec_sim.exit_price(self.current_price, avg_side)
-        comm = sum(self.exec_sim.commission(p["volume"]) for p in self.portfolio.positions)
-        self.portfolio.close_all(exit_px, comm / max(len(self.portfolio.positions), 1))
+            self.portfolio.close_position(0, exit_px, comm)
 
     # ═══════════════════════════════════════════════════════════════════════
     # SL / TP checking
