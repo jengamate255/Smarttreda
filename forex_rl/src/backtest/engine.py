@@ -54,9 +54,9 @@ class BacktestEngine:
             eq = info.get("equity", equity_curve[-1])
             equity_curve.append(eq)
 
-            if "trade_closed" in info and info["trade_closed"]:
-                tc = info["trade_closed"]
-                trade = TradeResult(
+            # Collect every trade that closed this step (supports max_positions > 1)
+            for tc in info.get("trades_closed", []) or [info["trade_closed"]] if info.get("trade_closed") else []:
+                trades.append(TradeResult(
                     entry_time=tc.get("entry_time", 0),
                     exit_time=tc.get("exit_time", 0),
                     side=tc.get("side", "BUY"),
@@ -68,8 +68,7 @@ class BacktestEngine:
                     slippage=tc.get("slippage", 0.0),
                     spread_cost=tc.get("spread_cost", 0.0),
                     regime=tc.get("regime", "unknown"),
-                )
-                trades.append(trade)
+                ))
 
         metrics = BacktestMetrics.compute_all(trades, equity_curve)
         return BacktestResult(

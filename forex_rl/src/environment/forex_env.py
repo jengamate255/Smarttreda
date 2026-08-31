@@ -431,7 +431,7 @@ class ForexTradingEnv(gym.Env):
         self.done = False
         self._prev_equity = self.cfg.initial_balance
         self._reward_buffer = []
-        self._last_trade_closed = None
+        self._last_trades_closed: List[Dict[str, Any]] = []
 
         self.current_price = float(self.close[self.current_step])
         self.current_atr = self._get_atr(self.current_step)
@@ -460,7 +460,7 @@ class ForexTradingEnv(gym.Env):
         self._check_positions()
 
         # ── Execute the new action ──────────────────────────────────────
-        self._last_trade_closed = None
+        self._last_trades_closed: List[Dict[str, Any]] = []
         self._execute_action(parsed)
 
         # ── Increment bars held ─────────────────────────────────────────
@@ -480,8 +480,9 @@ class ForexTradingEnv(gym.Env):
         # ── Observation & info ──────────────────────────────────────────
         obs = self._get_observation()
         info = self._build_info()
-        if self._last_trade_closed is not None:
-            info["trade_closed"] = self._last_trade_closed
+        if self._last_trades_closed:
+            info["trade_closed"] = self._last_trades_closed[-1]
+            info["trades_closed"] = list(self._last_trades_closed)
 
         return obs, reward, terminated, truncated, info
 
@@ -565,7 +566,7 @@ class ForexTradingEnv(gym.Env):
                 comm = self.exec_sim.commission(pos["volume"])
                 entry_price = pos["entry_price"]
                 pnl = pos["side"] * (exit_px - entry_price) * pos["volume"] * 100000 - comm
-                self._last_trade_closed = {
+                self._last_trades_closed.append({
                     "entry_price": entry_price,
                     "exit_price": exit_px,
                     "side": "BUY" if side == 1 else "SELL",
@@ -575,13 +576,33 @@ class ForexTradingEnv(gym.Env):
                     "slippage": abs(exit_px - self.current_price),
                     "spread_cost": self.exec_sim.spread_pips,
                     "reason": reason,
-                }
+                })
                 self.portfolio.close_position(i, exit_px, comm)
                 return
 
     def _close_all_positions(self, reason: str) -> None:
         if not self.portfolio.positions:
             return
+        # Record each closing trade, then flush the portfolio.
+        # Previously these exits were invisible to the backtest trade log
+        # (equity moved but PF/WR looked better than reality).
+        for pos in list(self.portfolio.positions):
+            exit_px = self.exec_sim.exit_price(self.current_price, pos["side"])
+            comm = self.exec_sim.commission(pos["volume"])
+            entry_price = pos["entry_price"]
+            pnl = pos["side"] * (exit_px - entry_price) * pos["volume"] * 100000 - comm
+            self._last_trades_closed.append({
+                "entry_price": entry_price,
+                "exit_price": exit_px,
+                "side": "BUY" if pos["side"] == 1 else "SELL",
+                "pnl": pnl,
+                "pnl_pct": pnl / self.portfolio.balance * 100 if self.portfolio.balance > 0 else 0,
+                "duration": pos.get("bars_held", 0),
+                "slippage": abs(exit_px - self.current_price),
+                "spread_cost": self.exec_sim.spread_pips,
+                "reason": reason,
+            })
+        # Flush every position at the market
         avg_side = max(
             set(p["side"] for p in self.portfolio.positions),
             key=lambda s: sum(1 for p in self.portfolio.positions if p["side"] == s),
@@ -622,7 +643,7 @@ class ForexTradingEnv(gym.Env):
                 comm = self.exec_sim.commission(pos["volume"])
                 entry_price = pos["entry_price"]
                 pnl = pos["side"] * (exit_px - entry_price) * pos["volume"] * 100000 - comm
-                self._last_trade_closed = {
+                self._last_trades_closed.append({
                     "entry_price": entry_price,
                     "exit_price": exit_px,
                     "side": "BUY" if pos["side"] == 1 else "SELL",
@@ -632,7 +653,7 @@ class ForexTradingEnv(gym.Env):
                     "slippage": abs(exit_px - exit_px),  # SL/TP is exact
                     "spread_cost": self.exec_sim.spread_pips,
                     "reason": reason,
-                }
+                })
                 self.portfolio.close_position(idx, exit_px, comm)
 
     # ═══════════════════════════════════════════════════════════════════════
