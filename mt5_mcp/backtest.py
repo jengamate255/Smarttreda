@@ -667,6 +667,7 @@ class Backtester:
         if p.use_vol_spread:
             tf = p.confirmation_timeframe.upper()
             pos_i = int(positions[tf][i]) if tf in positions else i
+            pos_i = min(pos_i, len(self._atr_full.get(tf, [])) - 1) if tf in self._atr_full else i
             atr_now = float(self._atr_full[tf][pos_i - 1]) if pos_i > 0 else zone_atr
             atr_window = self._atr_full[tf][max(0, pos_i - 200):pos_i]
             atr_avg = float(np.mean(atr_window)) if len(atr_window) > 0 else atr_now
@@ -785,6 +786,9 @@ class Backtester:
         if pos < 200:
             return "unknown"
         atr_full = self._atr_full[tf]
+        pos = min(pos, len(atr_full) - 1)
+        if pos < 0:
+            return "unknown"
         atr_now = float(atr_full[pos])
         # rolling ATR percentile over 200 bars
         window = atr_full[max(0, pos - 200):pos]
@@ -1029,7 +1033,12 @@ def save_result(result: BacktestResult, out_dir: Path) -> Path:
 def rebuild_summary(out_dir: Path) -> Path:
     rows: list[dict[str, Any]] = []
     for f in sorted(out_dir.glob("*.json")):
-        data = json.loads(f.read_text(encoding="utf-8"))
+        try:
+            data = json.loads(f.read_text(encoding="utf-8"))
+            if not isinstance(data, dict) or not isinstance(data.get("params"), dict):
+                continue  # skip non-standard files (e.g. btc_h4_donchian_*)
+        except Exception:
+            continue
         rows.append(
             {
                 "symbol": data["params"]["symbol"],
@@ -1260,10 +1269,12 @@ def main(argv: list[str] | None = None) -> int:
     # --- NEW: feature toggles ---
     parser.add_argument("--no-trailing", action="store_true", help="disable trailing stop")
     parser.add_argument("--no-partial", action="store_true", help="disable partial TP")
+    parser.add_argument("--no-adaptive-timeout", action="store_true", help="disable adaptive timeout (use plain MAX_HOLD_BARS timeout)")
     parser.add_argument("--no-vol-spread", action="store_true", help="disable vol-adjusted spread")
     parser.add_argument("--regime-filter", default="", help="regime filter: trend, range, volatile")
     parser.add_argument("--sizing", default="fixed", choices=["fixed", "kelly", "antimartingale"])
     parser.add_argument("--max-consec-losses", type=int, default=0, help="consecutive loss guard (0=off)")
+    parser.add_argument("--cooldown-bars", type=int, default=20, help="bars to skip after the loss guard fires")
     parser.add_argument("--sensitivity", action="store_true", help="run sensitivity analysis")
     parser.add_argument("--sensitivity-sweep", action="store_true", help="run trailing/partial parameter sweep")
     parser.add_argument("--correlation-group", default="", help="correlation group tag")
@@ -1291,10 +1302,12 @@ def main(argv: list[str] | None = None) -> int:
                 bars=args.bars,
                 use_trailing_stop=not args.no_trailing,
                 use_partial_tp=not args.no_partial,
+                use_adaptive_timeout=not args.no_adaptive_timeout,
                 use_vol_spread=not args.no_vol_spread,
                 regime_filter=args.regime_filter,
                 sizing=args.sizing,
                 max_consecutive_losses=args.max_consec_losses,
+                cooldown_bars=args.cooldown_bars,
                 correlation_group=args.correlation_group,
             )
             for s in symbols
