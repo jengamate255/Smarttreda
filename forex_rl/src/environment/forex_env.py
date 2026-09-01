@@ -350,6 +350,7 @@ class ForexTradingEnv(gym.Env):
         config: Optional[EnvConfig] = None,
         features: Optional[np.ndarray] = None,
         regime_labels: Optional[pd.Series] = None,
+        feature_names: Optional[List[str]] = None,
     ) -> None:
         super().__init__()
         self.cfg = config or EnvConfig()
@@ -367,6 +368,9 @@ class ForexTradingEnv(gym.Env):
             self.features = np.asarray(features, dtype=np.float32)
         else:
             self.features = self._extract_features_from_df()
+
+        # Column names for named-feature access (regime gating etc.)
+        self._feature_names: List[str] = list(feature_names) if feature_names else []
 
         self.n_market_features = self.features.shape[1]
         self.n_total_features = self.n_market_features + _ACCOUNT_FEATURE_COUNT
@@ -792,6 +796,8 @@ class ForexTradingEnv(gym.Env):
             return self._reward_risk_adjusted(prev_equity, curr_equity)
         elif self.cfg.reward_type == "sharpe":
             return self._reward_sharpe(prev_equity, curr_equity)
+        elif self.cfg.reward_type == "regime_gated":
+            return self._reward_regime_gated(prev_equity, curr_equity)
         return self._reward_simple(prev_equity, curr_equity)
 
     def _reward_simple(self, prev_eq: float, curr_eq: float) -> float:
@@ -825,6 +831,72 @@ class ForexTradingEnv(gym.Env):
         std = arr.std()
         sharpe = mean / std * np.sqrt(252) if std > 1e-10 else 0.0
         return float(np.clip(sharpe / 10.0, -1.0, 1.0))
+
+    def _current_regime_trendiness(self) -> float:
+        """Trendiness score in [-1, 1] at the current bar.
+
+        Reads the regime/trend feature columns by name from the feature
+        matrix (falls back to 0 if unavailable). +1 = strong uptrend,
+        -1 = strong downtrend, ~0 = ranging.
+        """
+        names = getattr(self, "_feature_names", None) or []
+        feats = self.features
+        row = feats[min(self.current_step, len(feats) - 1)]
+
+        def col(name: str, default: float = 0.0) -> float:
+            if name in names:
+                try:
+                    v = float(row[names.index(name)])
+                    return v if np.isfinite(v) else default
+                except (ValueError, IndexError):
+                    return default
+            return default
+
+        trend_up = col("regime_trend_up")
+        trend_down = col("regime_trend_down")
+        direction = col("trend_direction")
+        strength = col("regime_strength", 0.0)
+
+        # Prefer explicit trend direction * strength; fall back to
+        # regime one-hot asymmetry.
+        if abs(direction) > 1e-6:
+            return float(np.clip(direction * max(abs(strength), 0.3), -1.0, 1.0))
+        if trend_up > trend_down:
+            return float(np.clip(trend_up - trend_down, 0.0, 1.0))
+        if trend_down > trend_up:
+            return float(np.clip(-(trend_down - trend_up), -1.0, 0.0))
+        return 0.0
+
+    def _reward_regime_gated(self, prev_eq: float, curr_eq: float) -> float:
+        """Regime-gated P&L reward.
+
+        Replaces the flat inaction penalty (which forces trading in ALL
+        conditions, including ranges where the agent has no edge):
+        - Flat in a TRENDING regime  -> inaction penalty (missed move)
+        - Flat in a RANGING regime   -> small OK bonus (correct patience)
+        - Position AGAINST the trend -> adverse-exposure penalty per step
+        - Position WITH the trend    -> alignment bonus per step
+        P&L still dominates; gates only shape entry timing.
+        """
+        pnl = curr_eq - prev_eq
+        reward = pnl / self.cfg.initial_balance * 100.0
+
+        trendiness = self._current_regime_trendiness()
+        trending = abs(trendiness) > 0.25  # meaningful directional regime
+
+        if not self.portfolio.positions:
+            if trending:
+                reward -= self.cfg.inaction_penalty          # flat in trend = missed move
+            else:
+                reward += 0.005                             # patient in range = correct
+        else:
+            for p in self.portfolio.positions:
+                aligned = (p["side"] > 0 and trendiness > 0) or (p["side"] < 0 and trendiness < 0)
+                if trending and aligned:
+                    reward += 0.01                          # riding the trend
+                elif trending and not aligned:
+                    reward -= 0.01                          # fighting the trend
+        return float(reward)
 
     # ═══════════════════════════════════════════════════════════════════════
     # Termination
