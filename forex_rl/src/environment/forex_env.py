@@ -486,10 +486,15 @@ class ForexTradingEnv(gym.Env):
         self.current_atr = self._get_atr(self.current_step)
 
         # ── Check SL / TP on existing positions before new action ──────
+        # NOTE: the trade-list reset MUST happen BEFORE _check_positions().
+        # Previously the reset came AFTER, so every SL/TP closure was
+        # appended then immediately wiped — balance took the loss but the
+        # trade log (and PF/win-rate) never saw it. Signal/episode-end
+        # closes were the only survivors, inflating PF on losing folds.
+        self._last_trades_closed: List[Dict[str, Any]] = []
         self._check_positions()
 
         # ── Execute the new action ──────────────────────────────────────
-        self._last_trades_closed: List[Dict[str, Any]] = []
         self._execute_action(parsed)
 
         # ── Increment bars held ─────────────────────────────────────────

@@ -54,16 +54,25 @@ def run_reconciliation() -> dict:
 
     trade_log_pnl = 0.0
     n_trades = 0
+    sl_tp_closes = 0
     done = False
     t = 0
     while not done:
-        # Alternate buy/sell/hold to force trades and episode-end flush
-        action = [1, 2, 0][t % 3]
+        # Hold long enough for SL/TP to fire, then flip sides: covers
+        # SL/TP exits, signal exits AND episode-end flush in one episode.
+        if t < 20:
+            action = 1  # buy and hold -> SL/TP will trigger on volatile bars
+        elif t < 35:
+            action = 2  # sell (forces signal-close of the long)
+        else:
+            action = 0  # hold to truncation -> episode-end flush
         obs, reward, term, trunc, info = env.step(action)
         done = term or trunc
         for tc in info.get("trades_closed", []):
             trade_log_pnl += tc["pnl"]
             n_trades += 1
+            if tc.get("reason") in ("sl", "tp"):
+                sl_tp_closes += 1
         t += 1
 
     final = info["equity"]
@@ -78,12 +87,13 @@ def run_reconciliation() -> dict:
     return {
         "steps": t,
         "n_trades": n_trades,
+        "sl_tp_closes": sl_tp_closes,
         "trade_log_pnl": round(float(trade_log_pnl), 4),
         "equity_pnl": round(float(equity_pnl), 4),
         "reconciliation_drift": round(float(drift), 4),
         "initial_equity": float(initial),
         "final_equity": round(float(final), 4),
-        "reconciled": bool(abs(drift) < 0.50),
+        "reconciled": bool(abs(drift) < 0.50 and n_trades > 0 and sl_tp_closes > 0),
         "positions_flushed": True,
     }
 
