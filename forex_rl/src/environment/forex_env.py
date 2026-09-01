@@ -43,6 +43,8 @@ class EnvConfig:
     normalize_obs: bool = True
     max_episode_steps: int = 1000
     inaction_penalty: float = 0.05  # penalty per step when flat (0.05 = -$500 over 500 steps at 1.0 scale)
+    contract_size: float = 100000.0  # units per lot (FX standard lot; XAUUSD=100)
+    pip_size: float = 0.0001  # price increment of 1 pip (JPY pairs & XAUUSD: 0.01)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -62,10 +64,12 @@ class Portfolio:
         "total_trades",
         "wins",
         "total_pnl",
+        "contract_size",
     )
 
-    def __init__(self, initial_balance: float) -> None:
+    def __init__(self, initial_balance: float, contract_size: float = 100000.0) -> None:
         self.initial_balance = initial_balance
+        self.contract_size = contract_size
         self.balance: float = initial_balance
         self.positions: List[Dict[str, Any]] = []
         self.equity_curve: List[float] = [initial_balance]
@@ -101,8 +105,8 @@ class Portfolio:
         total_risk = 0.0
         for p in self.positions:
             if p["sl"] is not None:
-                # 1 pip = 0.0001, $10/pip/lot -> x100000 for USD risk
-                risk = abs(p["entry_price"] - p["sl"]) * p["volume"] * 100000.0
+                # Per-position contract size (FX=100000, XAUUSD=100)
+                risk = abs(p["entry_price"] - p["sl"]) * p["volume"] * p.get("contract_size", 100000.0)
                 total_risk += risk
         return min(total_risk / self.initial_balance, 1.0) if self.initial_balance > 0 else 0.0
 
@@ -132,6 +136,7 @@ class Portfolio:
             "commission": commission,
             "open_step": step,
             "bars_held": 0,
+            "contract_size": self.contract_size,
         }
         # Commission is round-trip and charged once at close (see
         # ExecutionSimulator.commission). Do NOT deduct here — it was
@@ -175,9 +180,8 @@ class Portfolio:
     @staticmethod
     def _unrealised_pnl(pos: Dict[str, Any], current_price: float) -> float:
         direction = pos["side"]  # +1 long, -1 short
-        # 1 lot = 100000 units, pip = 0.0001 -> $10/pip/lot (point_value=10).
-        # Was x10000 (understated 10x vs trade log and risk sizing).
-        return direction * (current_price - pos["entry_price"]) * pos["volume"] * 100000.0
+        # Per-position contract size (FX=100000 units, XAUUSD=100 oz).
+        return direction * (current_price - pos["entry_price"]) * pos["volume"] * pos.get("contract_size", 100000.0)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -194,6 +198,8 @@ class ExecutionSimulator:
         "commission_per_lot",
         "point_value",
         "min_sl_distance_pips",
+        "pip_size",
+        "contract_size",
     )
 
     def __init__(
@@ -203,30 +209,34 @@ class ExecutionSimulator:
         commission_per_lot: float = 7.0,
         point_value: float = 10.0,
         min_sl_distance_pips: float = 5.0,
+        pip_size: float = 0.0001,
+        contract_size: float = 100000.0,
     ) -> None:
         self.spread_pips = spread_pips
         self.slippage_pips = slippage_pips
         self.commission_per_lot = commission_per_lot
         self.point_value = point_value
         self.min_sl_distance_pips = min_sl_distance_pips
+        self.pip_size = pip_size
+        self.contract_size = contract_size
 
     def entry_price(self, mid_price: float, side: int) -> float:
         """Return the execution price including spread and slippage."""
         half_spread = self.spread_pips / 2.0
         slippage = self.slippage_pips * (0.5 + 0.5 * np.random.random())
         if side == 1:  # long — buy at ask
-            return mid_price + (half_spread + slippage) / 10000.0
+            return mid_price + (half_spread + slippage) * self.pip_size
         else:  # short — sell at bid
-            return mid_price - (half_spread + slippage) / 10000.0
+            return mid_price - (half_spread + slippage) * self.pip_size
 
     def exit_price(self, mid_price: float, side: int) -> float:
         """Return the exit price including spread and slippage."""
         half_spread = self.spread_pips / 2.0
         slippage = self.slippage_pips * (0.5 + 0.5 * np.random.random())
         if side == 1:  # long — sell at bid
-            return mid_price - (half_spread + slippage) / 10000.0
+            return mid_price - (half_spread + slippage) * self.pip_size
         else:  # short — buy at ask
-            return mid_price + (half_spread + slippage) / 10000.0
+            return mid_price + (half_spread + slippage) * self.pip_size
 
     def commission(self, volume: float) -> float:
         """Round-trip commission for *volume* lots.
@@ -239,7 +249,7 @@ class ExecutionSimulator:
 
     def adjust_sl(self, sl: float, entry: float, side: int, atr: float) -> Optional[float]:
         """Enforce minimum SL distance; return adjusted SL or None."""
-        min_dist = self.min_sl_distance_pips / 10000.0
+        min_dist = self.min_sl_distance_pips * self.pip_size
         dist = abs(entry - sl)
         if dist < min_dist:
             dist = max(min_dist, atr * 0.5)
@@ -249,7 +259,7 @@ class ExecutionSimulator:
             return entry + dist
 
     def adjust_tp(self, tp: float, entry: float, side: int, atr: float) -> Optional[float]:
-        min_dist = self.min_sl_distance_pips / 10000.0
+        min_dist = self.min_sl_distance_pips * self.pip_size
         dist = abs(tp - entry)
         if dist < min_dist:
             dist = max(min_dist, atr * 1.0)
@@ -259,11 +269,18 @@ class ExecutionSimulator:
             return entry - dist
 
     def lot_size(self, equity: float, risk_pct: float, sl_pips: float) -> float:
-        """Risk-based lot sizing."""
+        """Risk-based lot sizing, contract-aware.
+
+        USD risk per pip per lot = contract_size * pip_size
+        (FX: 100000*0.0001 = $10; XAUUSD: 100*0.01 = $1).
+        """
         if sl_pips <= 0:
             return 0.01
         risk_amount = equity * risk_pct
-        lot = risk_amount / (sl_pips * self.point_value)
+        usd_per_pip = self.contract_size * self.pip_size
+        if usd_per_pip <= 0:
+            usd_per_pip = self.point_value
+        lot = risk_amount / (sl_pips * usd_per_pip)
         return max(0.01, round(lot, 2))
 
 
@@ -381,6 +398,8 @@ class ForexTradingEnv(gym.Env):
             slippage_pips=self.cfg.slippage_pips,
             commission_per_lot=self.cfg.commission_per_lot,
             point_value=self.cfg.point_value,
+            pip_size=self.cfg.pip_size,
+            contract_size=self.cfg.contract_size,
         )
 
         # ── Runtime state (set in reset) ──────────────────────────────
@@ -436,7 +455,7 @@ class ForexTradingEnv(gym.Env):
             else:
                 self.current_step = min_start
 
-        self.portfolio = Portfolio(self.cfg.initial_balance)
+        self.portfolio = Portfolio(self.cfg.initial_balance, contract_size=self.cfg.contract_size)
         self.episode_step = 0
         self.done = False
         self._prev_equity = self.cfg.initial_balance
@@ -562,9 +581,9 @@ class ForexTradingEnv(gym.Env):
         sl = self.exec_sim.adjust_sl(sl, entry, side, atr)
         tp = self.exec_sim.adjust_tp(tp, entry, side, atr)
 
-        sl_pips = abs(entry - (sl or entry)) * 10000.0
+        sl_pips = abs(entry - (sl or entry)) / self.exec_sim.pip_size
         if sl_pips <= 0:
-            sl_pips = self.cfg.sl_atr_multiplier * atr * 10000.0
+            sl_pips = self.cfg.sl_atr_multiplier * atr / self.exec_sim.pip_size
 
         volume = self.exec_sim.lot_size(
             self.portfolio.equity(mid), self.cfg.risk_per_trade, sl_pips
@@ -581,7 +600,7 @@ class ForexTradingEnv(gym.Env):
                 exit_px = self.exec_sim.exit_price(self.current_price, side)
                 comm = self.exec_sim.commission(pos["volume"])
                 entry_price = pos["entry_price"]
-                pnl = pos["side"] * (exit_px - entry_price) * pos["volume"] * 100000 - comm
+                pnl = pos["side"] * (exit_px - entry_price) * pos["volume"] * pos.get("contract_size", 100000.0) - comm
                 self._last_trades_closed.append({
                     "entry_price": entry_price,
                     "exit_price": exit_px,
@@ -609,7 +628,7 @@ class ForexTradingEnv(gym.Env):
             exit_px = self.current_price
             comm = self.exec_sim.commission(pos["volume"])
             entry_price = pos["entry_price"]
-            pnl = pos["side"] * (exit_px - entry_price) * pos["volume"] * 100000 - comm
+            pnl = pos["side"] * (exit_px - entry_price) * pos["volume"] * pos.get("contract_size", 100000.0) - comm
             self._last_trades_closed.append({
                 "entry_price": entry_price,
                 "exit_price": exit_px,
@@ -654,7 +673,7 @@ class ForexTradingEnv(gym.Env):
                 pos = self.portfolio.positions[idx]
                 comm = self.exec_sim.commission(pos["volume"])
                 entry_price = pos["entry_price"]
-                pnl = pos["side"] * (exit_px - entry_price) * pos["volume"] * 100000 - comm
+                pnl = pos["side"] * (exit_px - entry_price) * pos["volume"] * pos.get("contract_size", 100000.0) - comm
                 self._last_trades_closed.append({
                     "entry_price": entry_price,
                     "exit_price": exit_px,

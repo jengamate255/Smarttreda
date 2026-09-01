@@ -29,15 +29,21 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 logger = logging.getLogger("v3")
 
 # Per-symbol tuning from prior validated experiments
+# pip/contract specs: FX 5-digit (pip=0.0001, 100k units, $10/pip/lot);
+# JPY pairs (pip=0.01, $10/pip/lot); XAUUSD (pip=0.01, 100 oz, $1/pip/lot)
 SYMBOL_CONFIGS = {
     "USDJPY": dict(spread_pips=1.0, sl_atr_multiplier=1.2, tp_atr_multiplier=2.5,
-                   inaction_penalty=0.05, ent_coef=0.15, learning_rate=3e-4, n_steps=20000),
+                   inaction_penalty=0.05, ent_coef=0.15, learning_rate=3e-4, n_steps=20000,
+                   pip_size=0.01, contract_size=100000.0, point_value=10.0),
     "XAUUSD": dict(spread_pips=1.5, sl_atr_multiplier=2.0, tp_atr_multiplier=3.0,
-                   inaction_penalty=0.051, ent_coef=0.172, learning_rate=2.4e-4, n_steps=20000),
+                   inaction_penalty=0.051, ent_coef=0.172, learning_rate=2.4e-4, n_steps=20000,
+                   pip_size=0.01, contract_size=100.0, point_value=1.0),
     "EURUSD": dict(spread_pips=1.5, sl_atr_multiplier=2.0, tp_atr_multiplier=3.0,
-                   inaction_penalty=0.05, ent_coef=0.15, learning_rate=3e-4, n_steps=20000),
+                   inaction_penalty=0.05, ent_coef=0.15, learning_rate=3e-4, n_steps=20000,
+                   pip_size=0.0001, contract_size=100000.0, point_value=10.0),
     "GBPUSD": dict(spread_pips=1.5, sl_atr_multiplier=2.0, tp_atr_multiplier=3.0,
-                   inaction_penalty=0.05, ent_coef=0.15, learning_rate=3e-4, n_steps=20000),
+                   inaction_penalty=0.05, ent_coef=0.15, learning_rate=3e-4, n_steps=20000,
+                   pip_size=0.0001, contract_size=100000.0, point_value=10.0),
 }
 
 
@@ -107,6 +113,9 @@ def train_symbol(symbol, n_bars=20000):
         sl_atr_multiplier=cfg["sl_atr_multiplier"],
         tp_atr_multiplier=cfg["tp_atr_multiplier"],
         inaction_penalty=cfg["inaction_penalty"],
+        pip_size=cfg.get("pip_size", 0.0001),
+        contract_size=cfg.get("contract_size", 100000.0),
+        point_value=cfg.get("point_value", 10.0),
     )
 
     train_env = ForexTradingEnv(df.iloc[:train_end].reset_index(drop=True), env_config, features=features[:train_end])

@@ -41,7 +41,15 @@ class BacktestMetrics:
 
         gross_profit = sum(t.pnl for t in wins) if wins else 0.0
         gross_loss = abs(sum(t.pnl for t in losses)) if losses else 0.0
-        profit_factor = gross_profit / gross_loss if gross_loss > 0 else float("inf")
+        # Clamp inf: 0 losing trades with any trades means PF is undefined.
+        # Use gross_profit as a finite cap so aggregates don't blow up to inf
+        # (degenerate folds previously turned mean-PF into inf).
+        if gross_loss > 0:
+            profit_factor = gross_profit / gross_loss
+        elif gross_profit > 0:
+            profit_factor = max(gross_profit, 1.0)  # finite cap
+        else:
+            profit_factor = 0.0
 
         mean_ret = np.mean(returns)
         std_ret = np.std(returns, ddof=1) if len(returns) > 1 else 0.0

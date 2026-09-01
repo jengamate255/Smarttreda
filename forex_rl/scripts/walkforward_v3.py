@@ -54,6 +54,9 @@ def run_walk_forward(symbol: str, n_bars: int = 20000, seed: int = 42) -> dict:
         sl_atr_multiplier=cfg["sl_atr_multiplier"],
         tp_atr_multiplier=cfg["tp_atr_multiplier"],
         inaction_penalty=cfg["inaction_penalty"],
+        pip_size=cfg.get("pip_size", 0.0001),
+        contract_size=cfg.get("contract_size", 100000.0),
+        point_value=cfg.get("point_value", 10.0),
     )
     agent_config = AgentConfig(
         algorithm="PPO",
@@ -84,6 +87,11 @@ def run_walk_forward(symbol: str, n_bars: int = 20000, seed: int = 42) -> dict:
         test_env = ForexTradingEnv(
             df.iloc[tr_e:te_e].reset_index(drop=True), env_config, features=feats[tr_e:te_e]
         )
+        # CRITICAL: deterministic sequential start from the window beginning.
+        # Without eval mode, reset() picks a RANDOM bar — folds started
+        # mid-window, truncated early, and produced phantom drift-only P&L
+        # ("0 trades, +\$6953" anomaly).
+        test_env.set_eval_mode(start_step=env_config.lookback)
 
         agent = PPOAgent(agent_config)
         agent.model = agent._build_model(train_env)
