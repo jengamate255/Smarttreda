@@ -1,0 +1,24 @@
+{
+  "symbol": "USDJPY",
+  "baseline": {
+    "trades": 34,
+    "net_profit": -89.4811971613799,
+    "sharpe": -0.1527391016902651,
+    "pf": 0.8948751780902438,
+    "max_dd": 0.026682382618596033,
+    "win_rate": 0.5
+  },
+  "regime_gated": {
+    "trades": 37,
+    "net_profit": -224.8591786480847,
+    "sharpe": -0.3791814970532335,
+    "pf": 0.7731069552101968,
+    "max_dd": 0.048638992048461525,
+    "win_rate": 0.43243243243243246
+  },
+  "pf_improvement": -0.122,
+  "net_improvement": -135.38,
+  "gated_beats_baseline": false,
+  "passes_bar": false,
+  "elapsed": 1383.7
+}

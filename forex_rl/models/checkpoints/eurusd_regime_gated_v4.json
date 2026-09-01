@@ -1,0 +1,24 @@
+{
+  "symbol": "EURUSD",
+  "baseline": {
+    "trades": 40,
+    "net_profit": -495.63610145638813,
+    "sharpe": -0.7751586590917555,
+    "pf": 0.5917666572305105,
+    "max_dd": 0.07596776006270282,
+    "win_rate": 0.45
+  },
+  "regime_gated": {
+    "trades": 42,
+    "net_profit": -1041.7045409481998,
+    "sharpe": -1.6419736475158448,
+    "pf": 0.3212828706148547,
+    "max_dd": 0.111710079610609,
+    "win_rate": 0.30952380952380953
+  },
+  "pf_improvement": -0.27,
+  "net_improvement": -546.07,
+  "gated_beats_baseline": false,
+  "passes_bar": false,
+  "elapsed": 615.6
+}

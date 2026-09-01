@@ -1,0 +1,24 @@
+{
+  "symbol": "XAUUSD",
+  "baseline": {
+    "trades": 90,
+    "net_profit": -428.90359462390734,
+    "sharpe": -0.3653387428242008,
+    "pf": 0.8461983640951964,
+    "max_dd": 0.07220016864970645,
+    "win_rate": 0.37777777777777777
+  },
+  "regime_gated": {
+    "trades": 81,
+    "net_profit": -312.56629590751436,
+    "sharpe": -0.2674720110325237,
+    "pf": 0.8765320353932866,
+    "max_dd": 0.058683461587746344,
+    "win_rate": 0.4074074074074074
+  },
+  "pf_improvement": 0.03,
+  "net_improvement": 116.34,
+  "gated_beats_baseline": true,
+  "passes_bar": false,
+  "elapsed": 1118.4
+}

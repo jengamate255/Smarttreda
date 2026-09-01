@@ -1,0 +1,24 @@
+{
+  "symbol": "GBPUSD",
+  "baseline": {
+    "trades": 69,
+    "net_profit": -854.8694346206939,
+    "sharpe": -0.8896405411753414,
+    "pf": 0.6118527109741514,
+    "max_dd": 0.0866938910814597,
+    "win_rate": 0.37681159420289856
+  },
+  "regime_gated": {
+    "trades": 71,
+    "net_profit": -699.8221021080626,
+    "sharpe": -0.6887812832252073,
+    "pf": 0.6886788238226904,
+    "max_dd": 0.10747378770181253,
+    "win_rate": 0.4084507042253521
+  },
+  "pf_improvement": 0.077,
+  "net_improvement": 155.05,
+  "gated_beats_baseline": true,
+  "passes_bar": false,
+  "elapsed": 1523.3
+}
