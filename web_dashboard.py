@@ -467,10 +467,24 @@ def positions():
                     "swap": round(p.swap, 2),
                     "total": round(p.profit + p.swap, 2),
                     "comment": p.comment,
+                    "magic": getattr(p, "magic", 0) or 0,
+                    "is_auto": (getattr(p, "magic", 0) or 0) == 235010,
                 }
             )
         result.sort(key=lambda x: x["symbol"])
         return {"positions": result, "count": len(result)}
+
+
+def _trade_source(magic: int, comment: str) -> str:
+    """Classify a deal as auto-trader (which config) or manual."""
+    c = (comment or "").lower()
+    if "jp225_z40" in c:
+        return "AT:JP225_Z40"
+    if "eurusd_med" in c:
+        return "AT:EURUSD_MED"
+    if magic == 235010:
+        return "AT:auto"
+    return "manual"
 
 
 @app.get("/api/history")
@@ -504,6 +518,7 @@ def history(days: int = Query(30, ge=1, le=365), limit: int = Query(30, ge=1, le
                 "profit": round(d.profit, 2),
                 "swap": round(d.swap, 2),
                 "total": round(d.profit + d.swap + d.fee, 2),
+                "source": _trade_source(getattr(d, "magic", 0) or 0, getattr(d, "comment", "") or ""),
             }
             for d in closed[:limit]
         ]
@@ -1201,7 +1216,7 @@ def journal_equity_curve(days: int = Query(30, ge=1, le=365)):
         with j._lock:
             conn = j._conn()
             rows = conn.execute(
-                "SELECT close_time, pnl, outcome, symbol, side, lots, entry, exit_price "
+                "SELECT close_time, pnl, outcome, symbol, side, lots, entry, exit_price, setup "
                 "FROM trades WHERE close_time >= ? AND pnl IS NOT NULL "
                 "ORDER BY close_time ASC",
                 [cutoff],
@@ -1218,6 +1233,7 @@ def journal_equity_curve(days: int = Query(30, ge=1, le=365)):
                 "cumulative": round(cumulative, 2),
                 "outcome": row["outcome"],
                 "symbol": row["symbol"],
+                "setup": row["setup"] or "manual",
             })
 
         return {

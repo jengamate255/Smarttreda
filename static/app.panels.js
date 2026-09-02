@@ -187,19 +187,24 @@ function renderTrades(trades) {
   const body = $("trades-body");
   body.innerHTML = "";
   if (!trades.length) {
-    body.innerHTML = '<tr class="empty-row"><td colspan="8">📂 No closed trades in this period yet</td></tr>';
+    body.innerHTML = '<tr class="empty-row"><td colspan="9">📂 No closed trades in this period yet</td></tr>';
     return;
   }
   const today = new Date().toISOString().slice(0, 10);
   for (const t of trades) {
     const tr = document.createElement("tr");
     const total = t.profit + t.swap;
+    const src = t.source || "manual";
+    const srcBadge = src.startsWith("AT:")
+      ? `<span class="src-badge auto" title="Auto trader">${esc(src.replace("AT:", ""))}</span>`
+      : `<span class="src-badge manual">manual</span>`;
     tr.innerHTML = `
       <td>${esc(t.time)}</td>
       <td>${esc(t.symbol)}</td>
       <td style="color:${t.type === "BUY" ? C.up : C.down}">${esc(t.type)}</td>
       <td>${esc(t.volume)}</td>
       <td>${fmtPrice(t.price)}</td>
+      <td>${srcBadge}</td>
       <td class="${t.profit >= 0 ? "pos" : "neg"}">${fmtMoney(t.profit)}</td>
       <td>${fmtMoney(t.swap)}</td>
       <td class="${total >= 0 ? "pos" : "neg"}">${fmtMoney(total)}</td>`;
@@ -210,7 +215,7 @@ function renderTrades(trades) {
   if (!window._tradesSortable) {
     window._tradesSortable = makeSortable($("trades-table"), {
       pageSize: 25,
-      numericCols: [3, 5, 6, 7],
+      numericCols: [3, 6, 7, 8],
       dateCols: [0],
     });
   }
@@ -462,14 +467,15 @@ async function loadAutoTrader() {
     }).join("");
 
     const v = at.last_validation || {};
+    const overdue = !!v.overdue;
     const vHtml = v.available ? `
-      <div class="slot-item" title="${esc(v.file || '')}">
-        <div class="slot-label">Monthly Validation</div>
-        <div class="slot-value ${String(v.action || '').startsWith("CONTINUE") ? 'pos' : 'neg'}">${String(v.action || "--").split(" - ")[0]}</div>
+      <div class="slot-item" title="${esc(v.file || '')}${v.age_days != null ? ' (' + v.age_days + 'd old)' : ''}">
+        <div class="slot-label">Monthly Validation ${overdue ? '⚠' : ''}</div>
+        <div class="slot-value ${overdue ? 'neg' : (String(v.action || '').startsWith("CONTINUE") ? 'pos' : 'neg')}">${overdue ? "OVERDUE" : String(v.action || "--").split(" - ")[0]}</div>
       </div>` : `
       <div class="slot-item">
         <div class="slot-label">Monthly Validation</div>
-        <div class="slot-value">not run</div>
+        <div class="slot-value neg">not run</div>
       </div>`;
 
     body.innerHTML = `
@@ -1031,15 +1037,29 @@ function renderEquityChart() {
   });
   ctx2.stroke();
 
-  /* trade markers */
+  /* trade markers — auto-trader setups get a diamond ring so the deployed
+     edge's contributions are visible on the equity curve */
   eq.points.forEach((p, i) => {
     if (p.pnl !== 0) {
       const px = 12 + (i + 0.5) * (W - 18) / Math.max(1, n - 1);
       const py = H - 18 - ((p.cumulative - Math.min(...cum)) / (maxC - minC || 1)) * (H - 40);
+      const setup = p.setup || "manual";
+      const isAuto = setup.startsWith("JP225") || setup.startsWith("EURUSD") ||
+                     setup === "boom_crash_spike_drift" || setup.startsWith("AT:");
       ctx2.fillStyle = p.pnl > 0 ? C.up : C.down;
       ctx2.beginPath();
       ctx2.arc(px, py, 3, 0, Math.PI * 2);
       ctx2.fill();
+      if (isAuto) {
+        ctx2.strokeStyle = "#7c3aed";
+        ctx2.lineWidth = 1.5;
+        ctx2.beginPath();
+        // diamond ring around the marker
+        ctx2.moveTo(px, py - 6); ctx2.lineTo(px + 6, py);
+        ctx2.lineTo(px, py + 6); ctx2.lineTo(px - 6, py);
+        ctx2.closePath();
+        ctx2.stroke();
+      }
     }
   });
 
@@ -1049,6 +1069,7 @@ function renderEquityChart() {
     <span>Max DD <b class="neg">${fmtMoney(eq.max_dd)}</b></span>
     <span>Max Runup <b class="pos">${fmtMoney(eq.max_runup)}</b></span>
     <span>Trades <b>${eq.total_trades}</b></span>
+    <span style="color:#7c3aed;" title="Auto-trader / spike-drift entries">◈ = strategy trade</span>
   `;
 }
 

@@ -71,6 +71,15 @@ def _last_validation() -> dict:
         data = json.loads(reports[-1].read_text(encoding="utf-8"))
         data["available"] = True
         data["file"] = reports[-1].name
+        # Age of the report for the overdue badge (re-run monthly per policy)
+        try:
+            run_at = datetime.fromisoformat(data.get("run_at", ""))
+            data["age_days"] = round(
+                (datetime.now(timezone.utc) - run_at).total_seconds() / 86400.0, 1
+            )
+        except (ValueError, TypeError):
+            data["age_days"] = None
+        data["overdue"] = bool(data.get("age_days") is not None and data["age_days"] > 35)
         return data
     except (OSError, ValueError):
         return {"available": False}

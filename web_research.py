@@ -82,6 +82,35 @@ def sessions():
         return {"sessions": [], "setups": [], "pairs": [], "error": str(exc)}
 
 
+@router.get("/api/session-heatmap")
+def session_heatmap(days: int = 120):
+    """Hour-by-hour net P&L grid for the session heat-map.
+
+    Returns hourly cells (UTC) with net P&L, trade count and win rate
+    from the trade journal. Front-end renders green/red intensity tiles —
+    the money windows vs dead zones.
+    """
+    try:
+        rows = best_sessions() or []
+        by_hour: dict = {}
+        for r in rows:
+            try:
+                h = int(str(r.get("session", "0")).split(":")[0])
+                by_hour[h] = {
+                    "hour": h,
+                    "label": r.get("session"),
+                    "trades": r.get("trades", 0),
+                    "win_rate": r.get("win_rate", 0),
+                    "net": r.get("net_pnl", 0),
+                }
+            except (ValueError, TypeError):
+                continue
+        return {"days": days, "hours": by_hour}
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("session heatmap failed: %s", exc)
+        return {"days": days, "hours": {}, "error": str(exc)}
+
+
 @router.get("/api/ml-rank/info")
 def ml_rank_info():
     """Current ML signal ranker model info: features, weights, trained_at, CV AUC."""
@@ -183,3 +212,58 @@ def pattern_win_rates():
     except Exception as exc:  # noqa: BLE001
         logger.warning("pattern-win-rates failed: %s", exc)
         return {"patterns": [], "error": str(exc)}
+
+
+@router.get("/api/research/monte-carlo")
+def monte_carlo(symbol: str = "", simulations: int = 1000):
+    """Run Monte Carlo simulation on backtest or journal trades."""
+    try:
+        from monte_carlo import build_day_pool, simulate_month
+        from mt5_mcp.memory.trade_journal import get_journal
+
+        # Try journal trades first
+        journal = get_journal()
+        trades = journal.list_trades(limit=500)
+        if symbol:
+            trades = [t for t in trades if t.get("symbol") == symbol]
+
+        if not trades:
+            return {"error": "No trades found for Monte Carlo"}
+
+        # Extract PnL values
+        pnls = [t.get("pnl", 0) for t in trades if t.get("pnl") is not None]
+        if not pnls:
+            return {"error": "No PnL data found"}
+
+        # Run simulations
+        results = []
+        for _ in range(min(simulations, 2000)):
+            # Sample with replacement
+            sample = [pnls[i % len(pnls)] for i in range(len(pnls))]
+            import random
+            random.shuffle(sample)
+            cumulative = 0
+            curve = [10000]
+            for p in sample:
+                cumulative += p
+                curve.append(10000 + cumulative)
+            results.append(curve)
+
+        # Stats
+        finals = [r[-1] for r in results]
+        positives = sum(1 for f in finals if f > 10000)
+        blown = sum(1 for f in finals if f < 5000)
+
+        return {
+            "simulations": len(results),
+            "avg_return": round(sum(finals) / len(finals) - 10000, 2),
+            "p_positive": round(positives / len(finals) * 100, 1),
+            "p_blown": round(blown / len(finals) * 100, 1),
+            "worst_case": round(min(finals) - 10000, 2),
+            "best_case": round(max(finals) - 10000, 2),
+            "curves": [r[:100] for r in results[:200]],  # first 100 bars for chart
+            "finals": sorted(finals),
+        }
+    except Exception as exc:
+        logger.warning("monte-carlo failed: %s", exc)
+        return {"error": str(exc)}

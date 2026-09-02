@@ -2329,3 +2329,25 @@ a:focus-visible,
 }
 .btn.danger { background: rgba(244,67,54,0.15); color: #f44336; border-color: rgba(244,67,54,0.4); }
 .btn.danger:hover { background: rgba(244,67,54,0.3); }
+
+/* ---------- Session heat-map ---------- */
+.session-heatmap .hm-grid {
+  display: grid; grid-template-columns: repeat(12, 1fr); gap: 3px; margin-top: 6px;
+}
+.hm-tile {
+  border-radius: 4px; padding: 6px 2px 4px; text-align: center;
+  border: 1px solid var(--border, #262636); min-height: 38px;
+  display: flex; flex-direction: column; justify-content: center; cursor: default;
+}
+.hm-tile .hm-h { font-size: 9px; color: var(--text-dim, #9aa); }
+.hm-tile .hm-net { font-size: 11px; font-weight: 600; color: #fff; }
+.hm-none { background: var(--panel-2, #101018); opacity: 0.5; }
+.hm-legend { display: flex; justify-content: space-between; font-size: 9px; color: var(--text-dim, #9aa); margin-top: 3px; }
+
+/* ---------- Trade source badges ---------- */
+.src-badge {
+  display: inline-block; padding: 1px 6px; border-radius: 8px;
+  font-size: 10px; font-weight: 600; white-space: nowrap;
+}
+.src-badge.auto { background: rgba(124,58,237,0.18); color: #b388ff; border: 1px solid rgba(124,58,237,0.5); }
+.src-badge.manual { background: rgba(120,123,134,0.12); color: #888; border: 1px solid rgba(120,123,134,0.3); }

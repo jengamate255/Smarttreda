@@ -148,6 +148,44 @@ function renderBoomCrash(data) {
   }).join("");
 }
 
+/* ---------- Session P&L Heat-map (spike-drift money windows) ---------- */
+async function loadSessionHeatmap() {
+  const el = $("session-heatmap");
+  if (!el) return;
+  try {
+    const data = await api("/api/session-heatmap?days=120");
+    const hours = data.hours || {};
+    const keys = Object.keys(hours);
+    if (!keys.length) {
+      el.innerHTML = '<div class="plan-empty">No session data in journal yet</div>';
+      return;
+    }
+    const nets = keys.map(k => Number(hours[k].net) || 0);
+    const maxAbs = Math.max(1, ...nets.map(n => Math.abs(n)));
+    // Build 24 tiles; hours with no trades render dim
+    let tiles = "";
+    for (let h = 0; h < 24; h++) {
+      const d = hours[h];
+      if (!d) {
+        tiles += `<div class="hm-tile hm-none" title="${h}:00 UTC — no trades"><span class="hm-h">${h}</span><span class="hm-net">–</span></div>`;
+        continue;
+      }
+      const net = Number(d.net) || 0;
+      const intensity = Math.min(0.85, 0.15 + Math.abs(net) / maxAbs * 0.7);
+      const color = net >= 0 ? `rgba(76,175,80,${intensity})` : `rgba(244,67,54,${intensity})`;
+      tiles += `<div class="hm-tile" style="background:${color}" title="${h}:00 UTC — ${d.trades} trades, WR ${d.win_rate}%, net ${fmtMoney(net)}">
+        <span class="hm-h">${h}</span>
+        <span class="hm-net">${net >= 0 ? "+" : ""}${Math.round(net)}</span>
+      </div>`;
+    }
+    el.innerHTML = `<div class="hm-grid">${tiles}</div>
+      <div class="hm-legend"><span>00</span><span>06</span><span>12</span><span>18</span><span>23 UTC</span></div>
+      <div class="sub" style="margin-top:4px;">Green = profitable hour · Red = losing hour · Intensity = |net|</div>`;
+  } catch (e) {
+    el.innerHTML = `<div class="plan-empty">Heat-map unavailable: ${esc(e.message || String(e))}</div>`;
+  }
+}
+
 /* ---------- AI Chart Detection ---------- */
 async function loadAiDetection() {
   const symbol = state.symbol.trim().toUpperCase() || "EURUSD";
@@ -821,6 +859,7 @@ function init() {
   loadRisk();
   loadCompliance();
   loadAutoTrader();
+  loadSessionHeatmap();
   loadForexBreakout();
   loadSessions();
   loadNews();

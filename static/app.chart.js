@@ -694,9 +694,12 @@ function drawPriceLines() {
   for (const p of state.positions) {
     if (p.symbol !== state.symbol) continue;
     const entryColor = p.total >= 0 ? C.up : C.down;
-    addPriceLine(candleSeries, p.price_open, entryColor, 2, `${p.type} ${p.volume}`);
-    if (p.sl) addPriceLine(candleSeries, p.sl, C.down, 4, "SL");
-    if (p.tp) addPriceLine(candleSeries, p.tp, C.up, 4, "TP");
+    // Auto-trader positions get an AT: prefix on their labels
+    const atTag = p.is_auto || (p.magic === 235010) ? "🤖AT " : "";
+    const cmt = p.comment ? " " + String(p.comment).slice(0, 12) : "";
+    addPriceLine(candleSeries, p.price_open, entryColor, 2, `${atTag}${p.type} ${p.volume}${cmt}`);
+    if (p.sl) addPriceLine(candleSeries, p.sl, C.down, 4, `${atTag}SL`);
+    if (p.tp) addPriceLine(candleSeries, p.tp, C.up, 4, `${atTag}TP`);
   }
 
   // live strategy overlay: Donchian range, H1 EMA200 trend, breakout/spike setup

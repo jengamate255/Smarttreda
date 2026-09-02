@@ -375,7 +375,7 @@ const HedgeFund = (() => {
       <thead>
         <tr>
           <th>Time</th><th>Symbol</th><th>Type</th><th>Lots</th>
-          <th>Price</th><th>Profit</th><th>Swap</th><th>Total</th>
+          <th>Price</th><th>Source</th><th>Profit</th><th>Swap</th><th>Total</th>
         </tr>
       </thead>
       <tbody id="trades-body"></tbody>
@@ -535,6 +535,10 @@ const HedgeFund = (() => {
     <div class="plan-empty">Loading...</div>
   </div>
   <div id="bc-meta" class="bc-meta"></div>
+  <div class="panel-title" style="margin-top:12px;">Session P&L Heat-map <span class="sub">Deriv spike-drift money windows (UTC)</span></div>
+  <div id="session-heatmap" class="session-heatmap">
+    <div class="plan-empty">Loading heat-map...</div>
+  </div>
 </section>
 
 <section class="panel ai-detection-panel">
