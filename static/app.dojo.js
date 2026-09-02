@@ -142,6 +142,14 @@ const Dojo = (() => {
           </div>
         </div>
 
+        <!-- Research Lab Findings -->
+        <div class="dojo-card dojo-card-wide" style="margin-top:16px;">
+          <h3>🔬 Research Lab <span class="dojo-dim small" style="font-weight:400;">evidence base — 2026-09-01/02 sessions</span></h3>
+          <div id="dojo-research-lab">
+            <div class="dojo-loading">Loading research findings...</div>
+          </div>
+        </div>
+
         <!-- Training Dialog -->
         <div id="dojo-train-dialog" class="dojo-dialog hidden">
           <div class="dojo-dialog-content">
@@ -341,6 +349,101 @@ const Dojo = (() => {
       }).join('');
     } catch (e) {
       console.error('Failed to load skill dist:', e);
+    }
+  }
+
+  // ── Research Lab findings ─────────────────────────────────────────────
+  async function loadResearchLab() {
+    const el = document.getElementById('dojo-research-lab');
+    if (!el) return;
+    try {
+      const data = await _get(`${API}/api/dojo/research`);
+      const rl = data.rl_verdict || {};
+      const pa = data.price_action_verdict || {};
+      const dv = data.deriv_verdict || {};
+      const jp = pa.jp225 || {};
+
+      // RL honest baseline table
+      const rlRows = (rl.honest_baseline || []).map(r => `
+        <tr>
+          <td class="dojo-bold">${esc(r.symbol)}</td>
+          <td>${r.trades}</td>
+          <td class="dojo-loss">$${Math.abs(r.net).toFixed(0)}</td>
+          <td class="dojo-loss">${r.pf.toFixed(2)}</td>
+        </tr>`).join('');
+
+      // Dead families table
+      const deadRows = (pa.dead_families || []).map(f => `
+        <tr>
+          <td class="dojo-bold">${esc(f.family)}</td>
+          <td class="dojo-profit">${esc(f.was)}</td>
+          <td class="dojo-loss">${esc(f.now)}</td>
+        </tr>`).join('');
+
+      // JP225 stress results
+      const stressRows = (jp.dojo_stress || []).map(s => `
+        <tr>
+          <td>${esc(s.test)}</td>
+          <td class="${s.pass ? 'dojo-profit' : 'dojo-loss'}">${s.pass ? '✅' : '❌'} ${esc(s.result)}</td>
+        </tr>`).join('');
+
+      // Deriv mistakes
+      const mistakeRows = (dv.mistakes || []).map(m => `
+        <tr><td class="dojo-loss">⚠ ${esc(m.mistake)}</td><td class="dojo-loss">-$${Math.abs(m.cost).toFixed(2)}</td></tr>`).join('');
+
+      el.innerHTML = `
+        <div class="dojo-research-grid">
+
+          <div class="dojo-research-col">
+            <h4 class="dojo-research-title">🧠 RL Agents — ${esc(rl.summary || '')}</h4>
+            <p class="dojo-dim small">${esc(rl.detail || '')}</p>
+            <table class="dojo-table">
+              <thead><tr><th>Symbol</th><th>Trades</th><th>Net</th><th>PF</th></tr></thead>
+              <tbody>${rlRows}</tbody>
+            </table>
+            <div class="small" style="margin-top:8px;">
+              ${(rl.rejections || []).map(r => `<div class="dojo-dim">✗ ${esc(r)}</div>`).join('')}
+            </div>
+          </div>
+
+          <div class="dojo-research-col">
+            <h4 class="dojo-research-title">🎯 JP225 — ${esc(pa.summary || '')}</h4>
+            <p class="dojo-dim small">${esc(pa.detail || '')}</p>
+            <table class="dojo-table">
+              <thead><tr><th>Stress test</th><th>Result</th></tr></thead>
+              <tbody>${stressRows}</tbody>
+            </table>
+            <div class="dojo-metric" style="margin-top:8px;">
+              <span class="dojo-dim small">Deployed config</span>
+              <span class="dojo-bold small">${esc(jp.config || '')}</span>
+            </div>
+            <div class="dojo-metric">
+              <span class="dojo-dim small">Stats</span>
+              <span class="dojo-profit small">${esc(jp.stats || '')}</span>
+            </div>
+            ${(jp.guardrails || []).map(g => `<div class="dojo-dim small">🛡 ${esc(g)}</div>`).join('')}
+          </div>
+
+          <div class="dojo-research-col">
+            <h4 class="dojo-research-title">🗑 Rejected Families (window-roll OOS)</h4>
+            <table class="dojo-table">
+              <thead><tr><th>Family</th><th>Was</th><th>Now</th></tr></thead>
+              <tbody>${deadRows}</tbody>
+            </table>
+            <h4 class="dojo-research-title" style="margin-top:14px;">⚡ Deriv Spike-Drift — ${esc(dv.summary || '')}</h4>
+            <p class="dojo-dim small">${esc(dv.detail || '')}</p>
+            <table class="dojo-table">
+              <thead><tr><th>Recorded mistake</th><th>Cost</th></tr></thead>
+              <tbody>${mistakeRows}</tbody>
+            </table>
+          </div>
+
+        </div>
+        <div class="dojo-dim small" style="margin-top:10px;">
+          Reports: ${data.reports ? data.reports.map(r => `<code>${esc(r.path)}</code>`).join(' · ') : ''}
+        </div>`;
+    } catch (e) {
+      el.innerHTML = `<div class="dojo-empty">Research findings unavailable: ${esc(e.message || e)}</div>`;
     }
   }
 
@@ -692,6 +795,7 @@ const Dojo = (() => {
     await loadLeaderboard();
     await loadActiveTraining();
     await loadSkillDist();
+    await loadResearchLab();
     showBanner('Refreshed');
   }
 
@@ -700,6 +804,7 @@ const Dojo = (() => {
     loadLeaderboard();
     loadActiveTraining();
     loadSkillDist();
+    loadResearchLab();
     // Toggle PPO params visibility
     const algoSelect = document.getElementById('dojo-algorithm');
     if (algoSelect) {

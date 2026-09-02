@@ -28,6 +28,106 @@ _train_stop: dict[str, threading.Event] = {}  # symbol -> stop signal
 _live_progress: dict[str, dict] = {}  # symbol -> latest live progress (in-memory)
 
 
+# ═══════════════════════════════════════════════════════════════════════════
+# Research Lab findings (2026-09-01 / 2026-09-02 research sessions)
+# Served to the Dojo UI so the honest evidence base is visible in-app.
+# ═══════════════════════════════════════════════════════════════════════════
+
+_RESEARCH_FINDINGS = {
+    "generated": "2026-09-02",
+    "rl_verdict": {
+        "summary": "RL agents (forex_rl PPO) have NO edge — parked.",
+        "detail": (
+            "After fixing 5 accounting bugs (10x P&L understatement, double "
+            "commission, truncation leak, SL/TP trade-log wipe, random eval "
+            "starts) and reconciling trade log vs equity to $0.00 drift, all "
+            "4 symbols are net-negative: EURUSD -$491, GBPUSD -$806, USDJPY "
+            "-$739, XAUUSD -$2,727. PF 0.58-0.90. Root cause: cost churn — "
+            "avg hold < 1h, spread+slippage+commission consume ~25% of the "
+            "risked amount per trade. The agents lose to the spread, not the "
+            "market. Earlier 'wins' were accounting illusions."
+        ),
+        "honest_baseline": [
+            {"symbol": "EURUSD", "trades": 38, "net": -491, "pf": 0.58},
+            {"symbol": "GBPUSD", "trades": 64, "net": -806, "pf": 0.60},
+            {"symbol": "USDJPY", "trades": 112, "net": -739, "pf": 0.75},
+            {"symbol": "XAUUSD", "trades": 248, "net": -2727, "pf": 0.66},
+        ],
+        "rejections": [
+            "Flat inaction penalty — manufactures activity, not alpha",
+            "Regime-gated reward — 2/4 beat baseline but 0/4 profitable",
+            "All v1-v3 reported numbers — produced by engines hiding SL/TP losses",
+        ],
+    },
+    "price_action_verdict": {
+        "summary": "JP225 is the ONLY validated price-action family — deployed live.",
+        "detail": (
+            "Deep validation of 6 candidate families with perturbation sweeps "
+            "plus a 5-day out-of-sample window roll killed 5 of 6: SPX500 "
+            "(PF 1.54→0.22), XAGUSD (2.28→0.52), EURGBP (1.39→0.17), EURUSD "
+            "(10.5→0.69), USOIL (live +$115 was luck; backtest -$7/trade). "
+            "JP225 alone survived: reproduced OOS (PF 1.545→1.64), 100% "
+            "perturbation retention, edge survives plain SL/TP (PF 1.16 — "
+            "the edge is in the entries)."
+        ),
+        "jp225": {
+            "config": "H4 trend, H1+H4 zones, score≥40, RR≥3, TP 80-100",
+            "stats": "29 trades, WR 41.4%, PF 1.64, +$534/6mo, MaxDD 2.36%",
+            "dojo_stress": [
+                {"test": "windows 3k/4k/5k/6k bars", "result": "PF 1.79/1.64/1.64/1.26", "pass": True},
+                {"test": "plain SL/TP (exits off)", "result": "PF 1.16, +$135 — edge is in entries", "pass": True},
+                {"test": "regime=trend filter", "result": "PF 1.31, cuts 55% net — DO NOT USE", "pass": False},
+                {"test": "regime=range filter", "result": "0 trades — DO NOT USE", "pass": False},
+                {"test": "loss guard 3/cd20", "result": "PF 1.64, zero cost — keep ON", "pass": True},
+            ],
+            "deployment": "auto_trader JP225_Z40 config, spread-gate fixed 2026-09-02, task MT5AutoTraderSIM enabled",
+            "guardrails": [
+                "Monthly: python -X utf8 validate_jp225_monthly.py — HALT verdict = disable",
+                "Scale-up: no risk increase until 20+ live trades PF ≥ 1.2",
+                "Kill switch: create mt5_mcp/memory/AUTO_TRADER_KILL",
+            ],
+        },
+        "dead_families": [
+            {"family": "SPX500 z60", "was": "PF 1.54 +$383", "now": "PF 0.22 -$317"},
+            {"family": "XAGUSD z40", "was": "PF 2.28 +$331", "now": "PF 0.52 -$51"},
+            {"family": "EURGBP z40", "was": "PF 1.39 +$120", "now": "PF 0.17 -$312"},
+            {"family": "EURUSD H1-z70", "was": "PF 10.5 +$424", "now": "PF 0.69 -$56"},
+            {"family": "USOIL z40", "was": "live +$115/12t", "now": "backtest PF 0.09 — luck"},
+        ],
+    },
+    "deriv_verdict": {
+        "summary": "Spike-drift during London open is the only profitable Deriv edge.",
+        "detail": (
+            "boom_crash_spike_drift: 5 trades, 80% WR, +$169, avg +$34/trade "
+            "at 93.5 avg confidence — best setup in the entire journal. "
+            "Manual Deriv trades: 77 trades, 33.8% WR, net -$19. The best "
+            "window is 07:00-09:00 UTC (London open, +$148 across 16 trades). "
+            "Avoid 11:00-12:00 and 18:00 UTC (combined -$169). Learned "
+            "config enforces: confidence ≥ 90, spike age < 15 min, "
+            "spike ≥ 2.5 ATR."
+        ),
+        "sessions_good": ["07:00-09:00 UTC (London open)"],
+        "sessions_bad": ["11:00-12:00 UTC", "18:00 UTC"],
+        "mistakes": [
+            {"mistake": "entered_before_confirmation", "cost": -84.39},
+            {"mistake": "stale_spike_age", "cost": -43.09},
+            {"mistake": "ignored_spike_clustering", "cost": -43.09},
+        ],
+    },
+    "reports": [
+        {"name": "RL forensics + regime-gated v4", "path": "mt5_mcp/memory/research_lab/report_2026-09-01.md"},
+        {"name": "JP225 consolidation + deployment", "path": "mt5_mcp/memory/research_lab/report_2026-09-02.md"},
+    ],
+}
+
+
+@router.get("/research")
+def get_research_findings():
+    """Research Lab findings: RL honest baseline, family validation,
+    JP225 deployment evidence, Deriv spike-drift edge."""
+    return _RESEARCH_FINDINGS
+
+
 class _StopTraining(Exception):
     """Raised by the per-episode callback when a stop was requested."""
     pass

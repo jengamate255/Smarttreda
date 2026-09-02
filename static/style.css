@@ -1531,6 +1531,24 @@ a:focus-visible {
 
 .dojo-spark { display: block; }
 
+/* Research Lab panel */
+.dojo-research-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 16px; margin-top: 4px;
+}
+.dojo-research-col h4.dojo-research-title {
+  margin: 0 0 8px 0; font-size: 13px; color: var(--text, #eee);
+}
+.dojo-research-col p { margin: 0 0 10px 0; line-height: 1.5; }
+.dojo-research-col .dojo-metric {
+  display: flex; justify-content: space-between; gap: 10px;
+  padding: 3px 0; border-bottom: 1px dashed var(--border);
+}
+.dojo-research-col code {
+  background: rgba(0,212,255,0.08); padding: 1px 5px; border-radius: 4px;
+  font-size: 11px;
+}
+
 /* Active training */
 .dojo-active-training { min-height: 60px; }
 .dojo-active-item {
