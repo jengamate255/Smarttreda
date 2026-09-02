@@ -246,41 +246,221 @@ function esc(s) {
   return s == null ? "" : String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 
-/* ---------- Toasts & notifications ---------- */
+/* ---------- Enhanced Toasts & Notification Center ---------- */
 const toastQueue = [];
-const TOAST_MAX = 5;
+const TOAST_MAX = 6;
 let toastPermissionAsked = false;
 
+/* Notification history for the bell dropdown */
+const NotifCenter = (() => {
+  const MAX_NOTIFS = 50;
+  let notifs = [];
+  let unread = 0;
+
+  function push(icon, title, msg, opts = {}) {
+    const n = {
+      id: Date.now() + Math.random(),
+      icon,
+      title,
+      msg,
+      time: new Date(),
+      read: false,
+      link: opts.link || null,
+    };
+    notifs.unshift(n);
+    if (notifs.length > MAX_NOTIFS) notifs.pop();
+    if (!n.read) unread++;
+    render();
+    return n;
+  }
+
+  function markAllRead() {
+    notifs.forEach(n => n.read = true);
+    unread = 0;
+    render();
+  }
+
+  function render() {
+    const countEl = document.getElementById("notif-count");
+    const listEl = document.getElementById("notif-list");
+    if (countEl) {
+      countEl.textContent = unread;
+      countEl.classList.toggle("visible", unread > 0);
+    }
+    if (listEl) {
+      if (!notifs.length) {
+        listEl.innerHTML = '<div class="notif-empty">No notifications yet</div>';
+        return;
+      }
+      listEl.innerHTML = notifs.slice(0, 30).map(n => {
+        const age = formatAge(n.time);
+        return `<div class="notif-item${n.read ? "" : " unread"}">
+          <span class="notif-item-icon">${n.icon}</span>
+          <div class="notif-item-body">
+            <div class="notif-item-title">${esc(n.title)}</div>
+            <div class="notif-item-msg">${esc(n.msg)}</div>
+            <div class="notif-item-time">${age}</div>
+          </div>
+        </div>`;
+      }).join("");
+    }
+  }
+
+  function formatAge(d) {
+    const s = Math.floor((Date.now() - d.getTime()) / 1000);
+    if (s < 60) return "just now";
+    if (s < 3600) return Math.floor(s / 60) + "m ago";
+    if (s < 86400) return Math.floor(s / 3600) + "h ago";
+    return Math.floor(s / 86400) + "d ago";
+  }
+
+  function init() {
+    // Build bell + dropdown in header
+    const header = document.querySelector("header");
+    if (!header || document.getElementById("notif-center")) return;
+    const center = document.createElement("div");
+    center.id = "notif-center";
+    center.className = "notif-center";
+    center.innerHTML = `
+      <button class="notif-bell" id="notif-bell" aria-label="Notifications" aria-haspopup="true" aria-expanded="false">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+          <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+        </svg>
+        <span id="notif-count" class="notif-count"></span>
+      </button>
+      <div id="notif-dropdown" class="notif-dropdown">
+        <div class="notif-header">
+          <span class="notif-header-title">Notifications</span>
+          <button class="notif-header-btn" id="notif-mark-read">Mark all read</button>
+        </div>
+        <div id="notif-list" class="notif-list">
+          <div class="notif-empty">No notifications yet</div>
+        </div>
+      </div>`;
+    // Insert before theme toggle
+    const themeBtn = document.getElementById("theme-toggle");
+    if (themeBtn) themeBtn.parentNode.insertBefore(center, themeBtn);
+    else header.querySelector(".status")?.appendChild(center);
+
+    // Toggle dropdown
+    const bell = document.getElementById("notif-bell");
+    const dropdown = document.getElementById("notif-dropdown");
+    bell.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const open = dropdown.classList.toggle("open");
+      bell.setAttribute("aria-expanded", open);
+      if (open) markAllRead();
+    });
+    document.addEventListener("click", (e) => {
+      if (!dropdown.contains(e.target) && e.target !== bell) {
+        dropdown.classList.remove("open");
+        bell.setAttribute("aria-expanded", "false");
+      }
+    });
+    document.getElementById("notif-mark-read")?.addEventListener("click", markAllRead);
+  }
+
+  return { push, markAllRead, init, render };
+})();
+
 function toast(msg, kind = "info", opts = {}) {
-  const { persist = false, timeout = 5000, action } = opts;
+  const { persist = false, timeout = 5000, action, title } = opts;
   const container = $("toast-container") || createToastContainer();
   const el = document.createElement("div");
   el.className = `toast ${kind}`;
   el.setAttribute("role", "alert");
   el.setAttribute("aria-live", "polite");
-  el.innerHTML = `<span>${esc(msg)}</span>`;
+
+  // Build structured content
+  const icon = document.createElement("span");
+  icon.className = "toast-icon";
+  const body = document.createElement("div");
+  body.className = "toast-body";
+  if (title) {
+    const t = document.createElement("div");
+    t.className = "toast-title";
+    t.textContent = title;
+    body.appendChild(t);
+  }
+  const m = document.createElement("div");
+  m.className = "toast-msg";
+  m.textContent = msg;
+  body.appendChild(m);
+  const time = document.createElement("div");
+  time.className = "toast-time";
+  time.textContent = new Date().toLocaleTimeString();
+  body.appendChild(time);
+
+  el.appendChild(icon);
+  el.appendChild(body);
+
+  // Action button
   if (action) {
     const btn = document.createElement("button");
     btn.className = "toast-action";
     btn.textContent = action.label;
-    btn.onclick = () => { action.fn(); dismissToast(el); };
+    btn.onclick = (e) => { e.stopPropagation(); action.fn(); dismissToast(el); };
     el.appendChild(btn);
   }
-  if (!persist) {
+
+  // Dismiss button
+  const dismiss = document.createElement("button");
+  dismiss.className = "toast-dismiss";
+  dismiss.innerHTML = "&times;";
+  dismiss.setAttribute("aria-label", "Dismiss");
+  dismiss.onclick = (e) => { e.stopPropagation(); dismissToast(el); };
+  el.appendChild(dismiss);
+
+  // Progress bar
+  if (!persist && timeout > 0) {
+    const progress = document.createElement("div");
+    progress.className = "toast-progress";
+    progress.style.width = "100%";
+    progress.style.transitionDuration = timeout + "ms";
+    el.appendChild(progress);
+    requestAnimationFrame(() => { progress.style.width = "0%"; });
     const timer = setTimeout(() => dismissToast(el), timeout);
     el.dataset.timer = timer;
+    el._progress = progress;
+    el._remaining = timeout;
+    el._start = Date.now();
+    // Hover pauses progress
+    el.addEventListener("mouseenter", () => {
+      if (el._progress) {
+        const elapsed = Date.now() - el._start;
+        el._remaining = Math.max(0, el._remaining - elapsed);
+        el._progress.style.transitionDuration = "0s";
+        el._progress.style.width = el._remaining / timeout * 100 + "%";
+      }
+    });
+    el.addEventListener("mouseleave", () => {
+      if (el._progress && el._remaining > 0) {
+        el._start = Date.now();
+        el._progress.style.transitionDuration = el._remaining + "ms";
+        el._progress.style.width = "0%";
+        el.dataset.timer = setTimeout(() => dismissToast(el), el._remaining);
+      }
+    });
   }
-  el.onclick = (e) => { if (e.target === el) dismissToast(el); };
+
   container.appendChild(el);
   toastQueue.push(el);
   if (toastQueue.length > TOAST_MAX) dismissToast(toastQueue[0]);
   requestAnimationFrame(() => el.classList.add("show"));
-  if (kind === "error" || kind === "warning") notify(msg, "");
+
+  // Push to notification center
+  const iconMap = { up: "\u2705", success: "\u2705", down: "\u274C", error: "\u274C", warning: "\u26A0\uFE0F", info: "\u2139\uFE0F", neutral: "\u{1F4CC}" };
+  NotifCenter.push(iconMap[kind] || "\u2139\uFE0F", title || msg.slice(0, 60), msg);
+
+  // Browser notification for important events
+  if (kind === "error" || kind === "warning" || kind === "down") notify(msg, "");
 }
 
 function dismissToast(el) {
   const timer = el.dataset.timer;
   if (timer) clearTimeout(timer);
+  el.classList.add("hiding");
   el.classList.remove("show");
   el.addEventListener("transitionend", () => el.remove(), { once: true });
   const idx = toastQueue.indexOf(el);
@@ -298,15 +478,16 @@ function createToastContainer() {
 
 function notify(title, body) {
   if (!("Notification" in window) || Notification.permission !== "granted") return;
-  try { new Notification(title, { body }); } catch (e) { /* unsupported */ }
+  try { new Notification(title, { body, icon: "/static/icons/icon-192.png" }); } catch (e) { /* unsupported */ }
 }
 
+// Request notification permission on first interaction
 document.addEventListener("click", () => {
   if (!toastPermissionAsked && "Notification" in window && Notification.permission === "default") {
     toastPermissionAsked = true;
     Notification.requestPermission().catch(() => {});
   }
-});
+}, { once: true });
 
 /* ---------- Keyboard shortcuts ---------- */
 const SHORTCUTS = [

@@ -763,7 +763,13 @@ async function pollEvents() {
         eventsCursor = Math.max(eventsCursor, ev.id);
         const kind = ev.kind === "filled" || ev.kind === "closed" ? "down"
           : ev.kind === "trail" ? "warning" : "info";
-        toast(`${String(ev.account || "?").toUpperCase()} Â· ${ev.message}`, kind, { timeout: 7000 });
+        const isAuto = String(ev.message || "").toLowerCase().includes("auto") ||
+                       String(ev.account || "").toLowerCase().includes("auto");
+        const title = ev.kind === "filled" ? "Trade Filled"
+          : ev.kind === "closed" ? "Trade Closed"
+          : ev.kind === "trail" ? "Trailing Update"
+          : isAuto ? "Auto Trader" : "Market Event";
+        toast(`${String(ev.account || "?").toUpperCase()} \u00b7 ${ev.message}`, kind, { timeout: 7000, title });
       }
       localStorage.setItem(EVENTS_KEY, String(eventsCursor));
     } else if (r.latest_id > eventsCursor) {

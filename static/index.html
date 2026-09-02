@@ -624,7 +624,10 @@ const HedgeFund = (() => {
 <script>
 // Initialize Hedge Fund layout after all scripts load
 document.addEventListener('DOMContentLoaded', () => {
-  setTimeout(() => HedgeFund.init(), 100);
+  setTimeout(() => {
+    HedgeFund.init();
+    NotifCenter.init();
+  }, 100);
 });
 </script>
 </body>
