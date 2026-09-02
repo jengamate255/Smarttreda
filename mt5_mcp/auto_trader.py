@@ -257,12 +257,30 @@ def _bar_key(client, symbol: str) -> str:
 
 
 def _spread_points(client, symbol: str) -> float:
+    """Spread in strategy pips, matching the backtester's convention.
+
+    Raw point-based spreads are unbounded for 2-digit symbols (JP225 live
+    spread is 1000 raw points but only 10 strategy pips), which would
+    permanently block index entries even though the validated backtest
+    assumed 15-pip spreads. Convert to pips like common.pip_size does:
+    digits>=4 -> point*10^(digits-4); digits==3 -> point*10;
+    digits==2 (indices/gold) -> point*100.
+    """
     info = client.symbol_info(symbol)
     tick = client.tick(symbol)
     point = float(info.get("point", 0.0) or 0.0)
+    digits = int(info.get("digits", 5) or 5)
     if point <= 0:
         raise RuntimeError(f"invalid point size for {symbol}")
-    return (float(tick.get("ask", 0.0)) - float(tick.get("bid", 0.0))) / point
+    if digits >= 4:
+        pip = point * 10 ** (digits - 4)
+    elif digits == 3:
+        pip = point * 10
+    else:  # digits == 2: indices, gold — 1 pip = 1.00 price point
+        pip = point * 100
+    if pip <= 0:
+        raise RuntimeError(f"invalid pip size for {symbol}")
+    return (float(tick.get("ask", 0.0)) - float(tick.get("bid", 0.0))) / pip
 
 
 def _status_guard() -> dict[str, Any]:
