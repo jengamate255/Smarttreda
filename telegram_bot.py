@@ -1,4 +1,4 @@
-﻿"""Interactive Telegram control bot for the dual-terminal MT5 system.
+"""Interactive Telegram control bot for the dual-terminal MT5 system.
 
 Long-polls Telegram getUpdates and serves commands from the authorised
 chat only. Data comes from the dashboard HTTP APIs where possible and
@@ -13,6 +13,11 @@ Commands:
     /chart SYMBOL [TF]    - annotated candlestick chart photo
     /scan                 - Boom/Crash spike scan (Deriv)
     /summary [DAYS]       - journal performance stats
+    /at                   - auto trader status (JP225/EURUSD runner)
+    /atpause              - engage auto trader kill switch
+    /atresume             - release auto trader kill switch
+    /research             - research lab verdicts (RL/JP225/Deriv)
+    /heatmap              - session P&L money windows
 
 Run:  python telegram_bot.py          (foreground)
       python telegram_bot.py --loop   (with auto-restart wrapper)
@@ -99,7 +104,15 @@ def cmd_help() -> str:
         "/price SYMBOL - live quote\n"
         "/chart SYMBOL [M1|M5|M15|H1|H4|D1] - chart photo\n"
         "/scan - Boom/Crash spike scan\n"
-        "/summary [days] - performance stats\n        /close TICKET - close a position\n        /halt - stop spike watcher\n        /resume - restart watcher\n"
+        "/summary [days] - performance stats\n"
+        "/at - auto trader status\n"
+        "/atpause - pause auto trader (kill switch)\n"
+        "/atresume - resume auto trader\n"
+        "/research - research lab verdicts\n"
+        "/heatmap - session P&L money windows\n"
+        "/close TICKET - close a position\n"
+        "/halt - stop spike watcher\n"
+        "/resume - restart watcher\n"
         "/help - commands"
     )
 
@@ -301,6 +314,134 @@ def cmd_summary(days: int = 7) -> str:
         return f"Summary failed: {str(exc)[:80]}"
 
 
+def cmd_at() -> str:
+    """Auto trader status: task, kill switch, cycles, per-symbol plans, validation."""
+    data = _dash_get("PROP", "/api/autotrader/status")
+    if not data or data.get("error"):
+        return f"Auto trader API unavailable: {str(data.get('error', 'offline'))[:60] if data else 'offline'}"
+    running = data.get("task_state") in ("Running", "Ready")
+    killed = bool(data.get("kill_switch"))
+    state = "PAUSED (kill switch)" if killed else ("ACTIVE" if running else data.get("task_state", "?"))
+
+    lines = [f"🤖 <b>AUTO TRADER</b> — {state}"]
+    lines.append(f"cycles: {data.get('cycles', 0)} | task: {data.get('task_state', '?')}")
+
+    plans = data.get("plans") or {}
+    for sym, p in plans.items():
+        conf = p.get("confidence")
+        conf_s = f"{conf:.1f}%" if isinstance(conf, (int, float)) else "--"
+        ok = isinstance(conf, (int, float)) and conf >= 90
+        icon = "🟢" if ok else "⚪"
+        reason = (p.get("reason") or "--")[:50]
+        lines.append(f"{icon} {sym}: {p.get('action', '?')} conf {conf_s}\n    ↳ {reason}")
+
+    v = data.get("last_validation") or {}
+    if v.get("available"):
+        age = v.get("age_days")
+        action = str(v.get("action", "--")).split(" - ")[0]
+        v_icon = "⚠️" if v.get("overdue") else ("✅" if action.startswith("CONTINUE") else "🛑")
+        lines.append(f"{v_icon} validation: {action} ({age}d ago)")
+    else:
+        lines.append("⚠️ validation: never run")
+    return "\n".join(lines)
+
+
+def cmd_atpause() -> str:
+    """Engage the auto trader kill switch (pauses at next cycle)."""
+    import urllib.request
+
+    base = DASHBOARDS["PROP"][0]
+    req = urllib.request.Request(
+        f"{base}/api/autotrader/kill?token={AUTH_TOKEN}",
+        method="POST",
+        headers={"X-Auth-Token": AUTH_TOKEN},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            ok = 200 <= resp.status < 300
+        if ok:
+            return ("⏸ <b>AUTO TRADER PAUSED</b>\n"
+                    "Kill switch engaged — pauses at the next cycle.\n"
+                    "Open positions are NOT closed. /atresume to restart.")
+        return f"Pause failed: HTTP {resp.status}"
+    except Exception as exc:  # noqa: BLE001
+        return f"Pause failed: {str(exc)[:70]}"
+
+
+def cmd_atresume() -> str:
+    """Release the auto trader kill switch."""
+    import urllib.request
+
+    base = DASHBOARDS["PROP"][0]
+    req = urllib.request.Request(
+        f"{base}/api/autotrader/kill?token={AUTH_TOKEN}",
+        method="DELETE",
+        headers={"X-Auth-Token": AUTH_TOKEN},
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            ok = 200 <= resp.status < 300
+        if ok:
+            return "▶️ <b>AUTO TRADER RESUMED</b>\nKill switch released — trading continues."
+        return f"Resume failed: HTTP {resp.status}"
+    except Exception as exc:  # noqa: BLE001
+        return f"Resume failed: {str(exc)[:70]}"
+
+
+def cmd_research() -> str:
+    """Research lab verdicts: RL, JP225 price-action, Deriv spike-drift."""
+    data = _dash_get("PROP", "/api/dojo/research")
+    if not data or data.get("error"):
+        return "Research API unavailable (dashboards offline?)"
+
+    lines = ["🔬 <b>RESEARCH LAB</b>"]
+    rl = data.get("rl_verdict") or {}
+    lines.append(f"🧠 RL: {rl.get('summary', '?')}")
+    base = rl.get("honest_baseline") or []
+    if base:
+        nets = ", ".join(f"{b['symbol']} {b['pf']:.2f}" for b in base)
+        lines.append(f"    honest PF: {nets}")
+    pa = data.get("price_action_verdict") or {}
+    jp = pa.get("jp225") or {}
+    lines.append(f"🎯 JP225: {pa.get('summary', '?')}")
+    lines.append(f"    {jp.get('stats', '')}")
+    dv = data.get("deriv_verdict") or {}
+    lines.append(f"⚡ Deriv: {dv.get('summary', '?')}")
+    good = ", ".join(dv.get("sessions_good") or [])
+    bad = ", ".join(dv.get("sessions_bad") or [])
+    lines.append(f"    good: {good} | avoid: {bad}")
+    return "\n".join(lines)
+
+
+def cmd_heatmap() -> str:
+    """Session P&L money windows: best and worst UTC hours."""
+    data = _dash_get("PROP", "/api/session-heatmap?days=120")
+    if not data or data.get("error"):
+        return "Heat-map API unavailable (dashboards offline?)"
+    hours = data.get("hours") or {}
+    if not hours:
+        return "No session data in the journal yet"
+    rows = sorted(
+        ((int(k), v) for k, v in hours.items()),
+        key=lambda kv: -(kv[1].get("net") or 0),
+    )
+    top = rows[:3]
+    worst = rows[-3:][::-1]
+
+    def fmt_row(hv):
+        h, v = hv
+        net = v.get("net") or 0
+        sign = "+" if net >= 0 else ""
+        return f"{h:02d}:00 — {sign}{net:.2f} ({v.get('trades', 0)}t, WR {v.get('win_rate', 0):.0f}%)"
+
+    lines = ["🗺 <b>SESSION P&L (UTC)</b>"]
+    lines.append("Money windows:")
+    lines.extend(f"  🟢 {fmt_row(r)}" for r in top)
+    lines.append("Dead zones:")
+    lines.extend(f"  🔴 {fmt_row(r)}" for r in worst)
+    return "\n".join(lines)
+
+
 # ------------------------------------------------------------------ plumbing
 
 def _watcher_pids():
@@ -386,8 +527,8 @@ def cmd_resume() -> str:
 
 
 def _seconds_until_utc_midnight() -> float:
-    now = datetime.datetime.now(timezone.utc)
-    nxt = (now + datetime.timedelta(days=1)).replace(
+    now = datetime.now(timezone.utc)
+    nxt = (now + timedelta(days=1)).replace(
         hour=0, minute=0, second=5, microsecond=0)
     return (nxt - now).total_seconds()
 
@@ -423,6 +564,16 @@ def handle_message(text: str) -> tuple[str, bytes | None]:
     if cmd == "/summary":
         d = int(args[0]) if args and args[0].isdigit() else 7
         return cmd_summary(min(d, 90)), None
+    if cmd == "/at":
+        return cmd_at(), None
+    if cmd == "/atpause":
+        return cmd_atpause(), None
+    if cmd == "/atresume":
+        return cmd_atresume(), None
+    if cmd == "/research":
+        return cmd_research(), None
+    if cmd == "/heatmap":
+        return cmd_heatmap(), None
     if cmd == "/close":
         try:
             return cmd_close(int(args[0])), None
@@ -512,6 +663,82 @@ def watchdog_loop(token: str, chat_id: int) -> None:
             log.info("watchdog: watcher recovered")
 
 
+AUTOTRADER_POLL = 30  # seconds between checks
+
+def autotrader_alert_loop(token: str, chat_id: int) -> None:
+    """Alert on auto-trader trade fills, kill-switch events, and validation warnings."""
+    last_cycles = 0
+    last_killed = None
+    last_validation_action = None
+    alerted_at = 0.0
+    while True:
+        time.sleep(AUTOTRADER_POLL)
+        try:
+            data = _dash_get("PROP", "/api/autotrader/status")
+            if not data or data.get("error"):
+                continue
+        except Exception as exc:  # noqa: BLE001
+            log.debug("autotrader alert poll failed: %s", exc)
+            continue
+
+        now = time.time()
+        cycles = data.get("cycles", 0)
+        killed = bool(data.get("kill_switch"))
+        task_state = data.get("task_state", "")
+
+        # --- new cycle (trade fill) ---
+        if cycles > last_cycles and last_cycles > 0:
+            delta = cycles - last_cycles
+            plans = data.get("plans") or {}
+            fills = []
+            for sym, p in plans.items():
+                conf = p.get("confidence")
+                conf_s = f"{conf:.1f}%" if isinstance(conf, (int, float)) else "--"
+                fills.append(f"  {sym} {p.get('action', '?')} conf={conf_s}")
+            text = (
+                f"🤖 <b>AUTO TRADER CYCLE</b> (×{delta})\n"
+                + "\n".join(fills[:4])
+            )
+            api_call(token, "sendMessage", {"chat_id": chat_id, "text": text})
+            log.info("autotrader alert: %d new cycle(s)", delta)
+
+        last_cycles = cycles
+
+        # --- kill-switch state change ---
+        if last_killed is not None and killed != last_killed:
+            if killed:
+                api_call(token, "sendMessage", {
+                    "chat_id": chat_id,
+                    "text": "⏸ <b>AUTO TRADER PAUSED</b> (kill switch engaged)\n"
+                            "Open positions kept open. /atresume to restart.",
+                })
+                log.info("autotrader alert: kill switch engaged")
+            else:
+                api_call(token, "sendMessage", {
+                    "chat_id": chat_id,
+                    "text": "▶️ <b>AUTO TRADER RESUMED</b>\nKill switch released.",
+                })
+                log.info("autotrader alert: kill switch released")
+        last_killed = killed
+
+        # --- validation overdue warning (once per day) ---
+        v = data.get("last_validation") or {}
+        v_action = v.get("action", "")
+        if v.get("overdue") and v_action != last_validation_action:
+            if now - alerted_at > 86400:
+                api_call(token, "sendMessage", {
+                    "chat_id": chat_id,
+                    "text": (
+                        f"⚠️ <b>VALIDATION OVERDUE</b>\n"
+                        f"Last validation: {v.get('age_days', '?')}d ago\n"
+                        f"Action: {v_action}\n"
+                        f"Run <code>validate_jp225_monthly.py</code> or check Auto Trader panel."
+                    ),
+                })
+                alerted_at = now
+        last_validation_action = v_action
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Telegram control bot")
     ap.add_argument("--once-poll", action="store_true", help="poll once then exit (debug)")
@@ -528,6 +755,7 @@ def main() -> int:
     # Watchdog: alert Telegram if the spike watcher dies (item #3).
     threading.Thread(target=watchdog_loop, args=(token, send_to), daemon=True).start()
     threading.Thread(target=midnight_summary_loop, args=(token, send_to), daemon=True).start()
+    threading.Thread(target=autotrader_alert_loop, args=(token, send_to), daemon=True).start()
     offset = 0
     while True:
         updates = api_call(token, "getUpdates",
