@@ -1305,6 +1305,13 @@ from web_research import router as research_router  # noqa: E402
 app.include_router(backtests_router)
 app.include_router(research_router)
 
+# Auto Trader monitor (deployed JP225_Z40 / EURUSD_MED unattended runner)
+try:
+    from web_autotrader import router as autotrader_router  # noqa: E402
+    app.include_router(autotrader_router)
+except ImportError:
+    pass
+
 # ForexDojo RL training engine
 try:
     from web_dojo import router as dojo_router  # noqa: E402

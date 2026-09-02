@@ -2318,3 +2318,14 @@ a:focus-visible,
 .risk-positions-table td {
   padding: 8px 10px; border-bottom: 1px solid var(--border);
 }
+
+/* ---------- Auto Trader panel ---------- */
+.autotrader-panel .at-log-lines {
+  max-height: 220px; overflow-y: auto; margin: 6px 0 0 0;
+  background: var(--panel-2, #101018); color: var(--text-dim, #9aa);
+  font-family: var(--mono, monospace); font-size: 11px; line-height: 1.5;
+  padding: 8px 10px; border-radius: 6px; white-space: pre-wrap;
+  border: 1px solid var(--border, #262636);
+}
+.btn.danger { background: rgba(244,67,54,0.15); color: #f44336; border-color: rgba(244,67,54,0.4); }
+.btn.danger:hover { background: rgba(244,67,54,0.3); }

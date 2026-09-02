@@ -434,6 +434,101 @@ async function loadCompliance() {
   }
 }
 
+/* ---------- Auto Trader (deployed unattended runner) ---------- */
+async function loadAutoTrader() {
+  const body = $("at-body");
+  if (!body) return;
+  try {
+    const at = await api("/api/autotrader/status");
+    if (at.error) throw new Error(at.error);
+
+    const running = at.task_state === "Running" || at.task_state === "Ready";
+    const killed = !!at.kill_switch;
+    const badge = $("at-state-badge");
+    badge.textContent = killed ? "PAUSED" : (running ? at.task_state.toUpperCase() : at.task_state.toUpperCase());
+    badge.style.background = killed ? "var(--orange)33" : (running ? "var(--green)33" : "var(--red)33");
+    badge.style.color = killed ? "var(--orange)" : (running ? "var(--green)" : "var(--red)");
+    $("at-cycles-sub").textContent = `${at.cycles || 0} cycles`;
+
+    const planRows = Object.entries(at.plans || {}).map(([sym, p]) => {
+      const conf = p.confidence != null ? Number(p.confidence).toFixed(1) : "--";
+      const confOk = p.confidence != null && p.confidence >= 90;
+      return `<tr>
+        <td class="pos">${esc(sym)}</td>
+        <td>${esc(p.action || "--")}</td>
+        <td class="${confOk ? 'pos' : ''}">${conf}%</td>
+        <td class="small" style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(p.reason || '')}">${esc(p.reason || "--")}</td>
+      </tr>`;
+    }).join("");
+
+    const v = at.last_validation || {};
+    const vHtml = v.available ? `
+      <div class="slot-item" title="${esc(v.file || '')}">
+        <div class="slot-label">Monthly Validation</div>
+        <div class="slot-value ${String(v.action || '').startsWith("CONTINUE") ? 'pos' : 'neg'}">${String(v.action || "--").split(" - ")[0]}</div>
+      </div>` : `
+      <div class="slot-item">
+        <div class="slot-label">Monthly Validation</div>
+        <div class="slot-value">not run</div>
+      </div>`;
+
+    body.innerHTML = `
+      <div class="slots-row">
+        <div class="slot-item">
+          <div class="slot-label">Task</div>
+          <div class="slot-value ${running ? 'pos' : 'neg'}">${esc(at.task_state)}</div>
+        </div>
+        <div class="slot-item">
+          <div class="slot-label">Kill Switch</div>
+          <div class="slot-value ${killed ? 'neg' : 'pos'}">${killed ? "ENGAGED" : "off"}</div>
+        </div>
+        ${vHtml}
+        <div class="slot-item">
+          <div class="slot-label">Cycles</div>
+          <div class="slot-value">${at.cycles || 0}</div>
+        </div>
+      </div>
+      <table class="data-table" style="margin-top:8px;">
+        <thead><tr><th>Symbol</th><th>Plan</th><th>Conf</th><th>Status</th></tr></thead>
+        <tbody>${planRows || '<tr><td colspan="4" class="plan-empty">No evaluations yet</td></tr>'}</tbody>
+      </table>
+      <div style="margin-top:10px;display:flex;gap:8px;">
+        ${killed
+          ? `<button class="btn small" onclick="AutoTraderCtl.kill(false)">▶ Resume</button>`
+          : `<button class="btn small danger" onclick="AutoTraderCtl.kill(true)">⏸ Pause (kill switch)</button>`}
+        <button class="btn small" onclick="AutoTraderCtl.toggleLog()">📜 Log</button>
+      </div>
+    `;
+
+    const logEl = $("at-log-lines");
+    if (logEl) {
+      logEl.textContent = (at.log_tail || []).join("\n") || "(no log output yet)";
+    }
+  } catch (e) {
+    body.innerHTML = `<div class="plan-empty">Auto trader unavailable: ${esc(e.message)}</div>`;
+  }
+}
+
+/* Auto Trader controls (kill switch + log toggle) */
+const AutoTraderCtl = {
+  async kill(engage) {
+    if (engage && !confirm("Engage kill switch?\\n\\nThe auto trader pauses at its next cycle. Open positions are NOT closed.")) return;
+    try {
+      if (engage) await apiPost("/api/autotrader/kill");
+      else await apiDelete("/api/autotrader/kill");
+      loadAutoTrader();
+    } catch (e) {
+      alert("Failed: " + (e.message || e));
+    }
+  },
+  toggleLog() {
+    const el = $("at-log");
+    if (!el) return;
+    el.classList.toggle("hidden");
+  }
+};
+window.AutoTraderCtl = AutoTraderCtl;
+
 /* ---------- Forex Breakout Panel ---------- */
 async function loadForexBreakout() {
   showSkeleton($("fb-body"), "rows", 5);

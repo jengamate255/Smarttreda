@@ -820,6 +820,7 @@ function init() {
   loadJournalDistribution();
   loadRisk();
   loadCompliance();
+  loadAutoTrader();
   loadForexBreakout();
   loadSessions();
   loadNews();
@@ -844,7 +845,7 @@ function init() {
 
   // Slow tier (60s): heavier data, staggered with offsets
   let slowIdx = 0;
-  const slowFns = [loadPlan, loadEquity, loadJournal, loadBoomCrash, loadRisk, loadCompliance];
+  const slowFns = [loadPlan, loadEquity, loadJournal, loadBoomCrash, loadRisk, loadCompliance, loadAutoTrader];
   setInterval(() => {
     if (document.hidden) return;
     slowFns[slowIdx % slowFns.length]();

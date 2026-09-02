@@ -314,6 +314,20 @@ const HedgeFund = (() => {
       </div>
     </section>
 
+    <section class="panel autotrader-panel">
+      <div class="panel-title">🤖 Auto Trader
+        <span class="badge" id="at-state-badge">--</span>
+        <span class="sub" id="at-cycles-sub"></span>
+      </div>
+      <div id="at-body">
+        <div class="plan-empty">Loading auto trader status...</div>
+      </div>
+      <div id="at-log" class="at-log hidden">
+        <div class="panel-title" style="margin-top:8px;">Recent cycles</div>
+        <pre id="at-log-lines" class="at-log-lines"></pre>
+      </div>
+    </section>
+
     <section class="panel forex-breakout-panel">
       <div class="panel-title">Forex Breakout <span class="sub">Donchian range + EMA200 trend</span>
         <span class="fb-actions">

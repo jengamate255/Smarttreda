@@ -225,6 +225,18 @@ async function apiPost(path, body) {
   return j;
 }
 
+async function apiDelete(path) {
+  const headers = {};
+  if (AUTH_TOKEN) headers["X-Auth-Token"] = AUTH_TOKEN;
+  const res = await fetch(path, { method: "DELETE", headers });
+  let j = null;
+  try { j = await res.json(); } catch (e) { /* no body */ }
+  if (!res.ok) {
+    throw new Error((j && (j.detail || j.error)) || `HTTP ${res.status}`);
+  }
+  return j;
+}
+
 function setStatus(ok, text) {
   $("status-dot").className = `dot ${ok ? "on" : "off"}`;
   $("status-text").textContent = text;
