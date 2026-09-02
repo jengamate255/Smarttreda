@@ -1,0 +1,43 @@
+{
+  "run_at": "2026-09-02T08:21:03.051295+00:00",
+  "results": {
+    "anchor_5000": {
+      "tag": "anchor_5000",
+      "trades": 29,
+      "pf": 1.64,
+      "win_rate": 41.4,
+      "net": 536.7900000000001
+    },
+    "window_3000": {
+      "tag": "window_3000",
+      "trades": 16,
+      "pf": 1.8,
+      "win_rate": 37.5,
+      "net": 392.96
+    },
+    "window_6000": {
+      "tag": "window_6000",
+      "trades": 32,
+      "pf": 1.33,
+      "win_rate": 37.5,
+      "net": 337.28
+    },
+    "perturb_z45": {
+      "tag": "perturb_z45",
+      "trades": 29,
+      "pf": 1.64,
+      "win_rate": 41.4,
+      "net": 536.5
+    },
+    "perturb_rr25": {
+      "tag": "perturb_rr25",
+      "trades": 29,
+      "pf": 1.56,
+      "win_rate": 41.4,
+      "net": 470.67
+    }
+  },
+  "hard_criteria_pass": true,
+  "window_stability_pass": true,
+  "action": "CONTINUE - JP225_Z40 edge intact"
+}
