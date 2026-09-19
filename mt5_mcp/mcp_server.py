@@ -41,10 +41,14 @@ class TradingMCPServer:
         """Analyze market data and return comprehensive analysis."""
         try:
             asset_class = asset_class_from_symbol(symbol)
-            norm_candles = [
-                NormalizedCandle(**{k: v for k, v in c.items() if k != "asset_class"})
-                for c in candles
-            ]
+            norm_candles = []
+            for c in candles:
+                candle_data = {k: v for k, v in c.items() if k != "asset_class"}
+                # Convert timestamp string to datetime if needed
+                if isinstance(candle_data.get("timestamp"), str):
+                    from dateutil.parser import parse
+                    candle_data["timestamp"] = parse(candle_data["timestamp"])
+                norm_candles.append(NormalizedCandle(**candle_data))
 
             input_data = OrchestratorInput(
                 task_id=f"task_{symbol}_{datetime.now(timezone.utc).timestamp()}",
@@ -63,7 +67,7 @@ class TradingMCPServer:
                     "stop_loss": setup.stop_loss,
                     "take_profit": setup.take_profit,
                     "expected_rr": setup.expected_rr,
-                    "confidence": setup.confidence,
+                    "status": setup.status.value if setup.status else None,
                 })
 
             return {

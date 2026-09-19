@@ -295,6 +295,25 @@ class ChiefTradingAgent:
         # Generate candidate setups based on available analysis
         for zone in zones[:3]:  # Limit to top 3 zones
             for direction in ["LONG", "SHORT"]:
+                # Calculate entry, SL, TP from zone
+                entry = None
+                stop_loss = None
+                take_profit = None
+
+                if zone:
+                    if direction == "LONG":
+                        # LONG: entry at zone low, SL below zone, TP 3x risk
+                        entry = zone.zone_low
+                        stop_loss = zone.zone_low - (zone.zone_high - zone.zone_low) * 0.5
+                        risk = entry - stop_loss
+                        take_profit = entry + risk * 3.0
+                    else:
+                        # SHORT: entry at zone high, SL above zone, TP 3x risk
+                        entry = zone.zone_high
+                        stop_loss = zone.zone_high + (zone.zone_high - zone.zone_low) * 0.5
+                        risk = stop_loss - entry
+                        take_profit = entry - risk * 3.0
+
                 setup = TradeSetup(
                     symbol=symbol,
                     asset_class=asset_class,
@@ -306,6 +325,9 @@ class ChiefTradingAgent:
                     liquidity=liquidity if liquidity.has_liquidity(zone.zone_low if zone else 0) else None,
                     confirmation=confirmation,
                     risk_percent=self.risk_percent,
+                    entry=entry,
+                    stop_loss=stop_loss,
+                    take_profit=take_profit,
                 )
 
                 # Calculate expected RR
