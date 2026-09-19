@@ -8,10 +8,13 @@ Agent communication uses structured Pydantic models with evidence dependencies.
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel, Field
+
+logger = logging.getLogger("mt5_mcp.orchestrator")
 
 from .asset import AssetClass, asset_class_from_symbol
 from .data_schema import NormalizedCandle, DataQualityReport, DataQualityStatus
@@ -26,6 +29,7 @@ from .zone_agent import ZoneAgent
 from .structure_agent import StructureAgent
 from .price_action_agent import PriceActionAgent
 from .regime_agent import RegimeAgent
+from .llm_narrative import LLMNarrativeGenerator
 from .groq_llm import (
     is_enabled as groq_enabled,
     check_health as groq_health,
@@ -78,6 +82,8 @@ class OrchestratorOutput(BaseModel):
     data_quality: DataQualityReport
     risk_result: RiskEngineResult = Field(default_factory=lambda: RiskEngineResult(can_trade=False, explanation=""))
     red_team_observations: list[str] = Field(default_factory=list)
+    llm_narratives: dict[str, Any] = Field(default_factory=dict)  # LLM-generated narratives
+    regime_data: dict[str, Any] = Field(default_factory=dict)  # Regime classification data
 
 
 # ---------------------------------------------------------------------------
@@ -103,11 +109,13 @@ class ChiefTradingAgent:
     """
 
     def __init__(self, risk_percent: float = 0.5, min_rr: float = 3.0,
-                 max_positions: int = 5, enable_red_team: bool = True) -> None:
+                 max_positions: int = 5, enable_red_team: bool = True,
+                 enable_llm: bool = True) -> None:
         self.risk_percent = risk_percent
         self.min_rr = min_rr
         self.max_positions = max_positions
         self.enable_red_team = enable_red_team
+        self.enable_llm = enable_llm
 
         self.data_quality_agent = DataQualityAgent()
         self.risk_engine = RiskEngine(
@@ -121,6 +129,9 @@ class ChiefTradingAgent:
         self.structure_agent = StructureAgent()
         self.price_action_agent = PriceActionAgent()
         self.regime_agent = RegimeAgent()
+
+        # LLM narrative generator
+        self.llm_narrative = LLMNarrativeGenerator(enabled=enable_llm)
 
     def run_pipeline(self, input_data: OrchestratorInput) -> OrchestratorOutput:
         """Run the full trading intelligence pipeline.
@@ -163,23 +174,57 @@ class ChiefTradingAgent:
 
         # --- Step 6: Regime Classification ---
         regime = self._classify_regime(candles, symbol, asset_class)
+        regime_data = self.regime_agent.classify(candles)
 
         # --- Step 7: Price Action Confirmation ---
         confirmation = self._analyze_price_action(candles, symbol, asset_class)
 
-        # --- Step 8: Strategy Evaluation ---
+        # --- Step 8: LLM Narrative Generation ---
+        if self.enable_llm:
+            try:
+                # Generate market narrative
+                narrative = self.llm_narrative.generate_market_narrative(
+                    symbol, structure, zones, regime, feature_bag
+                )
+                output.llm_narratives["market"] = narrative
+            except Exception as exc:
+                logger.warning("LLM narrative generation failed: %s", exc)
+
+        # --- Step 9: Strategy Evaluation ---
         # HTF supply/demand + structure + liquidity + price action
         setups = self._evaluate_strategy(
             symbol, asset_class, structure, zones, liquidity,
             confirmation, regime, feature_bag
         )
 
-        # --- Step 9: Red Team Attack ---
+        # --- Step 10: LLM Trade Thesis for each setup ---
+        if self.enable_llm and setups:
+            for setup in setups:
+                try:
+                    thesis = self.llm_narrative.generate_trade_thesis(
+                        symbol, setup.direction, structure, zones,
+                        confirmation, regime, feature_bag
+                    )
+                    setup.thesis = thesis.get("thesis", "")
+                    output.llm_narratives[f"thesis_{setup.id}"] = thesis
+                except Exception as exc:
+                    logger.warning("LLM thesis generation failed: %s", exc)
+
+        # --- Step 11: Red Team Attack ---
         if self.enable_red_team and setups:
             red_observations = self._red_team_attack(setups, candles, symbol, asset_class)
             output.red_team_observations = red_observations
 
-        # --- Step 10: Risk Engine Validation ---
+            # LLM-powered red team for each setup
+            if self.enable_llm:
+                for setup in setups:
+                    try:
+                        red_team = self.llm_narrative.generate_red_team_analysis(setup)
+                        output.llm_narratives[f"red_team_{setup.id}"] = red_team
+                    except Exception as exc:
+                        logger.warning("LLM red team analysis failed: %s", exc)
+
+        # --- Step 12: Risk Engine Validation ---
         # Use first setup or pick best
         candidate = setups[0] if setups else None
         risk_result = RiskEngineResult(can_trade=True, explanation="") if not candidate else \
@@ -188,8 +233,9 @@ class ChiefTradingAgent:
             )
         output.risk_result = risk_result
 
-        # --- Step 11: Generate candidate setups ---
+        # --- Step 13: Generate candidate setups ---
         output.candidate_setups = setups
+        output.regime_data = regime_data
 
         return output
 
