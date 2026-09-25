@@ -63,6 +63,23 @@ This file is the AI handoff context. Update it whenever state changes (services,
 - Root `telegram_bot.py` is the legacy standalone bot — source of merged features; do not run both.
 - Health endpoint port 8082; locks in `mt5_mcp/memory/telegram_bot.lock`.
 
+## Live state (2026-09-25 13:30)
+
+- **Open positions (2/3):** AUDNZD BUY 0.18 (yesterday, +$10ish) + **USDJPY BUY 0.11
+  ticket 397132112** — desk opened 13:06 (rising_channel, conf 78.9, entry 157.928,
+  SL 157.325, TP 158.821, risk ~$39, magic 20260601). JPY group then blocks new JPY
+  trades (combined-cap rule: existing + new > 0.5% equity) — working as designed.
+- **Post-fill crash fixed:** `trade_journal.log_signal` INSERT listed `zone_strength`
+  twice → `sqlite3.OperationalError: 37 values for 38 columns` raised AFTER the order
+  filled → no desk_events row, no desk_state position, no journal signal (the 13:06
+  "cycle error"). INSERT rewritten 2026-09-25; journal signal + desk_state position
+  backfilled for ticket 397132112.
+- **Fresh-deal blackout fixed:** server history timestamps are wall-clock-as-epoch
+  (UTC+3 baked in), but `mt5_client.deals_since` capped `date_to` at real UTC → deals
+  invisible for ~3h → `trades_today`/`daily_pnl` undercounted (cap was soft).
+  `date_to` now +86400.
+- Desk `cycle error` log line now includes traceback (`exc_info=True`).
+
 ## Current / next steps
 
 - Elevated: delete leftover VBS scheduled tasks (`MT5 Watch Daemon`, `MT5 Telegram Bot`, `MT5 Gateway`,

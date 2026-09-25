@@ -1181,7 +1181,7 @@ def main() -> int:
             if desk_guards() is None or True:
                 manage_cycle(client, dry_run if not DESK_ENABLED else False)
         except Exception as exc:
-            logger.warning("cycle error: %s", exc)
+            logger.warning("cycle error: %s", exc, exc_info=True)
         time.sleep(max(10, MANAGE_INTERVAL_SEC))
 
 

@@ -24,10 +24,12 @@ import pandas as pd
 
 from mt5_mcp.common import (
     MT5_TIME_GTC_ALIAS,
+    ORDER_FILLING_BOC,
     ORDER_FILLING_FOK,
     ORDER_FILLING_IOC,
     ORDER_FILLING_RETURN,
     RETCODE_DONE,
+    RETCODE_INVALID_FILL,
     RETCODE_PLACED,
     TIMEFRAME_MT5,
     Timeframe,
@@ -167,6 +169,18 @@ class MT5Client:
                 return
             if not self.connect():
                 raise MT5Error(f"MT5 not connected: {self._last_error}")
+
+    @property
+    def connected(self) -> bool:
+        """Whether a terminal session is live.
+
+        Unlike :meth:`health` this never performs an IPC call -- and unlike
+        :meth:`_call` it never triggers an implicit connection attempt. Used by
+        pure helpers (e.g. ``common.pip_value_per_lot``) that may only consult
+        the broker when a session already exists.
+        """
+        with self._lock:
+            return self._connected and self._mt5 is not None
 
     def health(self) -> dict[str, Any]:
         with self._lock:
@@ -511,7 +525,12 @@ class MT5Client:
     def deals_since(self, epoch_seconds: int, symbol: str = "") -> list[dict[str, Any]]:
         kwargs: dict[str, Any] = {
             "date_from": epoch_seconds,
-            "date_to": int(time.time()),
+            # Server history timestamps are wall-clock-as-epoch (server tz
+            # baked in, UTC+3 here), so a deal made "now" carries a stamp up
+            # to ~3h AHEAD of time.time(). Capping date_to at real UTC hides
+            # every fresh deal -> trades_today/daily_pnl undercount. One day
+            # of headroom keeps wall-clock-today deals inside the range.
+            "date_to": int(time.time()) + 86400,
         }
         if symbol:
             kwargs["group"] = symbol
@@ -526,31 +545,59 @@ class MT5Client:
     # ------------------------------------------------------------------
     # order plumbing
     # ------------------------------------------------------------------
-    def _filling(self, symbol: str) -> int:
+    def _filling_modes(self, symbol: str) -> list[int]:
+        """Supported ``ORDER_FILLING_*`` values for *symbol*, best first.
+
+        ``symbol_info.filling_mode`` is a bitmask of ``SYMBOL_FILLING_*`` flags
+        (bit0=FOK, bit1=IOC, bit2=BOC) which is a *different* enum from the
+        ``ORDER_FILLING_*`` values placed in the request (FOK=0, IOC=1,
+        RETURN=2, BOC=3). Mapping bit2 to RETURN produced retcode 10030
+        (unsupported filling mode) on every symbol that advertises BOC, such
+        as XAUUSD and the indices.
+        """
         info = self._tuple_to_dict(self._call("symbol_info", symbol))
         mode = int(info.get("filling_mode", 0) or 0)
-        # filling_mode is a bitmask: bit0(1)=FOK, bit1(2)=IOC, bit2(4)=RETURN
-        # The ORDER_FILLING constants (FOK=0, IOC=1, RETURN=2) do NOT match
-        # the bitmask bits, so we must use raw bit values for the check.
-        if mode & 4:  # bit 2 = RETURN supported
-            return ORDER_FILLING_RETURN
-        if mode & 2:  # bit 1 = IOC supported
-            return ORDER_FILLING_IOC
-        return ORDER_FILLING_FOK
+        modes: list[int] = []
+        if mode & 2:  # bit 1 = IOC
+            modes.append(ORDER_FILLING_IOC)
+        if mode & 1:  # bit 0 = FOK
+            modes.append(ORDER_FILLING_FOK)
+        if mode & 4:  # bit 2 = BOC (exchange execution only)
+            modes.append(ORDER_FILLING_BOC)
+        if not modes:
+            modes.append(ORDER_FILLING_RETURN)
+        return modes
+
+    def _filling(self, symbol: str) -> int:
+        return self._filling_modes(symbol)[0]
 
     def order_send(self, request: dict[str, Any]) -> dict[str, Any]:
-        if "type_filling" not in request and "symbol" in request:
-            request["type_filling"] = self._filling(str(request["symbol"]))
+        request = dict(request)
         if "type_time" not in request:
             request["type_time"] = MT5_TIME_GTC_ALIAS
-        result = self._tuple_to_dict(self._call("order_send", request))
-        retcode = result.get("retcode")
-        if retcode not in (RETCODE_DONE, RETCODE_PLACED):
-            raise MT5Error(
-                f"Order rejected: retcode={retcode} ({result.get('comment', '')}) "
-                f"request={request}"
+        if "type_filling" in request:
+            candidates = [int(request["type_filling"])]
+        else:
+            candidates = self._filling_modes(str(request.get("symbol", "")))
+        result: dict[str, Any] = {}
+        for attempt_no, filling in enumerate(candidates, start=1):
+            attempt = dict(request)
+            attempt["type_filling"] = filling
+            result = self._tuple_to_dict(self._call("order_send", attempt))
+            retcode = result.get("retcode")
+            if retcode in (RETCODE_DONE, RETCODE_PLACED):
+                return result
+            if retcode != RETCODE_INVALID_FILL or attempt_no == len(candidates):
+                break
+            logger.warning(
+                "order_send rejected filling mode %s (retcode 10030); retrying with %s",
+                filling,
+                candidates[attempt_no],
             )
-        return result
+        raise MT5Error(
+            f"Order rejected: retcode={result.get('retcode')} "
+            f"({result.get('comment', '')}) request={request}"
+        )
 
     def order_calc_margin(
         self, action: int, symbol: str, volume: float, price: float
