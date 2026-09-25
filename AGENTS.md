@@ -35,7 +35,7 @@ This file is the AI handoff context. Update it whenever state changes (services,
   Auto-trader: `MIN_TRADE_SCORE=70`, `MIN_CONFIDENCE=90`. Backtest CLI supports `--min-conf/--max-score`.
 - Desk (`trade_desk.py`, magic 20260601): `MT5_DESK_ENABLED=true`, `MT5_DESK_MODE=SIM`,
   `MT5_DESK_RISK_PERCENT=0.25`, `MT5_DESK_RISK_FIXED=50`, `MT5_DESK_SCAN_MINUTES=30`,
-  `MT5_DESK_SL_ATR=4.5` (widened 2026-09-24 from 3.0 — restart desk to apply),
+  `MT5_DESK_SL_ATR=4.5` (widened from 3.0; desk restarted 2026-09-25 11:54 to apply),
   `MT5_DESK_TP_R=2.0`, entry TF M5.
 - Compliance: drawdown-based halt currently blocks trading (`compliance.py`); USDJPY/USDCAD on blocked list.
 - Journal: `mt5_mcp/memory/journal.db` (`trades` has no `ts` column — use `open_time`/`close_time`).
@@ -52,7 +52,6 @@ This file is the AI handoff context. Update it whenever state changes (services,
 
 ## Current / next steps
 
-- Restart Trade Desk service so `MT5_DESK_SL_ATR=4.5` applies.
 - Elevated: delete leftover VBS scheduled tasks (`MT5 Watch Daemon`, `MT5 Telegram Bot`, `MT5 Gateway`,
   `MT5 Prop Dashboard`, `MT5 Trade Desk`, `MT5_Trading_Assistant_Startup`) if superseded by `MT5R_*`.
 - Blocked externally: OpenRouter 402 (credits), Groq 429 OTPM, news feed 429.
