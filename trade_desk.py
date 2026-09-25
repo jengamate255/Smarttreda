@@ -137,6 +137,8 @@ def _setup_logging() -> None:
 
 
 def _log_event(kind: str, payload: dict[str, Any]) -> None:
+    if isinstance(payload, list):  # a bare actions list — wrap, don't crash (fixes 15:20 cycle error)
+        payload = {"actions": payload}
     payload = {"ts": datetime.now(timezone.utc).isoformat(), "kind": kind, **payload}
     try:
         EVENTS_PATH.parent.mkdir(parents=True, exist_ok=True)

@@ -63,22 +63,38 @@ This file is the AI handoff context. Update it whenever state changes (services,
 - Root `telegram_bot.py` is the legacy standalone bot — source of merged features; do not run both.
 - Health endpoint port 8082; locks in `mt5_mcp/memory/telegram_bot.lock`.
 
-## Live state (2026-09-25 13:30)
+## Live state (2026-09-26 02:45)
 
-- **Open positions (2/3):** AUDNZD BUY 0.18 (yesterday, +$10ish) + **USDJPY BUY 0.11
-  ticket 397132112** — desk opened 13:06 (rising_channel, conf 78.9, entry 157.928,
-  SL 157.325, TP 158.821, risk ~$39, magic 20260601). JPY group then blocks new JPY
-  trades (combined-cap rule: existing + new > 0.5% equity) — working as designed.
-- **Post-fill crash fixed:** `trade_journal.log_signal` INSERT listed `zone_strength`
-  twice → `sqlite3.OperationalError: 37 values for 38 columns` raised AFTER the order
-  filled → no desk_events row, no desk_state position, no journal signal (the 13:06
-  "cycle error"). INSERT rewritten 2026-09-25; journal signal + desk_state position
-  backfilled for ticket 397132112.
+- **User operating policy:** desk auto-fills within caps; user audits after the
+  fact (no per-trade confirmation needed for desk executions inside compliance caps).
+- **Open positions (1/3):** AUDNZD BUY 0.18 ticket 396986574 (confirm_exec relaxed,
+  entry 1.2392, SL 1.23456, TP 1.24857, +$7ish).
+- **Today's USDJPY round trips (both losses, journaled):**
+  - Desk BUY 0.11 #397132112: 13:06→14:52 SL 157.529 → **−$27.93** (SL trailed
+    157.325→157.529 by manage). Journal signal + trades row backfilled.
+  - **BUY 0.15 #397151807: 15:41→16:00 SL 157.427 → −$35.17 — magic 0, empty comment
+    = no stack engine claims it** (all live engines use magic 20260601 or non-empty
+    comments) → treated as manual/unknown origin; journaled as `setup=manual`.
+    MCP audit log is stale (capped 2026-09-11) so MCP `open_trade` can't be ruled
+    out from logs alone.
+- **Desk `_log_event` crash fixed:** `manage_cycle` passed a `list` to
+  `_log_event` (`**payload` needs a mapping) → TypeError killed manage on any
+  position action (the 15:20:03 cycle error, position_closed recorded with
+  `pnl 0.0 / details unavailable`). `_log_event` now wraps lists as
+  `{"actions": [...]}`; trade_desk.py restarts via logon task
+  `MT5_Trading_Assistant_Startup` → `start_services.ps1` → `run_services.py`.
+- **Second live engine exists:** `forex_breakout_watch.py` (range-breakout, floor
+  conf 65, risk 0.5%, magic 20260601, `logs/forex_breakout.log`) — today: USDCAD
+  blocked-by-compliance spam (~13 rejections), NZDUSD risk-rejected, USDCHF
+  buy_stop #397207862 expired unfilled 23:48 (no exposure). Also
+  `confirm_execute_daemon`, `run_synthetic_watcher`, `btc_trend_watch` trade.
+- **Post-fill crash fixed (13:06 incident):** `trade_journal.log_signal` INSERT
+  had `zone_strength` twice → error AFTER fill; INSERT rewritten, backfilled.
 - **Fresh-deal blackout fixed:** server history timestamps are wall-clock-as-epoch
-  (UTC+3 baked in), but `mt5_client.deals_since` capped `date_to` at real UTC → deals
-  invisible for ~3h → `trades_today`/`daily_pnl` undercounted (cap was soft).
-  `date_to` now +86400.
+  (UTC+3 baked in), `mt5_client.deals_since` `date_to` now +86400.
 - Desk `cycle error` log line now includes traceback (`exc_info=True`).
+- Correlation gate verified: existing + new combined vs 0.5% cap (`jpy 84.00`
+  message = 39 existing + 45 new > 48.24 — working as designed).
 
 ## Current / next steps
 
