@@ -98,6 +98,20 @@ CORRELATION_GROUPS: dict[str, str] = {
     "USOIL": "energy",
 }
 
+# Hard USD-correlation caps used by the trade desk's portfolio constructor.
+# Each desk position is treated as one unit of DESK_RISK_FIXED dollars, so
+# these caps are expressed in the same dollar units (default: 3 x $50).
+MAX_GROUP_RISK_USD = float(os.getenv("MT5_MAX_GROUP_RISK_USD", "150"))
+MAX_USD_EXPOSURE_RISK = float(os.getenv("MT5_MAX_USD_EXPOSURE_RISK", "150"))
+
+# Symbols whose P&L is primarily a USD-strength/weakness bet. Stacking
+# same-direction trades across these is one macro bet, not diversification.
+USD_EXPOSURE_MEMBERS = frozenset({
+    "EURUSD", "GBPUSD", "AUDUSD", "NZDUSD",
+    "USDCAD", "USDCHF", "XAUUSD", "XAGUSD",
+    "USOIL", "UKOIL", "SPX500", "US500", "NAS100", "US100",
+})
+
 
 def _day_stamp() -> str:
     return time.strftime("%Y-%m-%d")
@@ -434,6 +448,7 @@ def evaluate(state_path: Path | None = None) -> dict:
         "open_risk": round(open_risk, 2),
         "max_open_risk": round(max_open, 2),
         "open_positions": len(client.positions() or []),
+        "max_positions": settings.max_positions,
         "trades_today": trades_today,
         "max_trades_per_day": effective_max_trades,
         "max_trades_per_day_base": settings.max_trades_per_day,
@@ -487,6 +502,11 @@ def gate(
     account = client.account_info()
     equity = float(account.get("equity") or 0.0)
     status = evaluate(state_path)
+
+    # Blocked symbols check
+    blocked = [s.upper() for s in settings.blocked_symbols]
+    if symbol.upper() in blocked:
+        violations.append(f"symbol '{symbol}' is on the blocked list")
 
     if status["mode"] == "halted":
         violations.append(f"trading halted: {status['halt_reason'] or 'compliance halt'}")

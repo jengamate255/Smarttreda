@@ -2,7 +2,7 @@
   "server": {
     "name": "mt5-mcp",
     "version": "1.0.0",
-    "transport": "stdio",
+    "transport": "streamable-http",
     "host": "127.0.0.1",
     "port": 9000
   },
@@ -32,18 +32,23 @@
     "target_tp_max_pips": 100,
     "sl_min_pips": 20,
     "sl_max_pips": 30,
-    "max_spread_points": 40,
-    "max_positions": 2,
-    "max_trades_per_day": 6,
+    "max_spread_points": 60,
+    "max_positions": 3,
+    "max_trades_per_day": 3,
     "max_trades_per_day_green_bonus": 2,
     "max_consecutive_losses": 3,
     "revenge_cooldown_minutes": 60,
     "news_blackout_minutes": 30,
     "liquidity_blackout_start": "00:00",
     "liquidity_blackout_end": "00:15",
-    "confidence_floor_percent": 90,
+    "confidence_floor_percent": 75,
     "min_volume": null,
-    "max_volume": null
+    "max_volume": null,
+    "blocked_symbols": [
+      "NDX100", "DJI30", "EURCAD",
+      "GBPUSD", "USDCAD", "GBPJPY", "EURGBP",
+      "NZDUSD"
+    ]
   },
   "strategy": {
     "trend_timeframe": "H4",
@@ -57,7 +62,9 @@
     "min_zone_score": 70,
     "min_trade_score": 70,
     "min_confidence_percent": 60,
-    "lookback_candles": 400
+    "lookback_candles": 400,
+    "require_mtf_alignment": true,
+    "mtf_min_aligned": 1
   },
   "memory": {
     "db_path": "memory/journal.db",

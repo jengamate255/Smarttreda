@@ -34,10 +34,23 @@ This file is the AI handoff context. Update it whenever state changes (services,
 - Floors (strategy): conf ≥75, score ≥70, health ≥55, RR ≥3.0 (`analysis_agent.py`).
   Auto-trader: `MIN_TRADE_SCORE=70`, `MIN_CONFIDENCE=90`. Backtest CLI supports `--min-conf/--max-score`.
 - Desk (`trade_desk.py`, magic 20260601): `MT5_DESK_ENABLED=true`, `MT5_DESK_MODE=SIM`,
-  `MT5_DESK_RISK_PERCENT=0.25`, `MT5_DESK_RISK_FIXED=50`, `MT5_DESK_SCAN_MINUTES=30`,
-  `MT5_DESK_SL_ATR=4.5` (widened from 3.0; desk restarted 2026-09-25 11:54 to apply),
+  `MT5_DESK_RISK_PERCENT=0.25`, `MT5_DESK_RISK_FIXED=45` (was 50 — **systematically
+  self-rejected**: compliance caps risk at 0.5% equity ≈ $48.25, so every desk execution
+  died at the gate (GBPJPY $52.10, AUDNZD $52.24, NZDUSD $48.31, USDJPY $55.22 rejections
+  2026-09-24/25). Fixed→45 on 2026-09-25 12:35; must stay under 0.5% × equity),
+  `MT5_DESK_SCAN_MINUTES=30`, `MT5_DESK_SL_ATR=4.5` (widened from 3.0),
   `MT5_DESK_TP_R=2.0`, entry TF M5.
-- Compliance: drawdown-based halt currently blocks trading (`compliance.py`); USDJPY/USDCAD on blocked list.
+- Compliance (`mt5_mcp/settings.json` → `risk` + `compliance.py`), updated 2026-09-25:
+  - Mode was GREEN/normal (daily & drawdown buffers fresh).
+  - **Blocked symbols**: NDX100, DJI30, EURCAD, GBPUSD, USDCAD, GBPJPY, EURGBP, NZDUSD.
+    NZDUSD added 2026-09-25 (backtest PF 0.07 = proven loser, correlates with open AUDNZD);
+    USDJPY/AUDUSD/XAGUSD/EURJPY removed same day (all in backtested tradable set —
+    the old block was an undocumented protective over-reaction; journal had no justifying losses).
+  - **Trades/day max 5**: `max_trades_per_day` base 3 + green bonus 2 (bonus only when
+    daily P&L > 0 AND normal mode) — absolute cap 5, conservative mode 3.
+  - `compliance.evaluate()` now returns `max_positions`; desk `free_slots` fallback fixed
+    2→3 (was silently attempting only 1 pick/scan when status lacked the key).
+    Desk restarted 2026-09-25 12:24 to apply all of the above.
 - Journal: `mt5_mcp/memory/journal.db` (`trades` has no `ts` column — use `open_time`/`close_time`).
   Desk events: `mt5_mcp/memory/desk_events.jsonl`, `desk_state.json`.
 
