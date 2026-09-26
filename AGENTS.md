@@ -63,7 +63,42 @@ This file is the AI handoff context. Update it whenever state changes (services,
 - Root `telegram_bot.py` is the legacy standalone bot — source of merged features; do not run both.
 - Health endpoint port 8082; locks in `mt5_mcp/memory/telegram_bot.lock`.
 
-## Live state (2026-09-26 02:45)
+## Trading consensus layer (since 2026-09-26)
+
+- **Module `mt5_mcp/consensus.py`** + config `settings.json -> "consensus"`.
+  Board file `mt5_mcp/memory/consensus.json` (atomic writes, multi-process).
+- **All 4 readable engines publish stances** (BUY/SELL/NONE + score, TTL 30m):
+  `desk` (top-sheet of every scan), `confirm` (every evaluation),
+  `breakout` (qualifying setups only), `analysis` (read-only, every cycle).
+- **Pre-trade `check()` rules** (wired into trade_desk `execute_pick`,
+  confirm `scan_symbol`, forex_breakout `scan_once`):
+  1. **allowlist** — only backtested set tradable: SPX500 XAGUSD AUDUSD USDJPY
+     EURUSD XAUUSD JP225 ETHUSD EURJPY (add approvals in settings.json
+     `consensus.allowed_symbols`; this now blocks USDCHF/NZDCAD/AUDNZD/USDCAD
+     desk+confirm+breakout entries that have no backtested edge).
+  2. **veto** — fresh (≤30m) opposite stance with score ≥75 blocks the entry
+     (e.g. desk NZDUSD SELL 76.3 ⇒ nobody buys NZDUSD for 30m).
+  3. **`min_agree: 0`** (corroboration optional): engines rarely see the same
+     setup simultaneously, so requiring agreeing votes would kill most trades;
+     raise only with vote-history evidence.
+  4. **unified risk cap 0.25%** — `consensus.risk_cap()`; breakout budget and
+     confirm's `evaluate_strategy(risk_percent=...)` both capped.
+- **Fail-open by design**: consensus errors log + allow — `compliance.gate()`
+  stays the hard veto. Consensus is an *additive* restriction (never unblocks
+  a compliance-blocked symbol).
+- **Session routine (part B)**: at session start run
+  `python -X utf8 mt5_mcp/consensus.py` (report) and present the board to the
+  user — who agrees with whom, stale votes, any blocked attempts
+  (`check SYMBOL SIDE --source x --score n` for an on-demand verdict).
+
+## Live state (2026-09-26 12:45)
+
+- **Consensus layer deployed 12:42**: desk/confirm/breakout restarted on
+  consensus-wired code (analysis picks it up each 1-min run). Board live with
+  4 sources; zero errors in first cycles. Weekend = market closed, no fills.
+- **Process "pairs" are one logical instance**: pythonw→python and
+  hermes→uv-python are parent→child forwarding chains (verified via
+  ParentProcessId) — do NOT kill just one PID, kill both or the twin survives.
 
 - **User operating policy:** desk auto-fills within caps; user audits after the
   fact (no per-trade confirmation needed for desk executions inside compliance caps).

@@ -35,6 +35,11 @@ if str(ROOT) not in sys.path:
 from mt5_mcp.client import get_client, reset_client
 from mt5_mcp.common import pip_size, pip_value_per_lot, round_to_step
 from mt5_mcp.config import get_settings
+from mt5_mcp.consensus import (
+    check as consensus_check,
+    publish as consensus_publish,
+    risk_cap as consensus_risk_cap,
+)
 from mt5_mcp.memory.trade_journal import get_journal
 from mt5_mcp.tools.supply_demand import detect_zones as detect_sd_zones
 from mt5_mcp.tools.trades import open_market, pending_order
@@ -310,7 +315,8 @@ def _find_breakout(client, logger: logging.Logger, args, symbol: str) -> dict | 
 def scan_once(args: argparse.Namespace, logger: logging.Logger, client) -> bool:
     account = client.account_info()
     equity = float(account.get("equity", account.get("balance", 0.0)) or 0.0)
-    budget = equity * args.risk_percent / 100.0
+    # unified consensus risk cap (engine default may be higher)
+    budget = equity * min(args.risk_percent, consensus_risk_cap()) / 100.0
 
     symbols = [s.strip().upper() for s in args.symbols.split(",") if s.strip()]
     if not symbols:
@@ -338,6 +344,15 @@ def scan_once(args: argparse.Namespace, logger: logging.Logger, client) -> bool:
                 setup["range_low"],
                 setup["range_high"],
             )
+
+            # consensus layer: board stance + allowlist + cross-engine veto
+            consensus_publish("breakout", symbol, setup["side"], setup["confidence"])
+            cver = consensus_check(symbol, setup["side"], "breakout",
+                                   score=float(setup["confidence"]))
+            if not cver.get("allowed"):
+                logger.warning("%s consensus rejected: %s", symbol,
+                               "; ".join(cver.get("violations", [])))
+                continue
 
             if not args.live:
                 logger.info("%s dry-run: no order submitted", symbol)

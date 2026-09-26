@@ -610,6 +610,17 @@ def execute_pick(client, entry: dict[str, Any], dry_run: bool) -> dict[str, Any]
     if not verdict.get("allowed"):
         return {"symbol": sym, "status": "blocked", "reason": "; ".join(verdict.get("violations", []))}
 
+    # consensus layer: allowlist + cross-engine veto (fail-open inside)
+    try:
+        from mt5_mcp.consensus import check as consensus_check
+        cver = consensus_check(sym, str(direction).upper(), "desk",
+                               score=float(entry.get("confluence") or 0))
+        if not cver.get("allowed"):
+            return {"symbol": sym, "status": "blocked",
+                    "reason": "; ".join(cver.get("violations", []))}
+    except Exception:
+        pass
+
     # size by risk percent using proper pip value
     lots = _size_position(client, sym, sl_pips, levels["entry"], sl)
     if not lots:
@@ -1081,6 +1092,14 @@ def scan_cycle(client, dry_run: bool) -> dict[str, Any]:
         "learning": learning_snapshot(),
     }
     _log_event("scan", summary)
+    # publish desk stances to the consensus board (top-sheet directional reads)
+    try:
+        from mt5_mcp.consensus import publish as consensus_publish
+        for t in summary.get("top", []):
+            consensus_publish("desk", t.get("symbol", ""), t.get("dir", "NONE"),
+                              t.get("confluence", 0))
+    except Exception:
+        pass
     if executions:
         note = "; ".join(
             f"{e.get('symbol')} {e.get('status')} {e.get('side', '')} {e.get('lots', '')}".strip()

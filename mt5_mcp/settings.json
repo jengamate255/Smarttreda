@@ -66,6 +66,18 @@
     "require_mtf_alignment": true,
     "mtf_min_aligned": 1
   },
+  "consensus": {
+    "enabled": true,
+    "vote_ttl_sec": 1800,
+    "veto_score": 75,
+    "min_agree": 0,
+    "agree_min_score": 60,
+    "risk_percent": 0.25,
+    "allowed_symbols": [
+      "SPX500", "XAGUSD", "AUDUSD", "USDJPY", "EURUSD",
+      "XAUUSD", "JP225", "ETHUSD", "EURJPY"
+    ]
+  },
   "memory": {
     "db_path": "memory/journal.db",
     "auto_sync_history_days": 30,
