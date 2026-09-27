@@ -152,6 +152,12 @@ Modules added to fix zero-trade diagnosis and improve signal quality:
   `momentum_breakout_strategy` (ADX > 25 + price breaking 20-bar high/low),
   `evaluate_all_strategies` runs all three (trend_zone + mean_reversion + momentum_breakout),
   `pick_best_strategy` resolves BUY/SELL conflicts by score.
+  **Strategy routing** (2026-09-27 backtest): `STRATEGY_ROUTING` maps symbol → preferred
+  strategy (EURJPY/GBPJPY/USDJPY/GBPUSD → mean_reversion PF 1.52-2.65, USDCAD →
+  momentum_breakout PF 1.56, EURUSD/USDCHF → trend_zone PF 1.34-3.25). `BACKTEST_PF`
+  stores per-(symbol, strategy) profit factors; `pick_best_strategy` multiplies trade_score
+  by PF (clamped 0.5-3.0) so historically profitable strategies are preferred. AUDUSD has
+  no profitable strategy (best PF 0.70 mean_reversion).
 
 - **`mt5_mcp/rl_trader.py`** — live RL trading wrapper.
   `RLTrader` loads trained PPO/reinforce models from `models/dojo/{symbol}_{timeframe}/`.

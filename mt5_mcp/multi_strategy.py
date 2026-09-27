@@ -8,6 +8,12 @@ Strategies:
 Each strategy returns a TradePlan. The system picks the highest-scoring valid plan.
 Conflicting signals (BUY vs SELL on same symbol) are resolved by score.
 
+Strategy routing (based on 2026-09-27 backtest):
+- EURJPY, GBPJPY, USDJPY, GBPUSD → mean_reversion (PF 1.52-2.65)
+- USDCAD → momentum_breakout (PF 1.56)
+- EURUSD, USDCHF → trend_zone (PF 3.25, 1.34)
+- AUDUSD → no profitable strategy (skip or use tightest filters)
+
 Usage:
     from mt5_mcp.multi_strategy import evaluate_all_strategies
     plans = evaluate_all_strategies("EURUSD")
@@ -29,6 +35,40 @@ from mt5_mcp.indicators import atr, rsi
 from mt5_mcp.strategy import evaluate_strategy
 
 logger = logging.getLogger("multi_strategy")
+
+STRATEGY_ROUTING: dict[str, str] = {
+    "EURJPY": "mean_reversion",
+    "GBPJPY": "mean_reversion",
+    "USDJPY": "mean_reversion",
+    "GBPUSD": "mean_reversion",
+    "USDCAD": "momentum_breakout",
+    "EURUSD": "trend_zone",
+    "USDCHF": "trend_zone",
+}
+
+BACKTEST_PF: dict[tuple[str, str], float] = {
+    ("EURJPY", "mean_reversion"): 2.65,
+    ("EURJPY", "momentum_breakout"): 1.16,
+    ("EURJPY", "trend_zone"): 0.21,
+    ("GBPJPY", "mean_reversion"): 2.32,
+    ("GBPJPY", "momentum_breakout"): 0.94,
+    ("GBPJPY", "trend_zone"): 0.24,
+    ("USDJPY", "mean_reversion"): 2.32,
+    ("USDJPY", "momentum_breakout"): 0.75,
+    ("USDJPY", "trend_zone"): 0.44,
+    ("GBPUSD", "mean_reversion"): 1.52,
+    ("GBPUSD", "momentum_breakout"): 0.89,
+    ("GBPUSD", "trend_zone"): 0.58,
+    ("USDCAD", "momentum_breakout"): 1.56,
+    ("USDCAD", "mean_reversion"): 0.45,
+    ("USDCAD", "trend_zone"): 0.46,
+    ("EURUSD", "trend_zone"): 3.25,
+    ("USDCHF", "trend_zone"): 1.34,
+    ("USDCHF", "mean_reversion"): 0.0,
+    ("AUDUSD", "mean_reversion"): 0.70,
+    ("AUDUSD", "momentum_breakout"): 0.53,
+    ("AUDUSD", "trend_zone"): 0.09,
+}
 
 
 def _bollinger_bands(df: pd.DataFrame, period: int = 20, std_dev: float = 2.0):
@@ -358,20 +398,42 @@ def evaluate_all_strategies(
     return plans
 
 
+def _strategy_name_from_plan(plan: TradePlan) -> str:
+    """Extract strategy name from a plan's confirmation field."""
+    conf = (plan.confirmation or "").lower()
+    if "mean_reversion" in conf:
+        return "mean_reversion"
+    if "momentum_breakout" in conf or "momentum_brk" in conf:
+        return "momentum_breakout"
+    if "trend_zone" in conf:
+        return "trend_zone"
+    return "unknown"
+
+
 def pick_best_strategy(plans: list[TradePlan]) -> TradePlan | None:
-    """Pick the best valid plan from a list. Returns None if no valid plans."""
+    """Pick the best valid plan from a list. Returns None if no valid plans.
+
+    Uses backtest profit factor as a score multiplier so strategies that
+    historically performed better on a given symbol get preferred.
+    """
     valid = [p for p in plans if p.valid and p.action in ("BUY", "SELL")]
     if not valid:
         return None
 
-    # Check for conflicts (BUY vs SELL on same symbol)
+    symbol = valid[0].symbol
+
+    def _adjusted_score(plan: TradePlan) -> float:
+        strat = _strategy_name_from_plan(plan)
+        pf = BACKTEST_PF.get((symbol, strat), 1.0)
+        pf_boost = max(0.5, min(pf, 3.0))
+        return plan.trade_score * pf_boost
+
     buys = [p for p in valid if p.action == "BUY"]
     sells = [p for p in valid if p.action == "SELL"]
 
     if buys and sells:
-        # Conflict: pick the side with higher total score
-        buy_score = max(p.trade_score for p in buys)
-        sell_score = max(p.trade_score for p in sells)
+        buy_score = max(_adjusted_score(p) for p in buys)
+        sell_score = max(_adjusted_score(p) for p in sells)
         valid = buys if buy_score >= sell_score else sells
         logger.info(
             "strategy conflict on %s: BUY max=%.1f vs SELL max=%.1f → picked %s",
@@ -381,6 +443,20 @@ def pick_best_strategy(plans: list[TradePlan]) -> TradePlan | None:
             valid[0].action,
         )
 
-    # Pick highest scoring plan
-    best = max(valid, key=lambda p: p.trade_score)
+    best = max(valid, key=_adjusted_score)
+
+    strat = _strategy_name_from_plan(best)
+    pf = BACKTEST_PF.get((symbol, strat), 0.0)
+    preferred = STRATEGY_ROUTING.get(symbol, "")
+    if preferred and strat != preferred:
+        logger.info(
+            "picked %s for %s (score %.1f, PF %.2f) over preferred %s",
+            strat, symbol, best.trade_score, pf, preferred,
+        )
+    else:
+        logger.info(
+            "picked %s for %s (score %.1f, PF %.2f)",
+            strat, symbol, best.trade_score, pf,
+        )
+
     return best
