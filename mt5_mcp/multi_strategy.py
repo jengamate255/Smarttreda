@@ -11,8 +11,8 @@ Conflicting signals (BUY vs SELL on same symbol) are resolved by score.
 Strategy routing (based on 2026-09-27 backtest):
 - EURJPY, GBPJPY, USDJPY, GBPUSD → mean_reversion (PF 1.52-2.65)
 - USDCAD → momentum_breakout (PF 1.56)
-- EURUSD, USDCHF → trend_zone (PF 3.25, 1.34)
-- AUDUSD → no profitable strategy (skip or use tightest filters)
+- EURUSD, USDCHF, ETHUSD, XAUUSD → trend_zone (PF 1.34-3.25)
+- AUDUSD, BTCUSD → no profitable strategy (skip or use tightest filters)
 
 Usage:
     from mt5_mcp.multi_strategy import evaluate_all_strategies
@@ -44,6 +44,8 @@ STRATEGY_ROUTING: dict[str, str] = {
     "USDCAD": "momentum_breakout",
     "EURUSD": "trend_zone",
     "USDCHF": "trend_zone",
+    "ETHUSD": "trend_zone",
+    "XAUUSD": "trend_zone",
 }
 
 BACKTEST_PF: dict[tuple[str, str], float] = {
@@ -68,6 +70,15 @@ BACKTEST_PF: dict[tuple[str, str], float] = {
     ("AUDUSD", "mean_reversion"): 0.70,
     ("AUDUSD", "momentum_breakout"): 0.53,
     ("AUDUSD", "trend_zone"): 0.09,
+    ("BTCUSD", "momentum_breakout"): 0.90,
+    ("BTCUSD", "mean_reversion"): 0.56,
+    ("BTCUSD", "trend_zone"): 0.53,
+    ("ETHUSD", "trend_zone"): 1.69,
+    ("ETHUSD", "mean_reversion"): 0.67,
+    ("ETHUSD", "momentum_breakout"): 0.67,
+    ("XAUUSD", "trend_zone"): 1.71,
+    ("XAUUSD", "momentum_breakout"): 0.92,
+    ("XAUUSD", "mean_reversion"): 0.66,
 }
 
 
