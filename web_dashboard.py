@@ -22,6 +22,12 @@ from dataclasses import asdict
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # dotenv not installed, skip
+
 import MetaTrader5 as mt5
 import numpy as np
 import pandas as pd
@@ -1335,6 +1341,13 @@ try:
 except ImportError:
     pass
 
+# Diagnostic dashboard (pipeline health + per-symbol gate traces)
+try:
+    from web_diagnostic import router as diagnostic_router  # noqa: E402
+    app.include_router(diagnostic_router)
+except ImportError:
+    pass
+
 
 def _require_connected():
     if not get_client().is_connected():
@@ -2068,6 +2081,15 @@ async def _ws_broadcast_loop():
 
 @app.websocket("/ws")
 async def ws_endpoint(ws: WebSocket):
+    # AuthMiddleware is a BaseHTTPMiddleware and Starlette never runs it for
+    # websocket scopes, so the /ws path must be checked here explicitly --
+    # otherwise anyone reaching the port gets the account snapshot for free.
+    # The frontend already connects as ``/ws?token=...`` (app.js).
+    if WEB_AUTH_TOKEN:
+        token = ws.query_params.get("token", "") or ws.headers.get("x-auth-token", "")
+        if token != WEB_AUTH_TOKEN:
+            await ws.close(code=1008)  # policy violation -> handshake rejected
+            return
     await ws.accept()
     with _ws_lock:
         _ws_clients.add(ws)
@@ -2087,11 +2109,17 @@ async def ws_endpoint(ws: WebSocket):
             else:
                 try:
                     data = json.loads(msg)
+                    mtype = data.get("type", "")
                     ch = data.get("channel", "")
-                    if data.get("type") == "subscribe" and ch:
+                    # app.js heartbeat sends {"type":"ping"} (JSON), not the
+                    # bare "ping" string -- answer both or latency/heartbeat
+                    # in the UI stays "--".
+                    if mtype == "ping":
+                        await ws.send_json({"type": "pong"})
+                    elif mtype == "subscribe" and ch:
                         with _ws_lock:
                             _ws_subscriptions.setdefault(ws, set()).add(ch)
-                    elif data.get("type") == "unsubscribe" and ch:
+                    elif mtype == "unsubscribe" and ch:
                         with _ws_lock:
                             subs = _ws_subscriptions.get(ws, set())
                             subs.discard(ch)
@@ -2111,8 +2139,8 @@ if __name__ == "__main__":
     import uvicorn
 
     parser = argparse.ArgumentParser(description="MT5 Web Dashboard")
-    parser.add_argument("--port", type=int, default=8050, help="Port to run on (default: 8050)")
-    parser.add_argument("--host", default="127.0.0.1", help="Host to bind to (default: 127.0.0.1)")
+    parser.add_argument("--port", type=int, default=None, help="Port to run on (default: WEB_PORT env or 8050)")
+    parser.add_argument("--host", default=None, help="Host to bind to (default: WEB_HOST env or 127.0.0.1)")
     parser.add_argument("--terminal", default=None, help="MT5 terminal path")
     parser.add_argument("--login", type=int, default=None, help="MT5 login")
     parser.add_argument("--password", default=None, help="MT5 password")
@@ -2137,8 +2165,13 @@ if __name__ == "__main__":
     is_deriv = bool(args.terminal and "deriv" in args.terminal.lower())
     os.environ.setdefault("MT5_MCP_ACCOUNT", "DERIV" if is_deriv else "PROP")
 
-    PORT = args.port
-    HOST = args.host
+    # CLI flags win; otherwise fall back to the env vars read at module load
+    # (WEB_PORT / WEB_HOST). Previously the hardcoded argparse defaults
+    # (8050/127.0.0.1) always overrode the env vars, so launchers that route
+    # instances via WEB_PORT (service.vbs deriv, docker-compose) silently
+    # bound to 8050 instead.
+    PORT = args.port if args.port is not None else PORT
+    HOST = args.host if args.host is not None else HOST
 
     logger.info("MT5 Web Dashboard -> http://%s:%s", HOST, PORT)
 

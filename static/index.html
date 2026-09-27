@@ -1541,6 +1541,9 @@ html {
     <button class="nav-btn" data-section="dojo">
       <span>🥋</span> Dojo
     </button>
+    <button class="nav-btn" data-section="diagnostic">
+      <span>🔍</span> Diagnostic
+    </button>
   </nav>
 
   <div class="header-right">
@@ -1787,6 +1790,12 @@ html {
 <!-- ═══ DOJO SECTION ═══ -->
 <div id="section-dojo" class="dash-section hidden" style="padding:20px;min-height:60vh"></div>
 
+<div id="section-diagnostic" class="dash-section hidden" style="padding:20px;min-height:60vh">
+  <div id="diagnostic-content">
+    <div style="text-align:center;padding:40px;color:var(--text-secondary)">Loading diagnostic data...</div>
+  </div>
+</div>
+
 <!-- ═══ MOBILE NAV ═══ -->
 <nav class="mobile-nav">
   <button class="mobile-nav-btn active" data-section="live">
@@ -1825,7 +1834,7 @@ themeToggle.addEventListener('click', () => {
 });
 
 // ═══ NAVIGATION ═══
-const sections = ['live', 'news', 'alerts', 'portfolio', 'risk', 'dojo'];
+const sections = ['live', 'news', 'alerts', 'portfolio', 'risk', 'dojo', 'diagnostic'];
 
 function showSection(name) {
   sections.forEach(s => {
@@ -1848,6 +1857,11 @@ function showSection(name) {
     const dojoEl = document.getElementById('section-dojo');
     dojoEl.innerHTML = Dojo.render();
     Dojo.init();
+  }
+
+  // Render Diagnostic when switching to it
+  if (name === 'diagnostic' && typeof Diagnostic !== 'undefined') {
+    Diagnostic.load();
   }
   
   // Save last active section
@@ -2127,6 +2141,7 @@ console.log('MT5 Trading Terminal loaded');
 <script src="/static/app.core.js"></script>
 <script src="/static/app.chart.js"></script>
 <script src="/static/app.panels.js"></script>
+<script src="/static/app.diagnostic.js"></script>
 <script src="/static/app.dojo.js"></script>
 <script src="/static/app.risk.js"></script>
 <script src="/static/app.js"></script>

@@ -33,6 +33,12 @@ This file is the AI handoff context. Update it whenever state changes (services,
 
 - Floors (strategy): conf ≥75, score ≥70, health ≥55, RR ≥3.0 (`analysis_agent.py`).
   Auto-trader: `MIN_TRADE_SCORE=70`, `MIN_CONFIDENCE=90`. Backtest CLI supports `--min-conf/--max-score`.
+- **Adaptive thresholds (since 2026-09-27):** `mt5_mcp/adaptive_thresholds.py` auto-adjusts
+  strategy floors based on recent journal performance (win rate, consecutive losses, time since
+  last trade). Relaxes 15-20% after 48h+ inactivity or tightens after 3+ consecutive losses.
+  State saved to `mt5_mcp/memory/adaptive_state.json`. Integrated into `strategy.py`
+  `evaluate_strategy(adaptive=True)` — overrides static config floors when adaptive data available.
+  Effective floors with adaptive: zone ≥60, score ≥60, conf ≥50, RR ≥2.0 (relaxed from static 70/70/60/3.0).
 - Desk (`trade_desk.py`, magic 20260601): `MT5_DESK_ENABLED=true`, `MT5_DESK_MODE=SIM`,
   `MT5_DESK_RISK_PERCENT=0.25`, `MT5_DESK_RISK_FIXED=45` (was 50 — **systematically
   self-rejected**: compliance caps risk at 0.5% equity ≈ $48.25, so every desk execution
@@ -40,12 +46,14 @@ This file is the AI handoff context. Update it whenever state changes (services,
   2026-09-24/25). Fixed→45 on 2026-09-25 12:35; must stay under 0.5% × equity),
   `MT5_DESK_SCAN_MINUTES=30`, `MT5_DESK_SL_ATR=4.5` (widened from 3.0),
   `MT5_DESK_TP_R=2.0`, entry TF M5.
-- Compliance (`mt5_mcp/settings.json` → `risk` + `compliance.py`), updated 2026-09-25:
+- Compliance (`mt5_mcp/settings.json` → `risk` + `compliance.py`), updated 2026-09-27:
   - Mode was GREEN/normal (daily & drawdown buffers fresh).
-  - **Blocked symbols**: NDX100, DJI30, EURCAD, GBPUSD, USDCAD, GBPJPY, EURGBP, NZDUSD.
-    NZDUSD added 2026-09-25 (backtest PF 0.07 = proven loser, correlates with open AUDNZD);
-    USDJPY/AUDUSD/XAGUSD/EURJPY removed same day (all in backtested tradable set —
-    the old block was an undocumented protective over-reaction; journal had no justifying losses).
+  - **Blocked symbols**: NDX100, DJI30, EURCAD, EURGBP, NZDUSD.
+    GBPUSD/USDCAD/GBPJPY **unblocked** 2026-09-27 (were conflicting with engine universes —
+    desk/confirm/breakout all tried to trade them but compliance silently rejected).
+    NZDUSD stays blocked (backtest PF 0.07).
+  - **Relaxed risk floors** 2026-09-27: `min_risk_reward` 3.0→2.0, `confidence_floor_percent`
+    75→60, `conservative_risk_percent` 0.25→0.5 (was self-rejecting valid setups).
   - **Trades/day max 5**: `max_trades_per_day` base 3 + green bonus 2 (bonus only when
     daily P&L > 0 AND normal mode) — absolute cap 5, conservative mode 3.
   - `compliance.evaluate()` now returns `max_positions`; desk `free_slots` fallback fixed
@@ -72,17 +80,17 @@ This file is the AI handoff context. Update it whenever state changes (services,
   `breakout` (qualifying setups only), `analysis` (read-only, every cycle).
 - **Pre-trade `check()` rules** (wired into trade_desk `execute_pick`,
   confirm `scan_symbol`, forex_breakout `scan_once`):
-  1. **allowlist** — only backtested set tradable: SPX500 XAGUSD AUDUSD USDJPY
-     EURUSD XAUUSD JP225 ETHUSD EURJPY (add approvals in settings.json
-     `consensus.allowed_symbols`; this now blocks USDCHF/NZDCAD/AUDNZD/USDCAD
-     desk+confirm+breakout entries that have no backtested edge).
+  1. **allowlist** — only backtested set tradable (expanded 2026-09-27 from 9→21 symbols):
+     SPX500 XAGUSD AUDUSD USDJPY EURUSD XAUUSD JP225 ETHUSD EURJPY GBPUSD USDCAD
+     GBPJPY AUDNZD NZDCAD AUDJPY CHFJPY GBPCHF NZDJPY CADCHF USDCHF BTCUSD.
+     Set in `settings.json` `consensus.allowed_symbols`.
   2. **veto** — fresh (≤30m) opposite stance with score ≥75 blocks the entry
      (e.g. desk NZDUSD SELL 76.3 ⇒ nobody buys NZDUSD for 30m).
   3. **`min_agree: 0`** (corroboration optional): engines rarely see the same
      setup simultaneously, so requiring agreeing votes would kill most trades;
      raise only with vote-history evidence.
-  4. **unified risk cap 0.25%** — `consensus.risk_cap()`; breakout budget and
-     confirm's `evaluate_strategy(risk_percent=...)` both capped.
+  4. **unified risk cap 0.5%** — `consensus.risk_cap()`; breakout budget and
+     confirm's `evaluate_strategy(risk_percent=...)` both capped (raised from 0.25% 2026-09-27).
 - **Fail-open by design**: consensus errors log + allow — `compliance.gate()`
   stays the hard veto. Consensus is an *additive* restriction (never unblocks
   a compliance-blocked symbol).
@@ -90,6 +98,71 @@ This file is the AI handoff context. Update it whenever state changes (services,
   `python -X utf8 mt5_mcp/consensus.py` (report) and present the board to the
   user — who agrees with whom, stale votes, any blocked attempts
   (`check SYMBOL SIDE --source x --score n` for an on-demand verdict).
+
+## Shared trading infrastructure (since 2026-09-27)
+
+Three shared modules eliminate duplication across execution paths and watchers:
+
+- **`mt5_mcp/pipeline.py`** — shared pre-trade gate chain + execution.
+  - `run_gates(symbol, side, lots, sl_price, confidence, source, score)` → `GateVerdict`
+    chains consensus check (fail-open) + compliance gate (hard veto).
+  - `execute_trade(...)` → `ExecResult` runs gates → open_market → journal → notify.
+  - `publish_stance(source, symbol, side, score)` — fail-open consensus publish.
+  - `size_position(symbol, sl_distance, risk_amount)` — tick-value lot sizing.
+  - **Used by**: `trade_desk.py` (`execute_pick` uses `run_gates`, `scan_cycle` uses
+    `publish_stance`), `confirm_execute_daemon.py` (`scan_symbol` uses both).
+
+- **`mt5_mcp/notifier.py`** — unified notification dispatcher.
+  - `trade_filled(...)`, `trade_closed(...)`, `signal_detected(...)`,
+    `position_update(...)`, `daily_summary(...)`.
+  - Each dispatches to Telegram (rich HTML), desktop popup, and JSONL event log.
+  - **Used by**: all execution paths and watchers (replaces direct telegram/popup/emit calls).
+
+- **`mt5_mcp/watcher_base.py`** — `BaseWatcher` ABC for watcher processes.
+  - Shared: logger setup, client management, lot sizing, exposure check,
+    daily loss breaker, main loop, CLI arg parser.
+  - Subclasses implement: `symbols()`, `client_key()`, `detect_signal()`,
+    `compliance_gate()`, `build_order()`.
+  - Override hooks: `exit_management()`, `pre_scan_cycle()`, `on_order_accepted()`,
+    `account_label()`, `volume_defaults()`.
+  - **Used by**: `trade_watch.py` (BoomCrashWatcher), `forex_breakout_watch.py`
+    (ForexBreakoutWatcher), `btc_trend_watch.py` (BtcTrendWatcher).
+
+## Pipeline improvements (since 2026-09-27)
+
+Modules added to fix zero-trade diagnosis and improve signal quality:
+
+- **`mt5_mcp/adaptive_thresholds.py`** — performance-based threshold adjustment.
+  Reads last 7 days of journal trades, calculates win rate / consecutive losses / hours
+  since last trade. Relaxes floors 15-20% after 48h+ inactivity; tightens after 3+ losses.
+  State persisted to `mt5_mcp/memory/adaptive_state.json`.
+
+- **`mt5_mcp/ml_ranker.py`** — ML signal ranker (logistic regression, pure numpy).
+  Trained on 623 trades (91 journal + 532 backtest), AUC 0.602, win rate above 0.5 = 83.3%.
+  Model at `mt5_mcp/models/signal_ranker.json`. Retrain: `python ml_ranker.py --train --journal`.
+  Integrated into `strategy.py`: rejects signals with `ml_score < 0.40`.
+
+- **`mt5_mcp/supply_demand.py`** — enhanced zone detection (2026-09-27):
+  `base_bars` 4→3, `impulse_mult` 1.5→1.3 (detects more zones).
+  Added proximity boost (up to +10 strength within 2 ATR of price), fresh zone bonus (+5),
+  relaxed broken penalty (0.5 was 0.3). `strategy.py` passes `current_price` for proximity.
+
+- **`mt5_mcp/multi_strategy.py`** — multi-strategy system:
+  `mean_reversion_strategy` (RSI < 30 + lower BB in ranging markets, ADX < 25),
+  `momentum_breakout_strategy` (ADX > 25 + price breaking 20-bar high/low),
+  `evaluate_all_strategies` runs all three (trend_zone + mean_reversion + momentum_breakout),
+  `pick_best_strategy` resolves BUY/SELL conflicts by score.
+
+- **`mt5_mcp/rl_trader.py`** — live RL trading wrapper.
+  `RLTrader` loads trained PPO/reinforce models from `models/dojo/{symbol}_{timeframe}/`.
+  `decide(symbol, timeframe, confidence_threshold=0.6)` → BUY/SELL/NONE with probabilities.
+  Features: returns, ATR, RSI, EMA, MACD, BB position, volume ratio, hour sin/cos.
+  **No trained models exist yet** — train via `forex_dojo.py` first.
+
+- **`web_diagnostic.py`** + **`static/app.diagnostic.js`** — diagnostic dashboard:
+  `/api/diagnostic/summary` (system health), `/config` (issues), `/consensus` (board),
+  `/symbols` (per-symbol pipeline trace: compliance → consensus → MT5 → strategy).
+  Registered in `web_dashboard.py`. Frontend panel in Diagnostic tab of main dashboard.
 
 ## Live state (2026-09-26 12:45)
 
@@ -133,8 +206,16 @@ This file is the AI handoff context. Update it whenever state changes (services,
 
 ## Current / next steps
 
+- **Services need restart** to apply 2026-09-27 changes: relaxed config floors, expanded
+  consensus allowlist (21 symbols), unblocked GBPUSD/USDCAD/GBPJPY, adaptive thresholds,
+  ML filter, multi-strategy. Restart desk/confirm/breakout + dashboard.
+- **Train RL models**: no trained models at `models/dojo/` yet — run `forex_dojo.py`
+  training loop before `rl_trader.py` can produce actions.
+- **Run diagnostic dashboard** after restart: check `/api/diagnostic/symbols` to verify
+  symbols now pass the full pipeline (compliance → consensus → MT5 → strategy).
 - Elevated: delete leftover VBS scheduled tasks (`MT5 Watch Daemon`, `MT5 Telegram Bot`, `MT5 Gateway`,
   `MT5 Prop Dashboard`, `MT5 Trade Desk`, `MT5_Trading_Assistant_Startup`) if superseded by `MT5R_*`.
 - Blocked externally: OpenRouter 402 (credits), Groq 429 OTPM, news feed 429.
 - Backtest verdict: lowering conf/score floors degrades quality (report:
-  `mt5_mcp/backtest/results/lowconf_exp/report.json`) — production floors stay.
+  `mt5_mcp/backtest/results/lowconf_exp/report.json`) — production floors stay, but adaptive
+  thresholds can temporarily relax them based on performance (safe: clamped to min bounds).

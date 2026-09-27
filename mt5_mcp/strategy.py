@@ -31,12 +31,13 @@ from mt5_mcp.common import (
     round_to_step,
 )
 from mt5_mcp.config import get_settings
+from mt5_mcp.adaptive_thresholds import get_adaptive_thresholds
 from mt5_mcp.indicators import atr, ema, swing_highs, swing_lows
 from mt5_mcp.price_action import detect_patterns
 from mt5_mcp.supply_demand import Zone, detect_zones
 
 try:
-    from ml_ranker import load_model, rank_signal
+    from mt5_mcp.ml_ranker import load_model, rank_signal
 
     _ML_AVAILABLE = True
 except Exception:  # noqa: BLE001
@@ -47,27 +48,24 @@ logger = logging.getLogger("mt5_mcp.strategy")
 DEMAND = "demand"
 SUPPLY = "supply"
 
+# Optimized pattern set - based on backtest results (2026-09-15)
+# Top 4 patterns by win rate and expectancy across all tradable symbols:
+#   Bullish: hammer (39.5% WR, +$25/trade), morning_star (41.7%, +$25),
+#            bullish_engulfing (33.9%, +$19), outside_bar (32.4%, +$1.3)
+#   Bearish: shooting_star, outside_bar, bearish_engulfing, evening_star
+# Removed: BOS (26.1% WR, -$14), pin_bar (25.3% WR, -$9),
+#          liquidity_sweep (35.1% WR, -$3), CHOCH, fake_breakout
 BULLISH_CONFIRMATIONS = {
-    "bullish_engulfing",
-    "pin_bar",
     "hammer",
     "morning_star",
+    "bullish_engulfing",
     "outside_bar",
-    "BOS",
-    "CHOCH",
-    "liquidity_sweep",
-    "fake_breakout",
 }
 BEARISH_CONFIRMATIONS = {
-    "bearish_engulfing",
-    "pin_bar",
     "shooting_star",
-    "evening_star",
     "outside_bar",
-    "BOS",
-    "CHOCH",
-    "liquidity_sweep",
-    "fake_breakout",
+    "bearish_engulfing",
+    "evening_star",
 }
 
 
@@ -191,18 +189,31 @@ def _choose_entry_math(
     tp_min: float,
     tp_max: float,
     min_rr: float,
+    sl_max: float | None = None,
 ) -> tuple[
     float | None, float | None, float | None, float | None, float | None, list[str]
 ]:
     warnings: list[str] = []
+    # Hard cap: never extend TP beyond 2x the natural max.
+    # If that doesn't meet min_rr, the trade is skipped (SL too wide).
+    tp_hard_cap = tp_max * 2.0
     if action == "BUY":
         zone_dist_pips = max(0.0, (entry - zone.lower) / pip) + 0.2 * atr_val / pip
         sl_pips = max(sl_min, zone_dist_pips)
+        if sl_max is not None and sl_pips > sl_max:
+            warnings.append(
+                f"SKIPPED: SL {sl_pips:.1f} pips exceeds max {sl_max:.1f}"
+            )
+            return None, None, None, None, None, warnings
         tp_pips = min(tp_max, max(tp_min, (tp_min + tp_max) / 2.0))
         rr = tp_pips / sl_pips if sl_pips else 0.0
         if rr < min_rr:
-            tp_pips = sl_pips * min_rr
-            warnings.append(f"TP extended to {tp_pips:.1f} pips to satisfy minimum RR")
+            tp_pips = min(tp_hard_cap, sl_pips * min_rr)
+            rr = tp_pips / sl_pips if sl_pips else 0.0
+            if rr < min_rr:
+                warnings.append(f"SKIPPED: SL {sl_pips:.1f} too wide for min R:R {min_rr}")
+                return None, None, None, None, None, warnings
+            warnings.append(f"TP capped at {tp_pips:.1f} pips (natural R:R {rr:.2f})")
         return (
             entry,
             entry - sl_pips * pip,
@@ -213,11 +224,18 @@ def _choose_entry_math(
         )
     zone_dist_pips = max(0.0, (zone.upper - entry) / pip) + 0.2 * atr_val / pip
     sl_pips = max(sl_min, zone_dist_pips)
+    if sl_max is not None and sl_pips > sl_max:
+        warnings.append(f"SKIPPED: SL {sl_pips:.1f} pips exceeds max {sl_max:.1f}")
+        return None, None, None, None, None, warnings
     tp_pips = min(tp_max, max(tp_min, (tp_min + tp_max) / 2.0))
     rr = tp_pips / sl_pips if sl_pips else 0.0
     if rr < min_rr:
-        tp_pips = sl_pips * min_rr
-        warnings.append(f"TP extended to {tp_pips:.1f} pips to satisfy minimum RR")
+        tp_pips = min(tp_hard_cap, sl_pips * min_rr)
+        rr = tp_pips / sl_pips if sl_pips else 0.0
+        if rr < min_rr:
+            warnings.append(f"SKIPPED: SL {sl_pips:.1f} too wide for min R:R {min_rr}")
+            return None, None, None, None, None, warnings
+        warnings.append(f"TP capped at {tp_pips:.1f} pips (natural R:R {rr:.2f})")
     return (
         entry,
         entry + sl_pips * pip,
@@ -267,10 +285,15 @@ def evaluate_strategy(
     confirmation_timeframe: str | None = None,
     lookback: int | None = None,
     closed_confirmation: bool = False,
+    require_mtf_alignment: bool | None = None,
+    mtf_min_aligned: int | None = None,
+    adaptive: bool = True,
 ) -> TradePlan:
     settings = get_settings()
     risk = settings.risk
     strategy_cfg = settings.strategy
+
+    adaptive_cfg = get_adaptive_thresholds() if adaptive else {}
 
     risk_percent = (
         risk_percent if risk_percent is not None else risk.default_risk_percent
@@ -279,17 +302,25 @@ def evaluate_strategy(
     tp_max = tp_max if tp_max is not None else risk.target_tp_max_pips
     sl_min = sl_min if sl_min is not None else risk.sl_min_pips
     sl_max = sl_max if sl_max is not None else risk.sl_max_pips
-    min_rr = min_rr if min_rr is not None else risk.min_risk_reward
+    min_rr = min_rr if min_rr is not None else adaptive_cfg.get("min_risk_reward", risk.min_risk_reward)
+    require_mtf_alignment = (
+        require_mtf_alignment
+        if require_mtf_alignment is not None
+        else strategy_cfg.require_mtf_alignment
+    )
+    mtf_min_aligned = (
+        mtf_min_aligned if mtf_min_aligned is not None else strategy_cfg.mtf_min_aligned
+    )
     min_zone_score = (
-        min_zone_score if min_zone_score is not None else strategy_cfg.min_zone_score
+        min_zone_score if min_zone_score is not None else adaptive_cfg.get("min_zone_score", strategy_cfg.min_zone_score)
     )
     min_trade_score = (
-        min_trade_score if min_trade_score is not None else strategy_cfg.min_trade_score
+        min_trade_score if min_trade_score is not None else adaptive_cfg.get("min_trade_score", strategy_cfg.min_trade_score)
     )
     min_confidence = (
         min_confidence_percent
         if min_confidence_percent is not None
-        else strategy_cfg.min_confidence_percent
+        else adaptive_cfg.get("min_confidence_percent", strategy_cfg.min_confidence_percent)
     )
     trend_tf = (trend_timeframe or strategy_cfg.trend_timeframe).upper()
     confirm_tf = (confirmation_timeframe or strategy_cfg.confirmation_timeframe).upper()
@@ -363,6 +394,20 @@ def evaluate_strategy(
         plan.warnings.append("EMA50/EMA200 not aligned and structure mixed")
         return plan
 
+    # MTF alignment gate: when the trend timeframe is contradicted by every other
+    # timeframe the bias is not confirmed, so the setup is not tradable. Enabled
+    # via ``settings.strategy.require_mtf_alignment`` (0/2 confluence like the
+    # 2026-09-24 EURCHF alert used to slip through on trend+zone alone).
+    if require_mtf_alignment and mtf_total > 0 and mtf_aligned < mtf_min_aligned:
+        plan.reason = (
+            f"MTF confluence {mtf_aligned}/{mtf_total} timeframes aligned with "
+            f"{mtf_trend} (min {mtf_min_aligned})"
+        )
+        plan.warnings.append(
+            f"{trend_tf} trend contradicted by the other timeframes"
+        )
+        return plan
+
     zone_frames: dict[str, tuple[pd.DataFrame, float]] = {}
     for tf in zone_tfs:
         try:
@@ -373,8 +418,9 @@ def evaluate_strategy(
 
     best_zone: Zone | None = None
     best_proximity = 0.0
+    ref_price = (ask + bid) / 2.0 if (ask and bid) else None
     for frame, atr_val in zone_frames.values():
-        for zone in detect_zones(frame, lookback=candles, min_strength=min_zone_score):
+        for zone in detect_zones(frame, lookback=candles, min_strength=min_zone_score, current_price=ref_price):
             if zone.type != zone_type or zone.broken:
                 continue
             chosen, proximity = _select_zone(
@@ -425,7 +471,8 @@ def evaluate_strategy(
 
     entry = ask if action == "BUY" else bid
     entry, sl, tp, sl_pips, tp_pips, math_warnings = _choose_entry_math(
-        action, entry, best_zone, zone_atr, pip, sl_min, tp_min, tp_max, min_rr
+        action, entry, best_zone, zone_atr, pip, sl_min, tp_min, tp_max, min_rr,
+        sl_max=sl_max,
     )
     if entry is None:
         plan.reason = "; ".join(math_warnings)
@@ -518,7 +565,14 @@ def evaluate_strategy(
     else:
         plan.ml_note = "ML ranker not installed"
 
-    if trade_score < min_trade_score or confidence_pct < min_confidence:
+    # ML filter: reject low-probability signals
+    ml_filter_threshold = 0.40  # below this = likely loser
+    if _ML_AVAILABLE and plan.ml_score > 0 and plan.ml_score < ml_filter_threshold:
+        plan.valid = False
+        plan.warnings.append(
+            f"ML filter: score {plan.ml_score:.3f} < {ml_filter_threshold} (likely loser)"
+        )
+    elif trade_score < min_trade_score or confidence_pct < min_confidence:
         plan.valid = False
         plan.warnings.append(
             f"below thresholds (score {trade_score:.0f} < {min_trade_score:.0f}, confidence {confidence_pct:.0f}% < {min_confidence:.0f}%)"
@@ -526,13 +580,14 @@ def evaluate_strategy(
     else:
         plan.valid = True
         logger.info(
-            "Strategy plan %s %s score=%.1f confidence=%.1f%% zone=%.1f confirm=%s",
+            "Strategy plan %s %s score=%.1f confidence=%.1f%% zone=%.1f confirm=%s ml=%.3f",
             action,
             symbol,
             trade_score,
             confidence_pct,
             best_zone.strength,
             confirmation.pattern,
+            plan.ml_score,
         )
     return plan
 

@@ -134,16 +134,16 @@ def _evaluate_zone(
     age_score = max(0.0, 1.0 - age_bars / 300.0)
     if touches <= 2:
         touch_score = 1.0
-    elif touches <= 4:
-        touch_score = 0.7
+    elif touches <= 5:
+        touch_score = 0.8
     else:
-        touch_score = 0.4
+        touch_score = 0.5
 
     strength = 100.0 * (
         0.35 * momentum + 0.25 * size_score + 0.20 * age_score + 0.20 * touch_score
     )
     if broken:
-        strength *= 0.3
+        strength *= 0.5
     strength = float(np.clip(strength, 1.0, 100.0))
 
     fresh = touches <= 1 and not broken
@@ -169,16 +169,20 @@ def _evaluate_zone(
 def detect_zones(
     df: pd.DataFrame,
     atr_period: int = 14,
-    base_bars: int = 4,
-    impulse_mult: float = 1.5,
+    base_bars: int = 3,
+    impulse_mult: float = 1.3,
     lookback: int = 400,
     min_strength: float = 0.0,
     atr_series: pd.Series | None = None,
+    current_price: float | None = None,
 ) -> list[Zone]:
     """Detect and score supply/demand zones. Sorted by strength (highest first).
 
     ``atr_series`` may be passed precomputed and aligned to ``df`` (after the
     tail/reset_index slice) to avoid recomputing the ATR every call.
+
+    ``current_price`` enables proximity boost: zones near current price get
+    a small strength bonus (they're more actionable).
     """
     if df is None or len(df) < base_bars + 30:
         return []
@@ -193,6 +197,25 @@ def detect_zones(
     )
     merged = _merge_candidates(candidates)
     zones = [_evaluate_zone(z, frame, atr_series, current_index) for z in merged]
+
+    # Proximity boost: zones near current price are more actionable
+    if current_price and current_price > 0 and zones:
+        current_atr = float(atr_series.iloc[-1]) if len(atr_series) > 0 else 1.0
+        if current_atr > 0:
+            for zone in zones:
+                zone_mid = (zone.upper + zone.lower) / 2
+                distance_atr = abs(current_price - zone_mid) / current_atr
+                if distance_atr < 2.0:  # within 2 ATR
+                    proximity_bonus = max(0, (2.0 - distance_atr) / 2.0) * 10  # up to +10
+                    zone.strength = min(100.0, zone.strength + proximity_bonus)
+                    zone.confidence = zone.strength
+
+    # Fresh zone bonus: untouched zones are more valuable
+    for zone in zones:
+        if zone.fresh and zone.touches == 0:
+            zone.strength = min(100.0, zone.strength + 5.0)
+            zone.confidence = zone.strength
+
     zones.sort(key=lambda z: (-z.strength, -z.formation_time.timestamp()))
     return [z for z in zones if z.strength >= min_strength]
 
