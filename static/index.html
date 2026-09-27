@@ -3,632 +3,2132 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MT5 Dashboard</title>
-<meta name="theme-color" content="#111216">
-<link rel="manifest" href="/static/manifest.webmanifest">
+<title>MT5 Trading Terminal</title>
+<meta name="theme-color" content="#0a0e17">
+<link rel="manifest" href="static/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/static/icons/icon-180.png">
 <link rel="icon" type="image/png" href="/static/icons/icon-192.png">
-<link rel="stylesheet" href="/static/style.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="static/style.css">
+<link rel="stylesheet" href="static/dojo.css">
 <meta name="auth-token" content="">
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   DESIGN SYSTEM — MT5 TRADING TERMINAL
+   Font: Plus Jakarta Sans (display) + JetBrains Mono (data)
+   Theme: Dark trading terminal with electric accents
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  /* Core palette */
+  --bg-0: #06080d;
+  --bg-1: #0a0e17;
+  --bg-2: #111827;
+  --bg-3: #1a2236;
+  --bg-4: #243049;
+  
+  /* Text */
+  --text-0: #f0f4fc;
+  --text-1: #b8c4dc;
+  --text-2: #7b8ba8;
+  --text-3: #4a5568;
+  
+  /* Accents */
+  --accent: #00d4aa;
+  --accent-dim: rgba(0, 212, 170, 0.15);
+  --accent-glow: rgba(0, 212, 170, 0.3);
+  --blue: #3b82f6;
+  --blue-dim: rgba(59, 130, 246, 0.15);
+  --purple: #8b5cf6;
+  --purple-dim: rgba(139, 92, 246, 0.15);
+  
+  /* Semantic */
+  --profit: #00d4aa;
+  --profit-bg: rgba(0, 212, 170, 0.08);
+  --loss: #ef4444;
+  --loss-bg: rgba(239, 68, 68, 0.08);
+  --warn: #f59e0b;
+  --warn-bg: rgba(245, 158, 11, 0.08);
+  
+  /* Borders */
+  --border: rgba(255, 255, 255, 0.06);
+  --border-hover: rgba(255, 255, 255, 0.12);
+  
+  /* Radius */
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 16px;
+  --r-xl: 24px;
+  
+  /* Fonts */
+  --font-display: 'Plus Jakarta Sans', -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+  
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.4);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.5);
+  --shadow-glow: 0 0 20px rgba(0, 212, 170, 0.15);
+  
+  /* Transitions */
+  --transition-fast: 0.15s ease;
+  --transition-base: 0.2s ease;
+  --transition-slow: 0.3s ease;
+}
+
+/* Light theme */
+[data-theme="light"] {
+  --bg-0: #f8fafc;
+  --bg-1: #ffffff;
+  --bg-2: #f1f5f9;
+  --bg-3: #e2e8f0;
+  --bg-4: #cbd5e1;
+  --text-0: #0f172a;
+  --text-1: #334155;
+  --text-2: #64748b;
+  --text-3: #94a3b8;
+  --border: rgba(0, 0, 0, 0.08);
+  --border-hover: rgba(0, 0, 0, 0.15);
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { font-size: 14px; }
+body {
+  font-family: var(--font-display);
+  background: var(--bg-0);
+  color: var(--text-1);
+  min-height: 100vh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ═══ HEADER ═══ */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px;
+  height: 56px;
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  transition: transform 0.3s ease;
+}
+
+.header.header-hidden {
+  transform: translateY(-100%);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: var(--text-0);
+  letter-spacing: -0.02em;
+}
+
+.logo-icon {
+  width: 32px;
+  height: 32px;
+  background: linear-gradient(135deg, var(--accent), var(--blue));
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+}
+
+.status-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--profit-bg);
+  color: var(--profit);
+  border: 1px solid rgba(0, 212, 170, 0.2);
+}
+
+.status-pill.offline {
+  background: var(--loss-bg);
+  color: var(--loss);
+  border-color: rgba(239, 68, 68, 0.2);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.header-center {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--bg-2);
+  border-radius: var(--r-md);
+  padding: 4px;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  font-family: var(--font-display);
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  position: relative;
+}
+
+.nav-btn:hover { 
+  color: var(--text-0); 
+  background: var(--bg-3);
+  transform: translateY(-1px);
+}
+
+.nav-btn.active {
+  color: var(--text-0);
+  background: var(--bg-1);
+  box-shadow: var(--shadow-sm);
+}
+
+.nav-btn.active::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 20px;
+  height: 2px;
+  background: var(--accent);
+  border-radius: 2px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 0 12px;
+  border-right: 1px solid var(--border);
+  transition: all var(--transition-fast);
+}
+
+.header-stat:hover {
+  background: var(--bg-2);
+}
+
+.header-stat:last-child { border-right: none; }
+
+.header-stat-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+  font-weight: 600;
+}
+
+.header-stat-value {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--text-0);
+  letter-spacing: -0.01em;
+}
+
+.theme-toggle {
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  background: var(--bg-2);
+  color: var(--text-2);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all var(--transition-fast);
+}
+
+.theme-toggle:hover { 
+  background: var(--bg-3); 
+  color: var(--text-0);
+  transform: rotate(15deg);
+}
+
+/* ═══ NEWS BANNER ═══ */
+.news-banner {
+  background: linear-gradient(90deg, var(--warn-bg), transparent);
+  border-bottom: 1px solid rgba(245, 158, 11, 0.2);
+  padding: 8px 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.8rem;
+}
+
+.news-badge {
+  background: var(--warn);
+  color: #000;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-weight: 700;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ═══ MAIN LAYOUT ═══ */
+.main-layout {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 1px;
+  background: var(--border);
+  min-height: calc(100vh - 56px);
+}
+
+/* ═══ LEFT COLUMN ═══ */
+.left-col {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-0);
+}
+
+/* ═══ ACCOUNT CARDS ═══ */
+.account-strip {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 1px;
+  background: var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.account-card {
+  background: var(--bg-1);
+  padding: 20px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+}
+
+.account-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0;
+  transition: opacity var(--transition-base);
+}
+
+.account-card:hover {
+  background: var(--bg-2);
+}
+
+.account-card:hover::before {
+  opacity: 1;
+}
+
+.account-card-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+  font-weight: 600;
+}
+
+.account-card-value {
+  font-family: var(--font-mono);
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--text-0);
+  letter-spacing: -0.02em;
+}
+
+.account-card-value.profit { 
+  color: var(--profit);
+  text-shadow: 0 0 20px rgba(0, 212, 170, 0.3);
+}
+
+.account-card-value.loss { 
+  color: var(--loss);
+  text-shadow: 0 0 20px rgba(239, 68, 68, 0.3);
+}
+
+/* ═══ CHART AREA ═══ */
+.chart-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--border);
+}
+
+.chart-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-1);
+}
+
+.chart-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.symbol-input {
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-0);
+  background: var(--bg-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 8px 12px;
+  width: 120px;
+  text-transform: uppercase;
+  transition: all var(--transition-fast);
+}
+
+.symbol-input:focus { 
+  outline: none; 
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+
+.tf-group {
+  display: flex;
+  gap: 2px;
+  background: var(--bg-2);
+  border-radius: var(--r-sm);
+  padding: 3px;
+  border: 1px solid var(--border);
+}
+
+.tf-btn {
+  padding: 6px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.tf-btn:hover { 
+  color: var(--text-0);
+  background: var(--bg-3);
+}
+
+.tf-btn.active {
+  background: var(--accent);
+  color: var(--bg-0);
+  box-shadow: 0 2px 8px rgba(0, 212, 170, 0.3);
+}
+
+.chart-toggles {
+  display: flex;
+  gap: 12px;
+}
+
+.chart-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  color: var(--text-2);
+  cursor: pointer;
+  font-weight: 600;
+  transition: color var(--transition-fast);
+}
+
+.chart-toggle:hover {
+  color: var(--text-0);
+}
+
+.chart-toggle input { display: none; }
+
+.chart-toggle .toggle-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--text-3);
+  transition: all var(--transition-fast);
+  border: 2px solid transparent;
+}
+
+.chart-toggle input:checked + .toggle-dot { 
+  background: var(--accent);
+  border-color: var(--accent-glow);
+  box-shadow: 0 0 8px var(--accent-glow);
+}
+
+/* ═══ SECTION TRANSITIONS ═══ */
+.dash-section {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.hidden {
+  display: none !important;
+}
+
+.chart-container {
+  flex: 1;
+  position: relative;
+  min-height: 400px;
+}
+
+#price-chart, #rsi-chart, #macd-chart {
+  width: 100%;
+  height: 100%;
+}
+
+/* ═══ BOTTOM PANELS ═══ */
+.bottom-panels {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
+  border-top: 1px solid var(--border);
+}
+
+.bottom-panel {
+  background: var(--bg-1);
+  display: flex;
+  flex-direction: column;
+  min-height: 280px;
+  transition: all var(--transition-base);
+}
+
+.bottom-panel:hover {
+  background: var(--bg-2);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-1);
+}
+
+.panel-title {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-badge {
+  background: var(--accent-dim);
+  color: var(--accent);
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.panel-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.panel-body::-webkit-scrollbar-track {
+  background: var(--bg-2);
+}
+
+.panel-body::-webkit-scrollbar-thumb {
+  background: var(--bg-4);
+  border-radius: 3px;
+}
+
+.panel-body::-webkit-scrollbar-thumb:hover {
+  background: var(--text-3);
+}
+
+/* ═══ POSITION ITEMS ═══ */
+.position-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-2);
+  border-radius: var(--r-sm);
+  margin-bottom: 8px;
+  border: 1px solid var(--border);
+  transition: all var(--transition-fast);
+}
+
+.position-item:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-3);
+}
+
+.position-symbol {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: var(--text-0);
+  min-width: 80px;
+}
+
+.position-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.75rem;
+  color: var(--text-2);
+}
+
+.position-pnl {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.9rem;
+  min-width: 80px;
+  text-align: right;
+}
+
+.position-pnl.profit {
+  color: var(--profit);
+}
+
+.position-pnl.loss {
+  color: var(--loss);
+}
+
+.position-close {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  background: var(--bg-1);
+  color: var(--text-2);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.position-close:hover {
+  background: var(--loss);
+  color: white;
+  border-color: var(--loss);
+  transform: scale(1.1);
+}
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panel-badge {
+  background: var(--bg-3);
+  color: var(--text-1);
+  padding: 2px 8px;
+  border-radius: 100px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+
+.panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px 16px;
+}
+
+/* ═══ RIGHT SIDEBAR ═══ */
+.right-sidebar {
+  background: var(--bg-1);
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  border-left: 1px solid var(--border);
+}
+
+.right-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.right-sidebar::-webkit-scrollbar-track {
+  background: var(--bg-2);
+}
+
+.right-sidebar::-webkit-scrollbar-thumb {
+  background: var(--bg-4);
+  border-radius: 3px;
+}
+
+/* ═══ TRADE PLAN ══ */
+.trade-plan {
+  border-bottom: 1px solid var(--border);
+  padding: 20px 16px;
+  background: linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 100%);
+}
+
+.plan-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+
+.plan-symbol {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-0);
+  letter-spacing: 0.05em;
+}
+
+.plan-action {
+  padding: 6px 16px;
+  border-radius: var(--r-sm);
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.plan-action.buy {
+  background: var(--profit-bg);
+  color: var(--profit);
+  border: 1px solid rgba(0, 212, 170, 0.3);
+}
+
+.plan-action.sell {
+  background: var(--loss-bg);
+  color: var(--loss);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.plan-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.plan-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  background: var(--bg-1);
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  transition: all var(--transition-fast);
+}
+
+.plan-field:hover {
+  border-color: var(--border-hover);
+  background: var(--bg-2);
+}
+
+.plan-field-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-3);
+  font-weight: 600;
+}
+
+.plan-field-value {
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-0);
+}
+
+.trade-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.trade-btn {
+  padding: 12px;
+  border: none;
+  border-radius: var(--r-sm);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.trade-btn.buy {
+  background: var(--profit);
+  color: var(--bg-0);
+}
+
+.trade-btn.buy:hover {
+  background: #00e5b8;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 212, 170, 0.3);
+}
+
+.trade-btn.sell {
+  background: var(--loss);
+  color: white;
+}
+
+.trade-btn.sell:hover {
+  background: #f55;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.trade-btn:active {
+  transform: translateY(0);
+}
+
+/* ═══ TRADE PLAN ═══ */
+.trade-plan {
+  padding: 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.plan-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.plan-symbol {
+  font-family: var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--text-0);
+}
+
+.plan-action {
+  padding: 4px 12px;
+  border-radius: var(--r-sm);
+  font-weight: 700;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+}
+.plan-action.buy { background: var(--profit-bg); color: var(--profit); }
+.plan-action.sell { background: var(--loss-bg); color: var(--loss); }
+
+.plan-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.plan-field {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  background: var(--bg-2);
+  border-radius: var(--r-sm);
+}
+
+.plan-field-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-3);
+}
+
+.plan-field-value {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-0);
+}
+
+/* One-click trading buttons */
+.trade-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.trade-btn {
+  padding: 12px;
+  border: none;
+  border-radius: var(--r-md);
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.trade-btn.buy {
+  background: linear-gradient(135deg, #00d4aa, #00b894);
+  color: #000;
+}
+.trade-btn.buy:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 212, 170, 0.3); }
+
+.trade-btn.sell {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
+}
+.trade-btn.sell:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3); }
+
+/* ═══ POSITIONS ═══ */
+.positions-list {
+  padding: 0;
+}
+
+.position-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.position-item:hover { background: var(--bg-2); }
+
+.position-symbol {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--text-0);
+}
+
+.position-details {
+  display: flex;
+  gap: 12px;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+}
+
+.position-pnl {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.position-pnl.profit { color: var(--profit); }
+.position-pnl.loss { color: var(--loss); }
+
+.position-close {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-3);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s;
+}
+.position-close:hover { background: var(--loss-bg); color: var(--loss); border-color: var(--loss); }
+
+/* ═══ NEWS FEED ═══ */
+.news-feed {
+  padding: 0;
+}
+
+.news-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.news-item:hover { background: var(--bg-2); }
+
+.news-time {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-3);
+  margin-bottom: 4px;
+}
+
+.news-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-0);
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
+
+.news-source {
+  font-size: 0.7rem;
+  color: var(--text-3);
+}
+
+.news-impact {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.news-impact.high { background: var(--loss-bg); color: var(--loss); }
+.news-impact.medium { background: var(--warn-bg); color: var(--warn); }
+.news-impact.low { background: var(--bg-3); color: var(--text-2); }
+
+/* ═══ MACRO CALENDAR ═══ */
+.macro-list {
+  padding: 0;
+}
+
+.macro-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.macro-time {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-3);
+  min-width: 50px;
+}
+
+.macro-event {
+  flex: 1;
+  font-size: 0.8rem;
+  color: var(--text-0);
+}
+
+.macro-impact {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.macro-impact.high { background: var(--loss); }
+.macro-impact.medium { background: var(--warn); }
+.macro-impact.low { background: var(--text-3); }
+
+/* ═══ ALERTS ═══ */
+.alert-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  transition: all var(--transition-fast);
+}
+
+.alert-item:hover {
+  background: var(--bg-2);
+}
+
+.alert-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  transition: all var(--transition-fast);
+}
+
+.alert-item:hover .alert-icon {
+  transform: scale(1.1);
+}
+
+.alert-icon.signal { 
+  background: var(--accent-dim);
+  border: 1px solid rgba(0, 212, 170, 0.2);
+}
+
+.alert-icon.warning { 
+  background: var(--warn-bg);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.alert-icon.danger { 
+  background: var(--loss-bg);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.alert-content {
+  flex: 1;
+}
+
+.alert-title {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-0);
+  margin-bottom: 2px;
+}
+
+.alert-time {
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  color: var(--text-3);
+}
+
+/* ═══ RISK PANEL ═══ */
+.risk-bar {
+  height: 6px;
+  background: var(--bg-3);
+  border-radius: 3px;
+  margin: 8px 0 12px 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.risk-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.5s ease;
+  position: relative;
+}
+
+.risk-fill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  animation: shimmer 2s infinite;
+}
+
+@keyframes shimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.risk-fill.low { 
+  background: linear-gradient(90deg, var(--profit), #00e5b8);
+  box-shadow: 0 0 10px rgba(0, 212, 170, 0.3);
+}
+
+.risk-fill.medium { 
+  background: linear-gradient(90deg, var(--warn), #fbbf24);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.3);
+}
+
+.risk-fill.high { 
+  background: linear-gradient(90deg, var(--loss), #f55);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
+}
+
+/* ═══ SCROLLBAR ═══ */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--bg-4); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+
+/* ═══ RESPONSIVE ═══ */
+@media (max-width: 1200px) {
+  .main-layout { grid-template-columns: 1fr; }
+  .right-sidebar { display: none; }
+  .account-strip { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .header { padding: 0 12px; }
+  .header-center { display: none; }
+  .account-strip { grid-template-columns: repeat(2, 1fr); }
+  .bottom-panels { grid-template-columns: 1fr; }
+  .chart-container { min-height: 300px; }
+}
+
+/* ═══ ANIMATIONS ═══ */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.panel { animation: fadeIn 0.3s ease; }
+
+/* ═══ TOOLTIP ═══ */
+.tooltip {
+  position: absolute;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  padding: 8px 12px;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-0);
+  pointer-events: none;
+  z-index: 50;
+  box-shadow: var(--shadow-md);
+}
+
+/* ═══ WATCHLIST ═══ */
+.watchlist {
+  display: flex;
+  gap: 4px;
+  padding: 8px 16px;
+  background: var(--bg-1);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+}
+
+.watchlist::-webkit-scrollbar {
+  height: 4px;
+}
+
+.watchlist::-webkit-scrollbar-track {
+  background: var(--bg-2);
+}
+
+.watchlist::-webkit-scrollbar-thumb {
+  background: var(--bg-4);
+  border-radius: 2px;
+}
+
+.watchlist-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: var(--r-sm);
+  background: var(--bg-2);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+
+.watchlist-item:hover { 
+  background: var(--bg-3);
+  transform: translateY(-1px);
+  border-color: var(--border-hover);
+}
+
+.watchlist-item.active { 
+  background: var(--accent-dim); 
+  border: 1px solid rgba(0, 212, 170, 0.3);
+  box-shadow: 0 0 12px rgba(0, 212, 170, 0.15);
+}
+
+.watchlist-symbol {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: var(--text-0);
+  letter-spacing: 0.02em;
+}
+
+.watchlist-price {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-1);
+  font-weight: 600;
+}
+
+.watchlist-change {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.watchlist-change.profit { color: var(--profit); }
+.watchlist-change.loss { color: var(--loss); }
+
+/* Price flash animation */
+@keyframes flashProfit {
+  0% { background: var(--profit-bg); }
+  100% { background: transparent; }
+}
+
+@keyframes flashLoss {
+  0% { background: var(--loss-bg); }
+  100% { background: transparent; }
+}
+
+.watchlist-item.flash-profit {
+  animation: flashProfit 0.6s ease;
+}
+
+.watchlist-item.flash-loss {
+  animation: flashLoss 0.6s ease;
+}
+.watchlist-change.up { color: var(--profit); }
+.watchlist-change.down { color: var(--loss); }
+
+/* ══ MOBILE NAV ═══ */
+.mobile-nav {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg-1);
+  border-top: 1px solid var(--border);
+  padding: 8px 16px;
+  z-index: 100;
+  box-shadow: 0 -4px 12px rgba(0,0,0,0.3);
+  transition: transform 0.3s ease;
+}
+
+.mobile-nav.nav-hidden {
+  transform: translateY(100%);
+}
+
+@media (max-width: 768px) {
+  .mobile-nav { display: flex; justify-content: space-around; }
+  body { padding-bottom: 70px; }
+}
+
+.mobile-nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  border: none;
+  background: transparent;
+  color: var(--text-3);
+  font-size: 0.65rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  border-radius: var(--r-sm);
+}
+
+.mobile-nav-btn:hover {
+  color: var(--text-0);
+  background: var(--bg-2);
+}
+
+.mobile-nav-btn.active { 
+  color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.mobile-nav-btn svg { width: 20px; height: 20px; }
+
+/* ═══ SECTION TOGGLE ═══ */
+.dash-section.hidden { display: none !important; }
+.dash-section { 
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ═ EMPTY STATES ═══ */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--text-3);
+}
+
+.empty-state-icon {
+  font-size: 2.5rem;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+
+.empty-state-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-2);
+  margin-bottom: 4px;
+}
+
+.empty-state-text {
+  font-size: 0.8rem;
+  color: var(--text-3);
+}
+
+/* ═══ LOADING SKELETON ═══ */
+@keyframes skeletonLoading {
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-2) 0%, var(--bg-3) 50%, var(--bg-2) 100%);
+  background-size: 200px 100%;
+  animation: skeletonLoading 1.5s infinite;
+  border-radius: var(--r-sm);
+}
+
+.skeleton-text {
+  height: 12px;
+  margin-bottom: 8px;
+}
+
+.skeleton-title {
+  height: 20px;
+  width: 60%;
+  margin-bottom: 12px;
+}
+
+.skeleton-chart {
+  height: 300px;
+  width: 100%;
+}
+
+/* ═══ NOTIFICATION STACKING ═══ */
+.notification-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.notification {
+  pointer-events: auto;
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ═══ KEYBOARD SHORTCUT HINTS ═══ */
+.kbd {
+  display: inline-block;
+  padding: 2px 6px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  background: var(--bg-3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-2);
+  margin-left: 4px;
+}
+
+/* ═══ CHART CROSSHAIR IMPROVEMENTS ═══ */
+.lc-tooltip {
+  background: var(--bg-3) !important;
+  border: 1px solid var(--border-hover) !important;
+  border-radius: var(--r-sm) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+/* ═══ IMPROVED FOCUS STATES ═══ */
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* ═══ SMOOTH SCROLL ═══ */
+html {
+  scroll-behavior: smooth;
+}
+</style>
 </head>
 <body>
 
-<!-- Skip to main content for keyboard users -->
-<a href="#main-content" class="sr-only focus-visible">Skip to main content</a>
-
-<header role="banner">
-  <div class="brand">MT5 <span>Dashboard</span></div>
-  <div class="status">
-    <span id="status-dot" class="dot off" aria-hidden="true"></span>
-    <span id="status-text" aria-live="polite">Connecting...</span>
-    <div class="status-dropdown">
-      <button id="status-btn" class="status-btn" aria-expanded="false" aria-haspopup="true" aria-label="Connection details">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-      </button>
-      <div id="status-menu" class="status-menu hidden" role="menu" aria-label="Connection details">
-        <div class="status-menu-item" role="menuitem">
-          <span class="status-menu-label">Terminal</span>
-          <span id="status-term" class="status-menu-value">--</span>
-        </div>
-        <div class="status-menu-item" role="menuitem">
-          <span class="status-menu-label">Build</span>
-          <span id="status-build" class="status-menu-value">--</span>
-        </div>
-        <div class="status-menu-item" role="menuitem">
-          <span class="status-menu-label">Latency</span>
-          <span id="status-latency" class="status-menu-value">--</span>
-        </div>
-        <div class="status-menu-item" role="menuitem">
-          <span class="status-menu-label">Last heartbeat</span>
-          <span id="status-heartbeat" class="status-menu-value">--</span>
-        </div>
-        <div class="status-menu-divider"></div>
-        <button id="status-reconnect" class="status-menu-btn" role="menuitem">Reconnect MT5</button>
-        <button id="status-ws-reconnect" class="status-menu-btn" role="menuitem">Reconnect WebSocket</button>
-      </div>
+<!-- ═══ HEADER ═══ -->
+<header class="header">
+  <div class="header-left">
+    <div class="logo">
+      <div class="logo-icon">⚡</div>
+      MT5 Terminal
     </div>
-    <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme (dark/light/auto)">
-      <svg class="theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
-      <svg class="theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-      <svg class="theme-icon-auto" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
-    </button>
+    <div id="status-pill" class="status-pill">
+      <span class="status-dot"></span>
+      <span id="status-text">Connected</span>
+    </div>
   </div>
+
+  <nav class="header-center">
+    <button class="nav-btn active" data-section="live">
+      <span>📈</span> Live
+    </button>
+    <button class="nav-btn" data-section="news">
+      <span>📰</span> News
+    </button>
+    <button class="nav-btn" data-section="alerts">
+      <span>🔔</span> Alerts
+    </button>
+    <button class="nav-btn" data-section="portfolio">
+      <span>📊</span> Portfolio
+    </button>
+    <button class="nav-btn" data-section="risk">
+      <span>🛡️</span> Risk
+    </button>
+    <button class="nav-btn" data-section="dojo">
+      <span>🥋</span> Dojo
+    </button>
+  </nav>
+
   <div class="header-right">
-    <span id="h-risk-badge" class="risk-badge hidden" aria-live="assertive" aria-atomic="true"></span>
-    <label for="h-account-select" class="acct-label">Account</label>
-    <select id="h-account-select" class="acct-select" aria-label="Switch trading account">
-      <option value="">--</option>
-    </select>
-    <span id="h-login" class="acct-active" aria-live="polite"></span>
-    <span id="peer-chip" class="peer-chip hidden" title="Other account dashboard"></span>
-    <span class="sep" aria-hidden="true">|</span>
-    <span id="h-server-time" aria-label="Server time">--:--:--</span>
-    <span class="sep" aria-hidden="true">|</span>
-    <span id="h-pos-count" aria-label="Open positions count">0 positions</span>
-    <span class="sep" aria-hidden="true">|</span>
-    <span id="h-terminal" class="dim" aria-label="Terminal info">--</span>
+    <div class="header-stat">
+      <span class="header-stat-label">Balance</span>
+      <span class="header-stat-value" id="h-balance">$9,529.01</span>
+    </div>
+    <div class="header-stat">
+      <span class="header-stat-label">Equity</span>
+      <span class="header-stat-value" id="h-equity">$9,529.01</span>
+    </div>
+    <div class="header-stat">
+      <span class="header-stat-label">P&L</span>
+      <span class="header-stat-value profit" id="h-pnl">+$0.00</span>
+    </div>
+    <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+    </button>
   </div>
 </header>
 
-<div id="news-banner" class="news-banner hidden" role="alert" aria-live="assertive">
-  <strong>HIGH-IMPACT NEWS</strong> <span id="news-banner-text"></span>
+<!-- ═══ NEWS BANNER ═══ -->
+<div id="news-banner" class="news-banner" style="display:none">
+  <span class="news-badge">⚡ HIGH IMPACT</span>
+  <span id="news-banner-text">Fed Rate Decision — 2:00 PM ET</span>
 </div>
 
-<!-- Hedge Fund Navigation -->
-<nav class="hf-nav" id="hf-nav" role="tablist" aria-label="Main navigation">
-  <button class="hf-nav-btn active" data-section="live" role="tab" aria-selected="true" aria-controls="hf-section-live" id="tab-live">
-    <span class="hf-nav-icon" aria-hidden="true">📈</span> Live Trading
+<!-- ═══ WATCHLIST (rendered live by app.js) ═══ -->
+<div class="watchlist" id="watchlist"></div>
+
+<!-- ═══ MAIN LAYOUT ═══ -->
+<div id="section-live" class="dash-section">
+<div class="main-layout">
+  <!-- LEFT: Charts + Bottom Panels -->
+  <div class="left-col">
+    <!-- Account Cards -->
+    <div class="account-strip">
+      <div class="account-card">
+        <span class="account-card-label">Balance</span>
+        <span class="account-card-value" id="c-balance">$9,529.01</span>
+      </div>
+      <div class="account-card">
+        <span class="account-card-label">Equity</span>
+        <span class="account-card-value" id="c-equity">$9,529.01</span>
+      </div>
+      <div class="account-card">
+        <span class="account-card-label">Free Margin</span>
+        <span class="account-card-value" id="c-margin">$9,529.01</span>
+      </div>
+      <div class="account-card">
+        <span class="account-card-label">Daily P&L</span>
+        <span class="account-card-value profit" id="c-daily">+$0.00</span>
+      </div>
+      <div class="account-card">
+        <span class="account-card-label">Floating P&L</span>
+        <span class="account-card-value" id="c-floating">$0.00</span>
+      </div>
+      <div class="account-card">
+        <span class="account-card-label">Open Positions</span>
+        <span class="account-card-value" id="c-positions">0</span>
+      </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="chart-area">
+      <div class="chart-toolbar">
+        <div class="chart-toolbar-left">
+          <input id="symbol-input" class="symbol-input" list="symbol-list" value="EURUSD" spellcheck="false">
+          <datalist id="symbol-list"></datalist>
+          <div class="tf-group" id="tf-group">
+            <button class="tf-btn" data-tf="M5">M5</button>
+            <button class="tf-btn" data-tf="M15">M15</button>
+            <button class="tf-btn" data-tf="M30">M30</button>
+            <button class="tf-btn active" data-tf="H1">H1</button>
+            <button class="tf-btn" data-tf="H4">H4</button>
+            <button class="tf-btn" data-tf="D1">D1</button>
+          </div>
+        </div>
+        <div class="chart-toggles">
+          <label class="chart-toggle"><input type="checkbox" id="chk-ema" checked><span class="toggle-dot"></span>EMA</label>
+          <label class="chart-toggle"><input type="checkbox" id="chk-rsi" checked><span class="toggle-dot"></span>RSI</label>
+          <label class="chart-toggle"><input type="checkbox" id="chk-macd"><span class="toggle-dot"></span>MACD</label>
+          <label class="chart-toggle"><input type="checkbox" id="chk-sd" checked><span class="toggle-dot"></span>S/D</label>
+        </div>
+      </div>
+      <div class="chart-container">
+        <div id="price-chart" class="lc-pane price-pane"></div>
+        <div id="rsi-chart" class="lc-pane rsi-pane hidden"></div>
+        <div id="macd-chart" class="lc-pane macd-pane hidden"></div>
+        <div id="tooltip" class="tooltip hidden"></div>
+      </div>
+    </div>
+
+    <!-- Bottom Panels -->
+    <div class="bottom-panels">
+      <!-- Positions -->
+      <div class="bottom-panel">
+        <div class="panel-header">
+          <span class="panel-title">Open Positions <span class="panel-badge" id="pos-count">0</span></span>
+        </div>
+        <div class="panel-body" id="positions-list">
+          <div style="padding:20px;text-align:center;color:var(--text-3)">No open positions</div>
+        </div>
+      </div>
+
+      <!-- News Feed -->
+      <div class="bottom-panel">
+        <div class="panel-header">
+          <span class="panel-title">📰 Market News</span>
+          <span class="news-source" id="news-provider" style="margin-left:auto;font-size:10px"></span>
+        </div>
+        <div class="panel-body news-feed" id="news-feed">
+          <div class="news-item"><div class="news-title" style="color:var(--text-3)">Loading live economic calendar…</div></div>
+        </div>
+      </div>
+
+      <!-- Macro Calendar -->
+      <div class="bottom-panel">
+        <div class="panel-header">
+          <span class="panel-title">📅 Macro Calendar</span>
+        </div>
+        <div class="panel-body macro-list" id="macro-calendar">
+          <div class="macro-item"><span class="macro-event" style="color:var(--text-3)">Loading live calendar…</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT SIDEBAR -->
+  <aside class="right-sidebar">
+    <!-- Trade Plan -->
+    <div class="trade-plan">
+      <div class="plan-header">
+        <span class="plan-symbol" id="plan-symbol">ETHUSD</span>
+        <span class="plan-action buy" id="plan-action">BUY</span>
+      </div>
+      <div class="plan-grid">
+        <div class="plan-field">
+          <span class="plan-field-label">Entry</span>
+          <span class="plan-field-value" id="plan-entry">2,409.89</span>
+        </div>
+        <div class="plan-field">
+          <span class="plan-field-label">Stop Loss</span>
+          <span class="plan-field-value" id="plan-sl">2,361.66</span>
+        </div>
+        <div class="plan-field">
+          <span class="plan-field-label">Take Profit</span>
+          <span class="plan-field-value" id="plan-tp">2,567.23</span>
+        </div>
+        <div class="plan-field">
+          <span class="plan-field-label">Risk/Reward</span>
+          <span class="plan-field-value" id="plan-rr">3.00</span>
+        </div>
+        <div class="plan-field">
+          <span class="plan-field-label">Lots</span>
+          <span class="plan-field-value" id="plan-lots">0.92</span>
+        </div>
+        <div class="plan-field">
+          <span class="plan-field-label">Risk</span>
+          <span class="plan-field-value" id="plan-risk">$47.15</span>
+        </div>
+      </div>
+      <div class="trade-actions">
+        <button class="trade-btn buy" onclick="executeTrade('BUY')">BUY</button>
+        <button class="trade-btn sell" onclick="executeTrade('SELL')">SELL</button>
+      </div>
+    </div>
+
+    <!-- Risk Overview -->
+    <div style="padding:16px;border-bottom:1px solid var(--border)">
+      <div class="panel-title" style="margin-bottom:12px">🛡️ Risk Overview</div>
+      <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:4px">
+        <span>Daily Loss Limit</span>
+        <span style="color:var(--profit)">$0 / $285.87</span>
+      </div>
+      <div class="risk-bar"><div class="risk-fill low" style="width:0%"></div></div>
+      
+      <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:4px">
+        <span>Open Risk</span>
+        <span style="color:var(--text-1)">$47.15 / $285.87</span>
+      </div>
+      <div class="risk-bar"><div class="risk-fill low" style="width:16%"></div></div>
+      
+      <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:4px">
+        <span>Drawdown</span>
+        <span style="color:var(--profit)">$0 / $762.32</span>
+      </div>
+      <div class="risk-bar"><div class="risk-fill low" style="width:0%"></div></div>
+    </div>
+
+    <!-- Alerts -->
+    <div style="flex:1;overflow-y:auto">
+      <div class="panel-header">
+        <span class="panel-title">🔔 Trade Alerts</span>
+      </div>
+      <div id="alerts-list">
+        <div class="alert-item">
+          <div class="alert-icon signal">📡</div>
+          <div class="alert-content">
+            <div class="alert-title">Live alerts will appear here</div>
+            <div class="alert-time">waiting for data…</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+</div><!-- /section-live -->
+
+<!-- ═══ NEWS SECTION ═══ -->
+<div id="section-news" class="dash-section hidden">
+  <div style="max-width:900px;margin:0 auto;padding:20px">
+    <h2 style="margin-bottom:16px">📰 Market News</h2>
+    <div id="news-full-feed">
+      <div style="padding:20px;text-align:center;color:var(--text-3)">Loading live economic calendar…</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ALERTS SECTION ═══ -->
+<div id="section-alerts" class="dash-section hidden">
+  <div style="max-width:900px;margin:0 auto;padding:20px">
+    <h2 style="margin-bottom:16px">🔔 Trade Alerts</h2>
+    <div id="alerts-full-list">
+      <div class="empty-state">
+        <div class="empty-state-icon">🔔</div>
+        <div class="empty-state-title">No alerts yet</div>
+        <div class="empty-state-text">Trade signals and risk warnings will appear here</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ PORTFOLIO SECTION ═══ -->
+<div id="section-portfolio" class="dash-section hidden">
+  <div id="hf-section-portfolio" style="padding:20px"></div>
+</div>
+
+<!-- ═══ RISK SECTION ═══ -->
+<div id="section-risk" class="dash-section hidden">
+  <div id="hf-section-risk" style="padding:20px"></div>
+</div>
+
+<!-- ═══ DOJO SECTION ═══ -->
+<div id="section-dojo" class="dash-section hidden" style="padding:20px;min-height:60vh"></div>
+
+<!-- ═══ MOBILE NAV ═══ -->
+<nav class="mobile-nav">
+  <button class="mobile-nav-btn active" data-section="live">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18.7 8l-5.1 5.2-2.8-2.7L7 14.3"/></svg>
+    Live
   </button>
-  <button class="hf-nav-btn" data-section="dojo" role="tab" aria-selected="false" aria-controls="hf-section-dojo" id="tab-dojo" tabindex="-1">
-    <span class="hf-nav-icon" aria-hidden="true">🥋</span> ForexDojo
+  <button class="mobile-nav-btn" data-section="news">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 22h16a2 2 0 002-2V4a2 2 0 00-2-2H8a2 2 0 00-2 2v16a2 2 0 01-2 2zm0 0a2 2 0 01-2-2v-9c0-1.1.9-2 2-2h2"/></svg>
+    News
   </button>
-  <button class="hf-nav-btn" data-section="portfolio" role="tab" aria-selected="false" aria-controls="hf-section-portfolio" id="tab-portfolio" tabindex="-1">
-    <span class="hf-nav-icon" aria-hidden="true">📊</span> Portfolio
+  <button class="mobile-nav-btn" data-section="alerts">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+    Alerts
   </button>
-  <button class="hf-nav-btn" data-section="risk" role="tab" aria-selected="false" aria-controls="hf-section-risk" id="tab-risk" tabindex="-1">
-    <span class="hf-nav-icon" aria-hidden="true">🛡️</span> Risk
+  <button class="mobile-nav-btn" data-section="portfolio">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+    Portfolio
+  </button>
+  <button class="mobile-nav-btn" data-section="dojo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    Dojo
   </button>
 </nav>
 
-<!-- Live Trading Section (default) -->
-<div id="hf-section-live" class="hf-section active" role="tabpanel" aria-labelledby="tab-live" id="main-content"></div>
-
-<!-- ForexDojo Section -->
-<div id="hf-section-dojo" class="hf-section" role="tabpanel" aria-labelledby="tab-dojo" hidden></div>
-
-<!-- Portfolio Section -->
-<div id="hf-section-portfolio" class="hf-section" role="tabpanel" aria-labelledby="tab-portfolio" hidden></div>
-
-<!-- Risk Section -->
-<div id="hf-section-risk" class="hf-section" role="tabpanel" aria-labelledby="tab-risk" hidden></div>
-
 <script>
-// Hedge Fund Tab Controller
-const HedgeFund = (() => {
-  let currentTab = 'live';
-  const sections = {};
+// ═══ THEME TOGGLE ═══
+const themeToggle = document.getElementById('theme-toggle');
+const savedTheme = localStorage.getItem('theme') || 'dark';
+document.documentElement.setAttribute('data-theme', savedTheme);
 
-  function switchTab(tab) {
-    // Hide current
-    document.querySelectorAll('.hf-section').forEach(s => {
-      s.classList.remove('active');
-      s.hidden = true;
-    });
-    document.querySelectorAll('.hf-nav-btn').forEach(b => {
-      b.classList.remove('active');
-      b.setAttribute('aria-selected', 'false');
-      b.setAttribute('tabindex', '-1');
-    });
+themeToggle.addEventListener('click', () => {
+  const current = document.documentElement.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', next);
+  localStorage.setItem('theme', next);
+});
 
-    // Show new
-    const newSection = document.getElementById('hf-section-' + tab);
-    newSection.classList.add('active');
-    newSection.hidden = false;
-    const newBtn = document.querySelector(`.hf-nav-btn[data-section="${tab}"]`);
-    newBtn.classList.add('active');
-    newBtn.setAttribute('aria-selected', 'true');
-    newBtn.removeAttribute('tabindex');
+// ═══ NAVIGATION ═══
+const sections = ['live', 'news', 'alerts', 'portfolio', 'risk', 'dojo'];
 
-    currentTab = tab;
-
-    // Load content if needed
-    if (tab === 'dojo') {
-      const el = document.getElementById('hf-section-dojo');
-      if (!el.innerHTML.trim()) {
-        el.innerHTML = Dojo.render();
-        Dojo.init();
-      }
-    } else if (tab === 'portfolio') {
-      const el = document.getElementById('hf-section-portfolio');
-      if (!el.innerHTML.trim()) {
-        el.innerHTML = Portfolio.render();
-        Portfolio.init();
-      }
-    } else if (tab === 'risk') {
-      const el = document.getElementById('hf-section-risk');
-      if (!el.innerHTML.trim()) {
-        el.innerHTML = Risk.render();
-        Risk.init();
+function showSection(name) {
+  sections.forEach(s => {
+    const el = document.getElementById('section-' + s);
+    if (el) {
+      if (s === name) {
+        el.classList.remove('hidden');
+        // Trigger reflow for animation
+        el.style.animation = 'none';
+        el.offsetHeight; // Trigger reflow
+        el.style.animation = null;
+      } else {
+        el.classList.add('hidden');
       }
     }
+  });
+
+  // Render Dojo when switching to it
+  if (name === 'dojo' && typeof Dojo !== 'undefined') {
+    const dojoEl = document.getElementById('section-dojo');
+    dojoEl.innerHTML = Dojo.render();
+    Dojo.init();
   }
+  
+  // Save last active section
+  localStorage.setItem('lastSection', name);
+}
 
-  // Keyboard navigation for tabs
-  function handleTabKeydown(e) {
-    const tabs = Array.from(document.querySelectorAll('.hf-nav-btn'));
-    const currentIndex = tabs.findIndex(t => t.classList.contains('active'));
-    let newIndex = currentIndex;
-    if (e.key === 'ArrowRight') newIndex = (currentIndex + 1) % tabs.length;
-    else if (e.key === 'ArrowLeft') newIndex = (currentIndex - 1 + tabs.length) % tabs.length;
-    else if (e.key === 'Home') newIndex = 0;
-    else if (e.key === 'End') newIndex = tabs.length - 1;
-    else return;
-    e.preventDefault();
-    const tab = tabs[newIndex].dataset.section;
-    switchTab(tab);
-    tabs[newIndex].focus();
-  }
-
-  function init() {
-    // Keyboard navigation for tabs
-    document.getElementById('hf-nav')?.addEventListener('keydown', handleTabKeydown);
-
-    // Mouse click navigation
-    document.querySelectorAll('.hf-nav-btn').forEach(btn => {
-      btn.addEventListener('click', () => switchTab(btn.dataset.section));
-    });
-
-    // Move existing content into Live section
-    const liveSection = document.getElementById('hf-section-live');
-    if (liveSection.children.length > 0) return; // already moved
-    const existingContent = [];
-    // Select all live-trading elements (cards, charts, panels, etc.)
-    document.querySelectorAll('.watchlist-wrap, section.cards, main.grid, section.panel, .sweep-panel, section.trades-panel, section.equity-panel, section.journal-panel').forEach(el => {
-      // Skip if already inside a hf-section
-      if (el.closest('.hf-section')) return;
-      existingContent.push(el);
-    });
-    existingContent.forEach(el => liveSection.appendChild(el));
-    // Also move any remaining loose panels that weren't caught
-    document.querySelectorAll('body > section.panel, body > main').forEach(el => {
-      if (el.closest('.hf-section')) return;
-      liveSection.appendChild(el);
-    });
-  }
-
-  return { switchTab, init };
-})();
-</script>
-
-<div class="watchlist-wrap">
-  <span class="wl-label">Watchlist</span>
-  <div id="watchlist" class="watchlist"></div>
-  <input id="wl-add" class="wl-add" placeholder="+ add symbol" maxlength="12" spellcheck="false">
-</div>
-
-<section class="cards">
-  <div class="card"><div class="card-label">Balance</div><div class="card-value" id="c-balance">--</div></div>
-  <div class="card"><div class="card-label">Equity</div><div class="card-value" id="c-equity">--</div></div>
-  <div class="card"><div class="card-label">Free Margin</div><div class="card-value" id="c-margin">--</div></div>
-  <div class="card"><div class="card-label">Margin Level</div><div class="card-value" id="c-margin-level">--</div></div>
-  <div class="card">
-    <div class="card-label">Daily P&amp;L <span class="sub" id="c-daily-sub"></span></div>
-    <div class="card-value" id="c-daily">--</div>
-  </div>
-  <div class="card"><div class="card-label">Floating P&amp;L</div><div class="card-value" id="c-floating">--</div></div>
-</section>
-
-<!-- ═══ LIVE TAB ═══ -->
-<div id="tab-live">
-<main class="grid">
-  <section class="panel chart-panel">
-    <div class="panel-head">
-      <input id="symbol-input" class="symbol-input" list="symbol-list" value="EURUSD" spellcheck="false">
-      <datalist id="symbol-list"></datalist>
-      <div class="tf-group" id="tf-group"></div>
-      <label class="check"><input type="checkbox" id="chk-ema" checked>EMA</label>
-      <label class="check"><input type="checkbox" id="chk-rsi" checked>RSI</label>
-      <label class="check"><input type="checkbox" id="chk-macd" checked>MACD</label>
-      <label class="check"><input type="checkbox" id="chk-bot" checked>Bot</label>
-      <label class="check"><input type="checkbox" id="chk-sd" checked>S/D Zones</label>
-      <label class="check"><input type="checkbox" id="chk-bt" title="Backtest entries/exits on chart">Trades</label>
-      <label class="check"><input type="checkbox" id="chk-strat" title="Live strategy overlay: Donchian range, H1 EMA200 trend, breakout/spike setup">Strategy</label>
-      <select id="count-select">
-        <option value="150">150 bars</option>
-        <option value="300" selected>300 bars</option>
-        <option value="500">500 bars</option>
-        <option value="1000">1000 bars</option>
-      </select>
-      <span id="bot-badge" class="bot-badge hidden"></span>
-      <span class="tick-info" id="chart-tick">--</span>
-    </div>
-    <div class="chart-wrap">
-      <div id="price-chart" class="lc-pane price-pane"></div>
-      <div id="rsi-chart" class="lc-pane rsi-pane hidden"></div>
-      <div id="macd-chart" class="lc-pane macd-pane hidden"></div>
-      <div id="tooltip" class="tooltip hidden"></div>
-    </div>
-  </section>
-
-  <aside class="col" id="sidebar">
-    <button id="sidebar-toggle" class="sidebar-toggle hidden" aria-label="Toggle sidebar">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-    </button>
-    <section class="panel plan-panel">
-      <div class="panel-title">Bot Trade Plan
-        <span class="plan-badge hidden" id="plan-badge"></span>
-        <span class="sub" id="plan-tf"></span>
-      </div>
-      <div id="plan-body" class="plan-body">
-        <div class="plan-empty">Evaluating...</div>
-      </div>
-    </section>
-
-    <section class="panel">
-      <div class="panel-title">Open Positions <span class="badge" id="pos-badge">0</span></div>
-      <div class="table-wrap">
-        <table class="data-table" id="positions-table">
-          <thead>
-            <tr>
-              <th>Symbol</th><th>Type</th><th>Lots</th><th>Open</th>
-              <th>Current</th><th>SL</th><th>TP</th><th>P&L</th><th class="col-actions">Actions</th>
-            </tr>
-          </thead>
-          <tbody id="positions-body"></tbody>
-        </table>
-      </div>
-      <div id="corr-risk" class="corr-risk hidden"></div>
-    </section>
-
-    <section class="panel">
-      <div class="panel-title">Risk <span class="badge" id="risk-badge">--</span></div>
-      <div id="risk-body">
-        <div class="plan-empty">Loading...</div>
-      </div>
-    </section>
-
-    <section class="panel alerts-panel">
-      <div class="panel-title">Alerts <span class="sub">Price & Signal notifications</span>
-        <span class="alert-actions">
-          <select id="alert-symbol" class="symbol-input" list="symbol-list" style="width:100px" placeholder="Symbol"></select>
-          <input id="alert-price" type="number" step="0.00001" placeholder="Price" style="width:100px">
-          <select id="alert-condition">
-            <option value="above">Price â‰¥</option>
-            <option value="below">Price â‰¤</option>
-            <option value="cross_up">Crosses above</option>
-            <option value="cross_down">Crosses below</option>
-          </select>
-          <input id="alert-name" type="text" placeholder="Label (optional)" style="width:120px">
-          <button id="alert-add" class="btn small">Add</button>
-        </span>
-      </div>
-      <div id="alerts-body">
-        <div class="plan-empty">Loading...</div>
-      </div>
-    </section>
-
-    <section class="panel compliance-panel">
-      <div class="panel-title">Compliance <span class="badge" id="comp-badge">--</span></div>
-      <div id="comp-body">
-        <div class="plan-empty">Loading...</div>
-      </div>
-    </section>
-
-    <section class="panel autotrader-panel">
-      <div class="panel-title">🤖 Auto Trader
-        <span class="badge" id="at-state-badge">--</span>
-        <span class="sub" id="at-cycles-sub"></span>
-      </div>
-      <div id="at-body">
-        <div class="plan-empty">Loading auto trader status...</div>
-      </div>
-      <div id="at-log" class="at-log hidden">
-        <div class="panel-title" style="margin-top:8px;">Recent cycles</div>
-        <pre id="at-log-lines" class="at-log-lines"></pre>
-      </div>
-    </section>
-
-    <section class="panel forex-breakout-panel">
-      <div class="panel-title">Forex Breakout <span class="sub">Donchian range + EMA200 trend</span>
-        <span class="fb-actions">
-          <input id="fb-min-conf" type="number" min="0" max="100" value="65" style="width:70px" title="Min confidence %">
-          <select id="fb-rr" style="width:90px">
-            <option value="1.5">R:R 1.5</option>
-            <option value="2">R:R 2</option>
-            <option value="3">R:R 3</option>
-          </select>
-          <button id="fb-scan" class="btn small">Scan</button>
-        </span>
-      </div>
-      <div id="fb-body">
-        <div class="plan-empty">Loading...</div>
-      </div>
-    </section>
-
-    <section class="panel">
-      <div class="panel-title">Journal Insights <span class="sub">from your trading history</span></div>
-      <div id="sessions-body">
-        <div class="plan-empty">Loading...</div>
-      </div>
-    </section>
-
-    <section class="panel">
-      <div class="panel-title">Trade Stats <span class="sub" id="stat-period"></span></div>
-      <div class="stats-grid">
-        <div class="stat"><div class="stat-label">Net Profit</div><div class="stat-value" id="s-net">--</div></div>
-        <div class="stat"><div class="stat-label">Win Rate</div><div class="stat-value" id="s-winrate">--</div></div>
-        <div class="stat"><div class="stat-label">Profit Factor</div><div class="stat-value" id="s-pf">--</div></div>
-        <div class="stat"><div class="stat-label">Trades</div><div class="stat-value" id="s-trades">--</div></div>
-        <div class="stat"><div class="stat-label">Avg Win</div><div class="stat-value" id="s-avgwin">--</div></div>
-        <div class="stat"><div class="stat-label">Avg Loss</div><div class="stat-value" id="s-avgloss">--</div></div>
-      </div>
-    </section>
-  </aside>
-</main>
-
-<button id="sidebar-backdrop" class="sidebar-backdrop hidden" aria-hidden="true"></button>
-
-<section class="panel trades-panel">
-  <div class="panel-title">Recent Trades <span class="sub">last 30 closed deals</span></div>
-  <div class="table-wrap">
-    <table class="data-table" id="trades-table">
-      <thead>
-        <tr>
-          <th>Time</th><th>Symbol</th><th>Type</th><th>Lots</th>
-          <th>Price</th><th>Source</th><th>Profit</th><th>Swap</th><th>Total</th>
-        </tr>
-      </thead>
-      <tbody id="trades-body"></tbody>
-    </table>
-  </div>
-</section>
-
-<section class="panel equity-panel">
-  <div class="panel-title">Equity Curve <span class="sub" id="equity-period">last 30 days</span>
-    <span class="eq-toggles">
-      <button class="btn-xs" id="eq-tab-equity" onclick="showEquityTab('equity')">Equity Curve</button>
-      <button class="btn-xs" id="eq-tab-dist" onclick="showEquityTab('dist')">Distribution</button>
-      <label class="check"><input type="checkbox" id="eq-balance" checked>Balance</label>
-      <label class="check"><input type="checkbox" id="eq-floating">Equity</label>
-      <label class="check"><input type="checkbox" id="eq-ma5">MA5</label>
-      <label class="check"><input type="checkbox" id="eq-dd">Drawdown</label>
-    </span>
-  </div>
-  <div class="equity-wrap">
-    <canvas id="equity-chart"></canvas>
-    <canvas id="distribution-chart" style="display:none"></canvas>
-    <div id="equity-stats" class="equity-stats"></div>
-  </div>
-</section>
-
-<section class="panel journal-panel">
-  <div class="panel-title">Trade Journal <span class="sub">mt5_mcp memory</span>
-    <span class="journal-tools">
-      <select id="jf-symbol"><option value="">All symbols</option></select>
-      <select id="jf-setup"><option value="">All setups</option></select>
-      <select id="jf-outcome"><option value="">All outcomes</option></select>
-      <button id="jf-sync" class="btn small" title="Sync closed MT5 positions">Sync</button>
-      <button id="jf-csv" class="btn small">Export CSV</button>
-    </span>
-  </div>
-  <div class="table-wrap">
-    <table class="data-table" id="journal-table">
-      <thead>
-        <tr>
-          <th>Closed</th><th>Symbol</th><th>Side</th><th>Setup</th>
-          <th>Entry</th><th>Exit</th><th>Lots</th><th>P&amp;L</th><th>Outcome</th><th>Notes</th>
-        </tr>
-      </thead>
-      <tbody id="journal-body"></tbody>
-    </table>
-  </div>
-  <div id="journal-editor" class="journal-editor hidden">
-    <div class="je-title">Edit journal entry <b id="je-ticket"></b> <button id="je-cancel" class="btn small">âœ•</button></div>
-    <label>Reason <input id="je-reason" type="text" placeholder="why this trade"></label>
-    <label>Mistakes <input id="je-mistakes" type="text" placeholder="separate with ;"></label>
-    <label>Lessons <input id="je-lessons" type="text" placeholder="what to do differently"></label>
-    <button id="je-save" class="btn">Save notes</button>
-  </div>
-</section>
-
-<section class="panel news-panel">
-  <div class="panel-title">Economic Calendar <span class="sub" id="news-provider"></span></div>
-  <div class="table-wrap">
-    <table class="data-table" id="news-table">
-      <thead>
-        <tr>
-          <th>Time (UTC)</th><th>Cur</th><th>Impact</th><th>Event</th><th>Forecast</th><th>Previous</th>
-        </tr>
-      </thead>
-      <tbody id="news-body"></tbody>
-    </table>
-  </div>
-</section>
-
-<section class="panel backtest-panel">
-  <div class="panel-title">Backtesting <span class="sub" id="bt-sub"></span>
-    <span class="bt-actions">
-      <input id="bt-symbol" class="symbol-input" list="symbol-list" value="EURUSD" spellcheck="false" placeholder="Symbol">
-      <select id="bt-tf"><option value="M5">M5</option><option value="M15" selected>M15</option><option value="H1">H1</option><option value="H4">H4</option></select>
-      <input id="bt-days" type="number" min="1" max="365" value="30" style="width:60px" title="Days">
-      <input id="bt-since" type="date" style="width:120px" title="Forward test from date">
-      <select id="bt-out"><option value="month">Month</option><option value="forward">Forward</option></select>
-      <button id="bt-run" class="btn small">Run</button>
-      <button id="bt-refresh" class="btn small" title="Refresh saved results">Refresh</button>
-    </span>
-  </div>
-  <div id="bt-body">
-    <div class="plan-empty">Loading...</div>
-  </div>
-</section>
-
-<section class="panel walk-forward-panel">
-  <div class="panel-title">Walk-Forward Validation <span class="sub">Out-of-sample overfitting detection</span>
-    <span class="wf-actions">
-      <input id="wf-symbol" class="symbol-input" list="symbol-list" value="EURUSD" spellcheck="false" placeholder="Symbol">
-      <input id="wf-train" type="number" min="500" max="10000" value="2000" style="width:70px" title="Training bars">
-      <input id="wf-test" type="number" min="100" max="5000" value="500" style="width:60px" title="Test bars">
-      <input id="wf-step" type="number" min="100" max="2000" value="500" style="width:60px" title="Step size">
-      <select id="wf-trend"><option>H4</option><option>H1</option><option>D1</option></select>
-      <input id="wf-zones" value="H1,H4" title="Zone timeframes" style="width:80px">
-      <input id="wf-slip" type="number" min="0" max="10" step="0.5" value="1.0" style="width:55px" title="Slippage points">
-      <input id="wf-comm" type="number" min="0" max="50" step="1" value="7" style="width:50px" title="Commission per lot">
-      <button id="wf-run" class="btn small">Run Walk-Forward</button>
-    </span>
-  </div>
-  <div id="wf-body">
-    <div class="plan-empty">Click "Run Walk-Forward" to validate out-of-sample performance and detect overfitting.</div>
-  </div>
-</section>
-
-<section class="panel market-intel-panel">
-  <div class="panel-title">Market Intelligence <span class="sub">Market Health Score & regime scan</span>
-    <span class="mi-actions">
-      <input id="mi-symbols" class="mi-symbols" placeholder="EURUSD,GBPUSD,XAUUSD (empty = majors)" spellcheck="false">
-      <select id="mi-tf"><option value="H1">H1</option><option value="H4">H4</option><option value="D1">D1</option></select>
-      <button id="mi-scan" class="btn small">Scan</button>
-    </span>
-  </div>
-  <div id="mi-body">
-    <div class="plan-empty">Loading...</div>
-  </div>
-</section>
-
-<section class="panel research-panel">
-  <div class="panel-title">Research Agent <span class="sub">Weekly performance review & data-driven suggestions</span>
-    <span class="rch-actions">
-      <input id="rch-days" type="number" min="1" max="90" value="7" style="width:60px" title="Lookback days">
-      <button id="rch-run" class="btn small">Generate</button>
-      <button id="rch-weekly" class="btn small">Weekly</button>
-    </span>
-  </div>
-  <div id="rch-body">
-    <div class="plan-empty">Loading...</div>
-  </div>
-</section>
-
-<section class="panel coach-panel">
-  <div class="panel-title">AI Coach <span class="sub">Post-trade reviews & similar trade lookup</span>
-    <span class="ch-actions">
-      <input id="ch-ticket" type="number" placeholder="Ticket (empty = latest)" style="width:120px">
-      <button id="ch-review" class="btn small">Review</button>
-      <button id="ch-latest" class="btn small">Latest</button>
-    </span>
-  </div>
-  <div id="ch-body">
-    <div class="plan-empty">Loading...</div>
-  </div>
-</section>
-
-<section class="panel boom-crash-panel">
-  <div class="panel-title">Boom/Crash Strategy <span class="sub">Spike + Drift on Synthetic Indices</span>
-    <span class="bc-actions">
-      <select id="bc-min-conf">
-        <option value="50">Min confidence 50%</option>
-        <option value="65" selected>Min confidence 65%</option>
-        <option value="80">Min confidence 80%</option>
-      </select>
-      <button id="bc-scan" class="btn small">Scan</button>
-    </span>
-  </div>
-  <div id="bc-body">
-    <div class="plan-empty">Loading...</div>
-  </div>
-  <div id="bc-meta" class="bc-meta"></div>
-  <div class="panel-title" style="margin-top:12px;">Session P&L Heat-map <span class="sub">Deriv spike-drift money windows (UTC)</span></div>
-  <div id="session-heatmap" class="session-heatmap">
-    <div class="plan-empty">Loading heat-map...</div>
-  </div>
-</section>
-
-<section class="panel ai-detection-panel">
-  <div class="panel-title">AI Chart Detection <span class="sub">Autochartist-style formations, levels & confluence</span>
-    <span class="aid-actions">
-      <select id="aid-timeframe" title="Detection timeframe">
-        <option>M15</option>
-        <option selected>H1</option>
-        <option>H4</option>
-        <option>D1</option>
-      </select>
-      <select id="aid-min-quality" title="Minimum pattern quality">
-        <option value="50">Quality 50+</option>
-        <option value="60" selected>Quality 60+</option>
-        <option value="75">Quality 75+</option>
-      </select>
-      <button id="aid-run" class="btn small">Detect</button>
-    </span>
-  </div>
-  <div id="aid-body">
-    <div class="plan-empty">Loading...</div>
-  </div>
-</section>
-
-<section class="panel ml-rank-panel">
-  <div class="panel-title">ML Signal Ranker <span class="sub">Logistic regression model auto-trained on backtest outcomes</span>
-    <span class="ml-actions">
-      <span id="ml-rank-info"></span>
-      <button id="ml-retrain-btn" class="btn small">Retrain Model</button>
-    </span>
-  </div>
-</section>
-
-<section class="panel pattern-panel">
-  <div class="panel-title">Pattern Win Rates <span class="sub">Win rate & P&L by setup type from journal</span></div>
-  <div class="table-wrap">
-    <table class="data-table">
-      <thead><tr><th>Setup</th><th>Trades</th><th>Win Rate</th><th>Wins</th><th>Losses</th><th>Total P&L</th><th>Avg P&L</th></tr></thead>
-      <tbody id="pattern-winrates-body">
-        <tr><td colspan="7" class="dim">Loading...</td></tr>
-      </tbody>
-    </table>
-  </div>
-</section>
-
-<section class="panel sens-panel">
-  <div class="panel-title">Parameter Sensitivity <span class="sub">How robust is each parameter? ±20% sweep</span>
-    <span class="sens-actions">
-      <input id="sens-symbol" class="symbol-input" list="symbol-list" value="EURUSD" spellcheck="false" placeholder="Symbol">
-      <input id="sens-bars" type="number" min="500" max="10000" value="3000" style="width:65px" title="Bars">
-      <button id="sens-run" class="btn small">Analyze</button>
-    </span>
-  </div>
-  <div id="sens-body">
-    <div class="plan-empty">Click "Analyze" to test how sensitive each parameter is to ±20% changes.</div>
-  </div>
-</section>
-
-<section class="panel sweep-panel">
-  <div class="panel-title">Trailing + Partial TP Sweep <span class="sub">Find the best exit combo</span>
-    <span class="sweep-actions">
-      <input id="sweep-symbol" class="symbol-input" list="symbol-list" value="EURUSD" spellcheck="false" placeholder="Symbol">
-      <input id="sweep-bars" type="number" min="500" max="10000" value="3000" style="width:65px" title="Bars">
-      <button id="sweep-run" class="btn small">Sweep</button>
-    </span>
-  </div>
-  <div id="sweep-body">
-    <div class="plan-empty">Click "Sweep" to test all trailing stop + partial TP combinations.</div>
-  </div>
-</section>
-</div><!-- /tab-live -->
-
-<div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
-
-<script src="/static/vendor/lightweight-charts.js"></script>
-<script src="/static/app.core.js?v=20260830"></script>
-<script src="/static/app.panels.js?v=20260829"></script>
-<script src="/static/app.chart.js?v=20260830"></script>
-<script src="/static/app.agents.js?v=20260829"></script>
-<script src="/static/app.dojo.js?v=20260830"></script>
-<script src="/static/app.portfolio.js?v=20260829"></script>
-<script src="/static/app.risk.js?v=20260829"></script>
-<script>
-// Initialize Hedge Fund layout after all scripts load
-document.addEventListener('DOMContentLoaded', () => {
-  setTimeout(() => {
-    HedgeFund.init();
-    NotifCenter.init();
-  }, 100);
+document.querySelectorAll('.nav-btn, .mobile-nav-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll(`[data-section="${btn.dataset.section}"]`).forEach(b => b.classList.add('active'));
+    showSection(btn.dataset.section);
+  });
 });
+
+// Restore last active section on load
+const lastSection = localStorage.getItem('lastSection');
+if (lastSection && sections.includes(lastSection)) {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll(`[data-section="${lastSection}"]`).forEach(b => b.classList.add('active'));
+  showSection(lastSection);
+}
+
+// ═══ WATCHLIST ═══
+document.querySelectorAll('.watchlist-item').forEach(item => {
+  item.addEventListener('click', () => {
+    document.querySelectorAll('.watchlist-item').forEach(i => i.classList.remove('active'));
+    item.classList.add('active');
+    const symbol = item.dataset.symbol;
+    document.getElementById('symbol-input').value = symbol;
+    // Trigger chart update
+    if (typeof loadChart === 'function') loadChart(symbol);
+  });
+});
+
+// ═══ TIMEFRAME BUTTONS ═══
+document.querySelectorAll('.tf-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    // Trigger timeframe change
+  });
+});
+
+// ═══ TRADE EXECUTION ═══
+function executeTrade(action) {
+  const symbol = document.getElementById('symbol-input').value;
+  const entry = document.getElementById('plan-entry').textContent;
+  const sl = document.getElementById('plan-sl').textContent;
+  const tp = document.getElementById('plan-tp').textContent;
+  const lots = document.getElementById('plan-lots').textContent;
+  const rr = document.getElementById('plan-rr').textContent;
+  const risk = document.getElementById('plan-risk').textContent;
+  
+  const message = `Execute ${action} ${symbol}?
+
+Entry: ${entry}
+Stop Loss: ${sl}
+Take Profit: ${tp}
+Lots: ${lots}
+Risk/Reward: ${rr}
+Risk Amount: ${risk}`;
+  
+  if (confirm(message)) {
+    // Show loading state
+    const btn = event.target;
+    const originalText = btn.textContent;
+    btn.textContent = 'Executing...';
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    
+    // Call API to execute trade
+    fetch('/api/trade', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        symbol, 
+        action, 
+        lots: parseFloat(lots), 
+        sl: parseFloat(sl), 
+        tp: parseFloat(tp)
+      })
+    })
+    .then(r => r.json())
+    .then(data => {
+      btn.textContent = originalText;
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      
+      if (data.success) {
+        showNotification(`✓ ${action} ${symbol} executed successfully!`, 'success');
+        // Refresh positions
+        if (typeof updatePositions === 'function') {
+          fetch('/api/positions').then(r => r.json()).then(pos => updatePositions(pos.positions));
+        }
+      } else {
+        showNotification(`✗ Trade failed: ${data.error}`, 'error');
+      }
+    })
+    .catch(err => {
+      btn.textContent = originalText;
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      showNotification(`✗ Trade failed: ${err.message}`, 'error');
+    });
+  }
+}
+
+// ═══ NOTIFICATION SYSTEM ═══
+// Create notification container for proper stacking
+const notifContainer = document.createElement('div');
+notifContainer.className = 'notification-container';
+document.body.appendChild(notifContainer);
+
+function showNotification(message, type = 'info', duration = 3000) {
+  const notification = document.createElement('div');
+  notification.className = `notification notification-${type}`;
+  notification.textContent = message;
+  notification.style.cssText = `
+    padding: 16px 24px;
+    background: ${type === 'success' ? 'var(--profit)' : type === 'error' ? 'var(--loss)' : 'var(--blue)'};
+    color: white;
+    border-radius: var(--r-md);
+    box-shadow: var(--shadow-lg);
+    font-weight: 600;
+    animation: slideIn 0.3s ease;
+  `;
+
+  notifContainer.appendChild(notification);
+
+  setTimeout(() => {
+    notification.style.animation = 'slideOut 0.3s ease';
+    setTimeout(() => notification.remove(), 300);
+  }, duration);
+}
+
+// Add notification animations
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes slideIn {
+    from {
+      transform: translateX(400px);
+      opacity: 0;
+    }
+    to {
+      transform: translateX(0);
+      opacity: 1;
+    }
+  }
+  
+  @keyframes slideOut {
+    from {
+      transform: translateX(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateX(400px);
+      opacity: 0;
+    }
+  }
+`;
+document.head.appendChild(style);
+
+// ═══ REAL-TIME UPDATES (WebSocket placeholder) ═══
+function updateWatchlist(data) {
+  // Update watchlist prices
+}
+
+function updatePositions(positions) {
+  const container = document.getElementById('positions-list');
+  if (!positions || positions.length === 0) {
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-3)">No open positions</div>';
+    return;
+  }
+  
+  container.innerHTML = positions.map(p => `
+    <div class="position-item">
+      <span class="position-symbol">${p.symbol}</span>
+      <div class="position-details">
+        <span>${p.type} ${p.lots}</span>
+        <span>@ ${p.open}</span>
+      </div>
+      <span class="position-pnl ${p.pnl >= 0 ? 'profit' : 'loss'}">${p.pnl >= 0 ? '+' : ''}$${p.pnl.toFixed(2)}</span>
+      <button class="position-close" onclick="closePosition(${p.ticket})" title="Close position">✕</button>
+    </div>
+  `).join('');
+}
+
+function closePosition(ticket) {
+  if (confirm('Close this position?')) {
+    fetch(`/api/positions/${ticket}/close`, {method: 'POST'})
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          showNotification('✓ Position closed successfully!', 'success');
+          // Refresh positions
+          fetch('/api/positions').then(r => r.json()).then(pos => updatePositions(pos.positions));
+        } else {
+          showNotification(`✗ Failed to close: ${data.error}`, 'error');
+        }
+      })
+      .catch(err => {
+        showNotification(`✗ Failed to close: ${err.message}`, 'error');
+      });
+  }
+}
+
+// ═══ KEYBOARD SHORTCUTS ═══
+document.addEventListener('keydown', (e) => {
+  // Don't trigger shortcuts when typing in inputs
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+  const key = e.key.toLowerCase();
+
+  // Navigation shortcuts (1-6 for sections)
+  const sectionMap = {
+    '1': 'live',
+    '2': 'news',
+    '3': 'alerts',
+    '4': 'portfolio',
+    '5': 'risk',
+    '6': 'dojo'
+  };
+
+  if (sectionMap[key]) {
+    showSection(sectionMap[key]);
+    // Update nav button active states
+    document.querySelectorAll('.nav-btn, .mobile-nav-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll(`[data-section="${sectionMap[key]}"]`).forEach(b => b.classList.add('active'));
+  }
+
+  // Refresh shortcut
+  if (key === 'r' && (e.ctrlKey || e.metaKey)) {
+    e.preventDefault();
+    location.reload();
+  }
+});
+
+// ═══ AUTO-HIDE NAV ON SCROLL ═══
+(function() {
+  let lastScrollY = window.scrollY;
+  let ticking = false;
+  const THRESHOLD = 10;
+
+  function onScroll() {
+    const currentY = window.scrollY;
+    const header = document.querySelector('.header');
+    const mobileNav = document.querySelector('.mobile-nav');
+
+    if (currentY > lastScrollY && currentY > 80) {
+      header?.classList.add('header-hidden');
+      mobileNav?.classList.add('nav-hidden');
+    } else if (currentY < lastScrollY) {
+      header?.classList.remove('header-hidden');
+      mobileNav?.classList.remove('nav-hidden');
+    }
+
+    lastScrollY = currentY;
+    ticking = false;
+  }
+
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      requestAnimationFrame(onScroll);
+      ticking = true;
+    }
+  }, { passive: true });
+})();
+
+// ═══ INITIAL LOAD ════
+console.log('MT5 Trading Terminal loaded');
 </script>
+
+<!-- Legacy scripts -->
+<script src="/static/vendor/lightweight-charts.js"></script>
+<script src="/static/app.core.js"></script>
+<script src="/static/app.chart.js"></script>
+<script src="/static/app.panels.js"></script>
+<script src="/static/app.dojo.js"></script>
+<script src="/static/app.risk.js"></script>
+<script src="/static/app.js"></script>
 </body>
 </html>
