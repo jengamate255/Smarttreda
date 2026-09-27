@@ -84,14 +84,14 @@ def _analyze_performance(trades: list[dict]) -> dict[str, Any]:
             "profit_factor": 0.0,
         }
 
-    wins = [t for t in trades if t.get("pnl", 0) > 0]
-    losses = [t for t in trades if t.get("pnl", 0) < 0]
+    wins = [t for t in trades if (t.get("pnl") or 0) > 0]
+    losses = [t for t in trades if (t.get("pnl") or 0) < 0]
 
     win_rate = len(wins) / len(trades) if trades else 0.0
 
     consecutive_losses = 0
     for t in trades:
-        if t.get("pnl", 0) < 0:
+        if (t.get("pnl") or 0) < 0:
             consecutive_losses += 1
         else:
             break
@@ -105,11 +105,11 @@ def _analyze_performance(trades: list[dict]) -> dict[str, Any]:
         except Exception:
             pass
 
-    gross_profit = sum(t.get("pnl", 0) for t in wins)
-    gross_loss = abs(sum(t.get("pnl", 0) for t in losses))
+    gross_profit = sum(t.get("pnl") or 0 for t in wins)
+    gross_loss = abs(sum(t.get("pnl") or 0 for t in losses))
     profit_factor = gross_profit / gross_loss if gross_loss > 0 else 0.0
 
-    avg_pnl = sum(t.get("pnl", 0) for t in trades) / len(trades)
+    avg_pnl = sum(t.get("pnl") or 0 for t in trades) / len(trades)
 
     return {
         "total_trades": len(trades),
