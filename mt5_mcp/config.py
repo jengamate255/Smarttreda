@@ -73,11 +73,16 @@ class RiskConfig(BaseModel):
     max_consecutive_losses: int = 3
     revenge_cooldown_minutes: float = 60.0
     news_blackout_minutes: float = 30.0
+    # 0 = report stale calendar data as a warning only (fail-open).
+    # Set > 0 (minutes) to blackout entries once the news feed is older.
+    news_stale_max_minutes: float = 0.0
     liquidity_blackout_start: str = "00:00"
     liquidity_blackout_end: str = "00:15"
     confidence_floor_percent: float = 90.0
+    allowed_sessions: list[str] | None = None
     min_volume: float | None = None
     max_volume: float | None = None
+    blocked_symbols: list[str] = Field(default_factory=list)
 
 
 class StrategyConfig(BaseModel):
@@ -88,8 +93,13 @@ class StrategyConfig(BaseModel):
     trend_slow_ema: int = 200
     min_zone_score: float = 70.0
     min_trade_score: float = 70.0
-    min_confidence_percent: float = 60.0
+    min_confidence_percent: float = 90.0
     lookback_candles: int = 400
+    # Require at least ``mtf_min_aligned`` of the other timeframes to agree with
+    # the trend timeframe before a plan is considered tradable. Off by default so
+    # library/MCP callers keep the previous behaviour; settings.json enables it.
+    require_mtf_alignment: bool = False
+    mtf_min_aligned: int = 1
 
 
 class DerivConfig(BaseModel):

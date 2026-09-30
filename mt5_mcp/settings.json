@@ -17,10 +17,10 @@
     "health_check_interval_seconds": 30
   },
   "risk": {
-    "default_risk_percent": 0.5,
-    "max_risk_percent": 0.5,
+    "default_risk_percent": 1.0,
+    "max_risk_percent": 1.0,
     "conservative_risk_percent": 0.5,
-    "max_daily_loss_percent": 3.0,
+    "max_daily_loss_percent": 4.0,
     "max_weekly_loss_percent": 6.0,
     "max_open_risk_percent": 3.0,
     "max_drawdown_percent": 8.0,
@@ -34,18 +34,19 @@
     "sl_max_pips": 30,
     "max_spread_points": 60,
     "max_positions": 3,
-    "max_trades_per_day": 3,
-    "max_trades_per_day_green_bonus": 2,
+    "max_trades_per_day": 2,
+    "max_trades_per_day_green_bonus": 1,
     "max_consecutive_losses": 3,
     "revenge_cooldown_minutes": 60,
     "news_blackout_minutes": 30,
     "liquidity_blackout_start": "00:00",
     "liquidity_blackout_end": "00:15",
-    "confidence_floor_percent": 60,
+    "confidence_floor_percent": 80,
+    "allowed_sessions": null,
     "min_volume": null,
     "max_volume": null,
     "blocked_symbols": [
-      "NDX100", "DJI30", "EURCAD", "EURGBP",
+      "DJI30", "EURCAD", "EURGBP",
       "NZDUSD"
     ]
   },
@@ -60,7 +61,7 @@
     "trend_slow_ema": 200,
     "min_zone_score": 60,
     "min_trade_score": 60,
-    "min_confidence_percent": 50,
+    "min_confidence_percent": 80,
     "lookback_candles": 400,
     "require_mtf_alignment": false,
     "mtf_min_aligned": 1
@@ -71,13 +72,10 @@
     "veto_score": 75,
     "min_agree": 0,
     "agree_min_score": 60,
-    "risk_percent": 0.5,
+    "risk_percent": 1.0,
     "allowed_symbols": [
-      "SPX500", "XAGUSD", "AUDUSD", "USDJPY", "EURUSD",
-      "XAUUSD", "JP225", "ETHUSD", "EURJPY",
-      "GBPUSD", "USDCAD", "GBPJPY", "AUDNZD", "NZDCAD",
-      "AUDJPY", "CHFJPY", "GBPCHF", "NZDJPY", "CADCHF",
-      "USDCHF", "BTCUSD"
+      "EURUSD", "EURJPY", "GBPJPY", "USDJPY", "SPX500", "XAUUSD",
+      "ETHUSD", "USDCAD", "GBPUSD", "USDCHF", "BTCUSD"
     ]
   },
   "memory": {

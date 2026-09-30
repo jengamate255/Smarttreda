@@ -13,6 +13,10 @@ import pandas as pd
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+# Sibling helpers (helpers.py) live next to this file. Prepend import mode adds
+# the test file's directory to sys.path implicitly, but --import-mode=importlib
+# does not, so make it explicit and keep both modes working.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 
 def _alias_test_modules() -> None:
@@ -298,3 +302,33 @@ def client_module():
     original = client_module._clients.copy()
     yield client_module
     client_module._clients = original
+
+
+@pytest.fixture(autouse=True)
+def pinned_risk_settings(monkeypatch):
+    """Pin risk limits to the RiskConfig defaults for deterministic tests.
+
+    ``settings.json`` is tuned for live trading (``max_open_risk_percent`` 3.0,
+    ``max_trades_per_day`` 6, ``confidence_floor_percent`` 75) while the gate
+    tests assert the strict defaults this fixture restores. Without it the suite
+    fails purely because the live config was retuned -- see
+    .smart-trader/failures.md F3. ``get_settings()`` is lru_cached, so the same
+    object the gate reads is patched and reverted per test.
+
+    Pinned to RiskConfig defaults: max_open_risk_percent 1.0, max_trades_per_day
+    3, confidence_floor_percent 90, max_daily_loss_percent 3.0 (live is 4.0 --
+    the daily-loss mode tests calibrate -300/-240 on 10k equity against it),
+    max_risk_percent 0.5 (live is 1.0 -- test_correlation_cap's combined
+    euro-group exposure of ~86 only exceeds the cap at 0.5%). Live values
+    conservative_risk_percent 0.5 is deliberately NOT pinned: the conservative
+    small-lot assertion in test_daily_loss_80pct_conservative needs it.
+    """
+    from config import get_settings
+
+    risk = get_settings().risk
+    monkeypatch.setattr(risk, "max_open_risk_percent", 1.0)
+    monkeypatch.setattr(risk, "max_trades_per_day", 3)
+    monkeypatch.setattr(risk, "confidence_floor_percent", 90.0)
+    monkeypatch.setattr(risk, "max_daily_loss_percent", 3.0)
+    monkeypatch.setattr(risk, "max_risk_percent", 0.5)
+    yield risk

@@ -31,7 +31,7 @@ from pathlib import Path
 from mt5_mcp.client import get_client
 from mt5_mcp.common import TRADE_ACTION_REMOVE, pip_size, pip_value_per_lot
 from mt5_mcp.config import get_settings
-from mt5_mcp.tools.news import get_provider
+from mt5_mcp.tools.news import get_provider, news_status
 
 logger = logging.getLogger("mt5_mcp")
 
@@ -42,6 +42,16 @@ DEAL_ENTRY_IN = 0
 DEAL_ENTRY_OUT = 1
 DEAL_TYPE_BUY = 0
 DEAL_TYPE_SELL = 1
+
+
+def _get_session(hour: int) -> str:
+    """Map UTC hour to trading session: asian, london, or ny."""
+    if 0 <= hour < 8:
+        return "asian"
+    elif 8 <= hour < 13:
+        return "london"
+    else:
+        return "ny"
 
 
 def is_synthetic_symbol(symbol: str) -> bool:
@@ -294,6 +304,14 @@ def _in_news_blackout(settings) -> bool:
     return False
 
 
+def _age_text(age_sec) -> str:
+    """Human readable calendar age for warnings/verdicts."""
+    if age_sec is None:
+        return "unknown age"
+    minutes = float(age_sec) / 60.0
+    return f"{minutes:.0f}m" if minutes < 90 else f"{minutes / 60:.1f}h"
+
+
 def _server_now(client) -> datetime:
     if hasattr(client, "server_time"):
         try:
@@ -406,7 +424,32 @@ def evaluate(state_path: Path | None = None) -> dict:
     news_blocked = _in_news_blackout(settings)
     liquidity_blocked = _in_liquidity_blackout(client, settings)
 
+    # Calendar health: never report a clean "no news" verdict when the feed is
+    # unusable - surface the staleness instead (opt-in blackout via
+    # risk.news_stale_max_minutes, 0 = warn only / fail-open).
+    nstatus = news_status()
+    news_blocked_reason = None
+    if news_blocked:
+        news_blocked_reason = (
+            f"high-impact news within {settings.news_blackout_minutes:.0f} minutes"
+        )
+    stale_limit = float(getattr(settings, "news_stale_max_minutes", 0.0) or 0.0)
+    age_sec = nstatus.get("news_data_age_sec")
+    news_stale_blocked = bool(
+        stale_limit > 0 and (age_sec is None or age_sec > stale_limit * 60.0)
+    )
+    if news_stale_blocked:
+        news_blocked = True
+        news_blocked_reason = (
+            f"news calendar stale ({_age_text(age_sec)} old, limit {stale_limit:.0f} min)"
+        )
+
     warnings: list[str] = []
+    if nstatus.get("news_stale"):
+        warnings.append(
+            f"news calendar unusable ({nstatus.get('news_source', 'none')}, "
+            f"age {_age_text(age_sec)}) - blackout checks degraded"
+        )
     if daily_used >= settings.daily_conservative_ratio:
         warnings.append(
             f"daily loss buffer: {daily_used * 100:.0f}% of limit used - "
@@ -468,6 +511,10 @@ def evaluate(state_path: Path | None = None) -> dict:
         "per_trade_risk_cap_percent": per_trade_cap,
         "confidence_floor_percent": settings.confidence_floor_percent,
         "news_blocked": news_blocked,
+        "news_blocked_reason": news_blocked_reason,
+        "news_stale": bool(nstatus.get("news_stale")),
+        "news_source": nstatus.get("news_source"),
+        "news_data_age_sec": nstatus.get("news_data_age_sec"),
         "liquidity_blocked": liquidity_blocked,
         "warnings": warnings,
         "trading_allowed": mode != "halted",
@@ -508,6 +555,17 @@ def gate(
     if symbol.upper() in blocked:
         violations.append(f"symbol '{symbol}' is on the blocked list")
 
+    # Session filter: only allow trading during configured sessions
+    allowed_sessions = getattr(settings, "allowed_sessions", None)
+    if allowed_sessions:
+        current_hour = datetime.now(timezone.utc).hour
+        current_session = _get_session(current_hour)
+        if current_session not in [s.lower() for s in allowed_sessions]:
+            violations.append(
+                f"session '{current_session}' not allowed "
+                f"(allowed: {', '.join(allowed_sessions)})"
+            )
+
     if status["mode"] == "halted":
         violations.append(f"trading halted: {status['halt_reason'] or 'compliance halt'}")
     if not status["trading_allowed"]:
@@ -523,7 +581,8 @@ def gate(
         )
     if status["news_blocked"] and not is_synthetic_symbol(symbol):
         violations.append(
-            f"high-impact news within {settings.news_blackout_minutes:.0f} minutes"
+            status.get("news_blocked_reason")
+            or f"high-impact news within {settings.news_blackout_minutes:.0f} minutes"
         )
 
     tick = client.tick(symbol)

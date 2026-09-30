@@ -40,27 +40,54 @@ This file is the AI handoff context. Update it whenever state changes (services,
   `evaluate_strategy(adaptive=True)` — overrides static config floors when adaptive data available.
   Effective floors with adaptive: zone ≥60, score ≥60, conf ≥50, RR ≥2.0 (relaxed from static 70/70/60/3.0).
 - Desk (`trade_desk.py`, magic 20260601): `MT5_DESK_ENABLED=true`, `MT5_DESK_MODE=SIM`,
-  `MT5_DESK_RISK_PERCENT=0.25`, `MT5_DESK_RISK_FIXED=45` (was 50 — **systematically
-  self-rejected**: compliance caps risk at 0.5% equity ≈ $48.25, so every desk execution
-  died at the gate (GBPJPY $52.10, AUDNZD $52.24, NZDUSD $48.31, USDJPY $55.22 rejections
-  2026-09-24/25). Fixed→45 on 2026-09-25 12:35; must stay under 0.5% × equity),
+  `MT5_DESK_RISK_PERCENT=1.0`, `MT5_DESK_RISK_FIXED=90` (updated 2026-09-27 for FundingPips
+  challenge: 1% of ~$9642 = $96.42, capped at $90 for safety margin),
   `MT5_DESK_SCAN_MINUTES=30`, `MT5_DESK_SL_ATR=4.5` (widened from 3.0),
   `MT5_DESK_TP_R=2.0`, entry TF M5.
 - Compliance (`mt5_mcp/settings.json` → `risk` + `compliance.py`), updated 2026-09-27:
   - Mode was GREEN/normal (daily & drawdown buffers fresh).
-  - **Blocked symbols**: NDX100, DJI30, EURCAD, EURGBP, NZDUSD.
-    GBPUSD/USDCAD/GBPJPY **unblocked** 2026-09-27 (were conflicting with engine universes —
-    desk/confirm/breakout all tried to trade them but compliance silently rejected).
+  - **Risk raised to 1%** for FundingPips challenge (was 0.5%). Conservative mode stays 0.5%.
+  - **Daily loss raised to 4%** (was 3%, FundingPips hard limit is 5% — 1% safety buffer).
+  - **Max trades/day: 2** base + 1 green bonus = 3 absolute (was 3+2=5, reduced for quality).
+  - **Blocked symbols**: DJI30, EURCAD, EURGBP, NZDUSD.
+    NDX100 **unblocked** 2026-09-27 (ema_crossover PF 1.92).
+    GBPUSD/USDCAD/GBPJPY **unblocked** 2026-09-27.
     NZDUSD stays blocked (backtest PF 0.07).
-  - **Relaxed risk floors** 2026-09-27: `min_risk_reward` 3.0→2.0, `confidence_floor_percent`
-    75→60, `conservative_risk_percent` 0.25→0.5 (was self-rejecting valid setups).
-  - **Trades/day max 5**: `max_trades_per_day` base 3 + green bonus 2 (bonus only when
-    daily P&L > 0 AND normal mode) — absolute cap 5, conservative mode 3.
+  - **Relaxed risk floors** 2026-09-27: `min_risk_reward` 3.0→2.0, `conservative_risk_percent`
+    0.25→0.5 (was self-rejecting valid setups). `confidence_floor_percent` now **80**
+    (values 60/75 seen in older notes were interim).
+  - **Trades/day max 3**: `max_trades_per_day` base 2 + green bonus 1 (bonus only when
+    daily P&L > 0 AND normal mode) — absolute cap 3.
   - `compliance.evaluate()` now returns `max_positions`; desk `free_slots` fallback fixed
     2→3 (was silently attempting only 1 pick/scan when status lacked the key).
     Desk restarted 2026-09-25 12:24 to apply all of the above.
+- **settings.json clobber incident (2026-09-30 10:39 restore):** an unknown writer
+  re-serialized `mt5_mcp/settings.json` at 2026-09-29 16:02 (4-space `ConvertTo-Json`
+  style) and silently reverted the allowlist to 21, floor to 60, trades to 3, re-blocked
+  NDX100, and **corrupted `deriv.api_token` (68→69 chars)**. Restored from
+  `C:\Users\Dave\AppData\Local\Temp\opencode\settings.working.json`; re-verify the file
+  after any bulk settings edit, and keep `config.get_settings()` lru_cache in mind:
+  long-running processes only pick up risk-block changes on restart (consensus
+  allowlist is re-read per call and is hot).
 - Journal: `mt5_mcp/memory/journal.db` (`trades` has no `ts` column — use `open_time`/`close_time`).
   Desk events: `mt5_mcp/memory/desk_events.jsonl`, `desk_state.json`.
+
+## News feed (fixed 2026-09-30)
+
+- **Bug:** `ForexFactoryNewsProvider._fetch()` hit the network first and only fell
+  back to disk after failure; feed 429s → `FAILURE_TTL=180s` retry storm →
+  `news_cache.json` never refreshed → `compliance._in_news_blackout()` failed open
+  (silent blindness) while `auto_trader._news_guard()` failed closed (inconsistent).
+- **Fix (`mt5_mcp/tools/news.py`):** disk-cache-first reads (STALE_GRACE_TTL 7d),
+  network only past `FAILURE_TTL`, exponential backoff 180s→3600s ±20% jitter honoring
+  `Retry-After`, atomic cache writes (tmp + `os.replace`), and `news_status()` →
+  `{news_source, news_data_age_sec, news_stale, news_retry_in_sec, news_provider_error}`
+  (spread into `news_filter()` results and `compliance.evaluate()` return).
+- **Staleness policy:** `risk.news_stale_max_minutes` (default **0** = warn only,
+  fail-open — set >0 to hard-blackout trading when the calendar is older than N minutes).
+  `gate()` reports `news_blocked_reason`; synthetic symbols stay exempt.
+- Verified 2026-09-30: disk-first fetch 0.00s/41 events, cache fresh, `analysis_agent
+  --once` cycle 1141 exit 0 with **no 429**; `tests/test_news.py` 7 pass.
 
 ## Telegram (merged — status 2026-09-25)
 
@@ -80,17 +107,20 @@ This file is the AI handoff context. Update it whenever state changes (services,
   `breakout` (qualifying setups only), `analysis` (read-only, every cycle).
 - **Pre-trade `check()` rules** (wired into trade_desk `execute_pick`,
   confirm `scan_symbol`, forex_breakout `scan_once`):
-  1. **allowlist** — only backtested set tradable (expanded 2026-09-27 from 9→21 symbols):
-     SPX500 XAGUSD AUDUSD USDJPY EURUSD XAUUSD JP225 ETHUSD EURJPY GBPUSD USDCAD
-     GBPJPY AUDNZD NZDCAD AUDJPY CHFJPY GBPCHF NZDJPY CADCHF USDCHF BTCUSD.
-     Set in `settings.json` `consensus.allowed_symbols`.
+  1. **allowlist** — only backtested set tradable (reset 2026-09-30 to the 11
+     PF-backed symbols; replaces the 21-symbol list, which included 10 symbols
+     with no profitable strategy — `diagnose_pipeline.py` reports the other
+     engine symbols as "missing" by design, not a blocker):
+     EURUSD EURJPY GBPJPY USDJPY SPX500 XAUUSD ETHUSD USDCAD GBPUSD USDCHF BTCUSD.
+     Set in `settings.json` `consensus.allowed_symbols` (read per-call — hot, no restart).
   2. **veto** — fresh (≤30m) opposite stance with score ≥75 blocks the entry
      (e.g. desk NZDUSD SELL 76.3 ⇒ nobody buys NZDUSD for 30m).
   3. **`min_agree: 0`** (corroboration optional): engines rarely see the same
      setup simultaneously, so requiring agreeing votes would kill most trades;
      raise only with vote-history evidence.
-  4. **unified risk cap 0.5%** — `consensus.risk_cap()`; breakout budget and
-     confirm's `evaluate_strategy(risk_percent=...)` both capped (raised from 0.25% 2026-09-27).
+  4. **unified risk cap 1.0%** — `consensus.risk_cap()` (= `consensus.risk_percent`
+     in settings, raised 0.5→1.0 in the 2026-09-29 config retune); breakout budget and
+     confirm's `evaluate_strategy(risk_percent=...)` both capped.
 - **Fail-open by design**: consensus errors log + allow — `compliance.gate()`
   stays the hard veto. Consensus is an *additive* restriction (never unblocks
   a compliance-blocked symbol).
@@ -150,8 +180,15 @@ Modules added to fix zero-trade diagnosis and improve signal quality:
 - **`mt5_mcp/multi_strategy.py`** — multi-strategy system:
   `mean_reversion_strategy` (RSI < 30 + lower BB in ranging markets, ADX < 25),
   `momentum_breakout_strategy` (ADX > 25 + price breaking 20-bar high/low),
-  `evaluate_all_strategies` runs all three (trend_zone + mean_reversion + momentum_breakout),
-  `pick_best_strategy` resolves BUY/SELL conflicts by score.
+  `btc_trend_following_strategy` (EMA 50/200 cross + RSI pullback completion,
+  2.5x ATR SL / 4x ATR TP — designed for BTC's $462 ATR, 3.3% pullbacks),
+  `ema_crossover_strategy` (EMA20/50 cross + ADX > 20 filter, 2x ATR SL / 4x ATR TP —
+  optimized for stock indices),
+  `evaluate_all_strategies` runs all five (trend_zone + mean_reversion + momentum_breakout + btc_trend + ema_crossover),
+  `pick_best_strategy` resolves BUY/SELL conflicts by score × backtest PF multiplier.
+  Strategy routing: EURJPY/GBPJPY/USDJPY/GBPUSD→mean_reversion, USDCAD→momentum_breakout,
+  EURUSD/USDCHF/ETHUSD/XAUUSD→trend_zone, BTCUSD→btc_trend_following (PF 1.17),
+  SPX500/NDX100→ema_crossover (PF 1.78-1.92).
   **Strategy routing** (2026-09-27 backtest): `STRATEGY_ROUTING` maps symbol → preferred
   strategy (EURJPY/GBPJPY/USDJPY/GBPUSD → mean_reversion PF 1.52-2.65, USDCAD →
   momentum_breakout PF 1.56, EURUSD/USDCHF/ETHUSD/XAUUSD → trend_zone PF 1.34-3.25).
@@ -169,6 +206,14 @@ Modules added to fix zero-trade diagnosis and improve signal quality:
   `/api/diagnostic/summary` (system health), `/config` (issues), `/consensus` (board),
   `/symbols` (per-symbol pipeline trace: compliance → consensus → MT5 → strategy).
   Registered in `web_dashboard.py`. Frontend panel in Diagnostic tab of main dashboard.
+
+- **`mt5_mcp/challenge_tracker.py`** + **`web_challenge.py`** — FundingPips challenge tracker:
+  `ChallengeTracker` monitors progress toward 8% profit target, tracks daily loss (4% internal
+  cap vs 5% FundingPips limit), max drawdown (8%), consistency rule (no day > 40% of total profit),
+  and min trading days (5). State persisted to `memory/challenge_state.json`.
+  API: `/api/challenge/status` (progress + risk alerts), `/api/challenge/init?balance=N`
+  (set starting balance), `/api/challenge/daily` (day-by-day P&L breakdown).
+  Registered in `web_dashboard.py`.
 
 ## Live state (2026-09-26 12:45)
 
@@ -212,16 +257,33 @@ Modules added to fix zero-trade diagnosis and improve signal quality:
 
 ## Current / next steps
 
-- **Services need restart** to apply 2026-09-27 changes: relaxed config floors, expanded
-  consensus allowlist (21 symbols), unblocked GBPUSD/USDCAD/GBPJPY, adaptive thresholds,
-  ML filter, multi-strategy. Restart desk/confirm/breakout + dashboard.
+- **2026-09-30 session:** news feed fixed (disk-first + backoff, section above),
+  consensus allowlist reset to the 11 PF-backed symbols, settings.json restored after
+  the 16:02 clobber (incl. corrupted deriv token), tests: `test_news` 7/7,
+  `test_compliance` 26/26 after extending the `pinned_risk_settings` fixture
+  (`max_daily_loss_percent` 3.0, `max_risk_percent` 0.5 — the live 4.0/1.0 retunes
+  had drifted 6 gate tests) + stubbing `symbol_info` for the unknown-symbol test.
+  `analysis_agent --once`, `diagnose_pipeline.py`, `consensus.py` board all verified.
+- **Pre-existing test failures (21, fail at HEAD too — not from this session):**
+  `test_coach`/`test_memory`/`test_research` sqlite `separation_atr` (test-schema
+  drift; live `journal.db` already has the column), `test_ml_ranker::test_build_dataset`
+  (feature shape), `test_strategy` ×3, `test_trade_guard` ×2.
+- **Services restarted 2026-09-30** after the settings restore (lru_cache holds the
+  pre-restore values until restart; consensus allowlist is hot). Wave A = watchdog/1-min
+  task respawn, wave B = batch-started (desk/gateway/8050/watch_daemon ×2/run_services)
+  need `schtasks /Run` or VBS relaunch — verify ports 8050/8055/8060/8080/8082/8010 after.
+- **Initialize challenge tracker**: POST `/api/challenge/init?balance=9642` to set starting
+  balance. Current status: +$210 (2.18%), 27.3% toward 8% target. Consistency risk flagged
+  (best day = 117% of total profit — need more steady gains).
+- **Update .env**: set `MT5_DESK_RISK_FIXED=90` (was 45) to match new 1% risk setting.
 - **Train RL models**: no trained models at `models/dojo/` yet — run `forex_dojo.py`
   training loop before `rl_trader.py` can produce actions.
 - **Run diagnostic dashboard** after restart: check `/api/diagnostic/symbols` to verify
   symbols now pass the full pipeline (compliance → consensus → MT5 → strategy).
 - Elevated: delete leftover VBS scheduled tasks (`MT5 Watch Daemon`, `MT5 Telegram Bot`, `MT5 Gateway`,
   `MT5 Prop Dashboard`, `MT5 Trade Desk`, `MT5_Trading_Assistant_Startup`) if superseded by `MT5R_*`.
-- Blocked externally: OpenRouter 402 (credits), Groq 429 OTPM, news feed 429.
+- Blocked externally: OpenRouter 402 (credits), Groq 429 OTPM.
+  News feed 429 **resolved 2026-09-30** (disk-first + backoff — see News feed section).
 - Backtest verdict: lowering conf/score floors degrades quality (report:
   `mt5_mcp/backtest/results/lowconf_exp/report.json`) — production floors stay, but adaptive
   thresholds can temporarily relax them based on performance (safe: clamped to min bounds).

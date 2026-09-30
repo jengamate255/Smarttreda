@@ -83,9 +83,19 @@ class TestGateBasics:
         assert verdict["allowed"] is False
         assert any("stop-loss required" in v for v in verdict["violations"])
 
-    def test_unknown_symbol_rejected(self, com_client):
+    def test_unknown_symbol_rejected(self, com_client, monkeypatch):
+        # FakeClient answers symbol_info for any string (there is no real symbol
+        # universe in tests), so stub the unknown one -- the gate must reject
+        # whenever symbol_info comes back empty, as live MT5 does for bad symbols.
+        real = com_client.symbol_info
+        monkeypatch.setattr(
+            com_client,
+            "symbol_info",
+            lambda s: None if s == "NOTREAL" else real(s),
+        )
         verdict = gate("NOTREAL", "BUY", 0.1, sl_price=1.19500)
         assert verdict["allowed"] is False
+        assert any("not found" in v for v in verdict["violations"])
 
     def test_floating_risk_cap(self, com_client):
         com_client._positions.append(
@@ -278,6 +288,45 @@ class TestMarketFilters:
             set_provider(FakeNews())
             verdict = gate("Boom 500 Index", "SELL", 0.05, sl_price=1.20050)
             assert verdict["allowed"] is True
+        finally:
+            set_provider(original)
+
+    def test_stale_calendar_warns_but_does_not_block_by_default(self, com_client):
+        # StubNewsProvider carries no calendar data -> reported as stale.
+        status = evaluate()
+
+        assert status["news_stale"] is True
+        assert status["news_data_age_sec"] is None
+        assert status["news_blocked"] is False
+        assert any("news calendar" in w for w in status["warnings"])
+
+    def test_stale_calendar_blocks_when_limit_configured(self, com_client, monkeypatch):
+        from config import get_settings
+
+        monkeypatch.setattr(get_settings().risk, "news_stale_max_minutes", 30.0)
+
+        class AgedNews:
+            _cache_usable = True
+            _source = "disk"
+            _last_error = "HTTP Error 429: Too Many Requests"
+            _failure_until = 0.0
+
+            def __init__(self):
+                self._data_saved_at = time.time() - 3 * 3600
+
+            def upcoming(self, hours=24, currency=""):
+                return []
+
+        original = get_provider()
+        try:
+            set_provider(AgedNews())
+            status = evaluate()
+            assert status["news_blocked"] is True
+            assert "stale" in (status["news_blocked_reason"] or "")
+
+            verdict = gate("EURUSD", "BUY", 0.05, sl_price=1.19500)
+            assert verdict["allowed"] is False
+            assert any("stale" in v for v in verdict["violations"])
         finally:
             set_provider(original)
 
