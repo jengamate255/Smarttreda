@@ -272,6 +272,10 @@ Modules added to fix zero-trade diagnosis and improve signal quality:
   pre-restore values until restart; consensus allowlist is hot). Wave A = watchdog/1-min
   task respawn, wave B = batch-started (desk/gateway/8050/watch_daemon ×2/run_services)
   need `schtasks /Run` or VBS relaunch — verify ports 8050/8055/8060/8080/8082/8010 after.
+  **Watchdog telegram trap:** `service_watchdog` guards port **8082** and respawns the
+  legacy root `telegram_bot.py` if 8082 drops → instant 409 vs `run_telegram_bot.py`.
+  Killed the legacy bot 11:14 (8082 back to 200 OK); never kill `run_telegram_bot`
+  without immediately restoring 8082, and if root `telegram_bot.py` reappears, kill it.
 - **Initialize challenge tracker**: POST `/api/challenge/init?balance=9642` to set starting
   balance. Current status: +$210 (2.18%), 27.3% toward 8% target. Consistency risk flagged
   (best day = 117% of total profit — need more steady gains).
