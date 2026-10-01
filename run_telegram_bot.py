@@ -118,6 +118,13 @@ def _single_instance():
                 pass
     else:
         raise SystemExit("could not acquire telegram lock")
+    _time.sleep(1.5)
+    try:
+        owner = int(_LOCK_PATH.read_text(encoding="utf-8").strip())
+    except Exception:
+        owner = 0
+    if owner != os.getpid():
+        raise SystemExit(f"lost telegram lock race to pid {owner} - exiting to avoid 409 Conflict")
     try:
         yield
     finally:
@@ -616,6 +623,50 @@ async def resume_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(response)
 
 
+async def desk_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not _is_authorized(_chat_id(update)):
+        return
+    response = trading_bot.cmd_desk()
+    await update.message.reply_text(response, parse_mode="HTML")
+
+
+async def consensus_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not _is_authorized(_chat_id(update)):
+        return
+    response = trading_bot.cmd_consensus()
+    await update.message.reply_text(response, parse_mode="HTML")
+
+
+async def challenge_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not _is_authorized(_chat_id(update)):
+        return
+    response = trading_bot.cmd_challenge()
+    await update.message.reply_text(response, parse_mode="HTML")
+
+
+async def journal_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not _is_authorized(_chat_id(update)):
+        return
+    args = " ".join(context.args) if context.args else ""
+    response = trading_bot.cmd_journal.__func__(trading_bot, int(args) if args.isdigit() else 10)
+    await update.message.reply_text(response, parse_mode="HTML")
+
+
+async def services_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not _is_authorized(_chat_id(update)):
+        return
+    response = trading_bot.cmd_services()
+    await update.message.reply_text(response, parse_mode="HTML")
+
+
+async def strategy_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if not _is_authorized(_chat_id(update)):
+        return
+    args = " ".join(context.args) if context.args else ""
+    response = trading_bot.cmd_strategy.__func__(trading_bot, args)
+    await update.message.reply_text(response, parse_mode="HTML")
+
+
 async def callback_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not _is_authorized(_chat_id(update)):
         try:
@@ -768,6 +819,12 @@ def main():
         application.add_handler(CommandHandler("halt", halt_command))
         application.add_handler(CommandHandler("resume", resume_command))
         application.add_handler(CommandHandler("alerts", alerts_command))
+        application.add_handler(CommandHandler("desk", desk_command))
+        application.add_handler(CommandHandler("consensus", consensus_command))
+        application.add_handler(CommandHandler("challenge", challenge_command))
+        application.add_handler(CommandHandler("journal", journal_command))
+        application.add_handler(CommandHandler("services", services_command))
+        application.add_handler(CommandHandler("strategy", strategy_command))
         application.add_handler(CommandHandler("help", help_command))
         application.add_handler(CallbackQueryHandler(callback_handler))
         application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))

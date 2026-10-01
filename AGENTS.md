@@ -73,6 +73,12 @@ This file is the AI handoff context. Update it whenever state changes (services,
     (values 60/75 seen in older notes were interim).
   - **Trades/day max 3**: `max_trades_per_day` base 2 + green bonus 1 (bonus only when
     daily P&L > 0 AND normal mode) — absolute cap 3.
+  - **Spread never blocks (2026-10-01, user directive):** `risk.max_spread_points` 60→**0**.
+    Falsy → compliance skips the points check; absent `max_spread_relative` (default 0)
+    → relative check passes too, so both `compliance.gate` and `tools/trades.py` allow
+    any spread (BTCUSD 3222 pts verified passing; only remaining violation was the probe's
+    missing SL). Re-enable: set `max_spread_points` > 0 **and restart executors**
+    (`get_settings()` lru_cache — desk/confirm/watchers/telegram read it at import).
   - `compliance.evaluate()` now returns `max_positions`; desk `free_slots` fallback fixed
     2→3 (was silently attempting only 1 pick/scan when status lacked the key).
     Desk restarted 2026-09-25 12:24 to apply all of the above.
@@ -361,10 +367,14 @@ Modules added to fix zero-trade diagnosis and improve signal quality:
   pre-restore values until restart; consensus allowlist is hot). Wave A = watchdog/1-min
   task respawn, wave B = batch-started (desk/gateway/8050/watch_daemon ×2/run_services)
   need `schtasks /Run` or VBS relaunch — verify ports 8050/8055/8060/8080/8082/8010 after.
-  **Watchdog telegram trap:** `service_watchdog` guards port **8082** and respawns the
-  legacy root `telegram_bot.py` if 8082 drops → instant 409 vs `run_telegram_bot.py`.
-  Killed the legacy bot 11:14 (8082 back to 200 OK); never kill `run_telegram_bot`
-  without immediately restoring 8082, and if root `telegram_bot.py` reappears, kill it.
+  **Watchdog telegram trap — FIXED 2026-10-02:** `service_watchdog`'s `telegram_bot` cfg
+  now targets `run_telegram_bot.py` (cmd+pattern) **and** `.env` carries
+  `START_TELEGRAM_BOT=0` → the watchdog skips telegram entirely; `MT5R_Telegram`
+  (interval PT1M, IgnoreNew) is the sole spawner (~1 min recovery). Also hardened
+  `run_telegram_bot._single_instance`: after acquiring the lock it sleeps 1.5 s and
+  re-reads the owner pid (the old stale-lock race let task + watchdog both pass and
+  double-start → 409). Still: never two pollers; if legacy root `telegram_bot.py`
+  reappears, kill it.
 - **Initialize challenge tracker**: POST `/api/challenge/init?balance=9642` to set starting
   balance. Current status: +$210 (2.18%), 27.3% toward 8% target. Consistency risk flagged
   (best day = 117% of total profit — need more steady gains).

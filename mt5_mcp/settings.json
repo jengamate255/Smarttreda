@@ -32,7 +32,7 @@
     "target_tp_max_pips": 100,
     "sl_min_pips": 20,
     "sl_max_pips": 30,
-    "max_spread_points": 60,
+    "max_spread_points": 0,
     "max_positions": 3,
     "max_trades_per_day": 2,
     "max_trades_per_day_green_bonus": 1,
