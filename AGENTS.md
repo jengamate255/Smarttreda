@@ -44,6 +44,14 @@ This file is the AI handoff context. Update it whenever state changes (services,
   challenge: 1% of ~$9642 = $96.42, capped at $90 for safety margin),
   `MT5_DESK_SCAN_MINUTES=30`, `MT5_DESK_SL_ATR=4.5` (widened from 3.0),
   `MT5_DESK_TP_R=2.0`, entry TF M5.
+- **Consistency floor 0.25 (2026-10-01):** `challenge_tracker.get_consistency_multiplier`
+  no longer returns 0.0 (full desk pause) when best day > 40% of total — that hard pause
+  was a deadlock (trade_desk is the sole consumer, so total_pnl could never grow to dilute
+  the ratio). Floor 0.25 = desk trades quarter size until ratio < 40%. Desk restarted via
+  `schtasks /Run "MT5 Trade Desk"` (VBS task `desk_service.vbs` — no MT5R_* task exists
+  for desk; watch out: killing desk can transiently respawn, count python procs = pair only).
+  First scan after fix: EURJPY BUY 0.14 #400849873 + ETHUSD BUY 1.0 #400849878 filled at
+  25% size (daily limit then 2/2).
 - Compliance (`mt5_mcp/settings.json` → `risk` + `compliance.py`), updated 2026-09-27:
   - Mode was GREEN/normal (daily & drawdown buffers fresh).
   - **Risk raised to 1%** for FundingPips challenge (was 0.5%). Conservative mode stays 0.5%.
