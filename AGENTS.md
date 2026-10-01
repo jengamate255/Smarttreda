@@ -23,7 +23,12 @@ This file is the AI handoff context. Update it whenever state changes (services,
 
 - VBS services (start via `service.vbs` / `desk_service.vbs`): MT5 Gateway :8060, MT5 Prop Dashboard :8050,
   MT5 Trade Desk, MT5 Telegram Bot, MT5 Watch Daemon, research service.
-- Recurring tasks `MT5R_*` (7) are the live set. Legacy `MT5_*`/`MT5LIVE_*` tasks were deleted 2026-09-25;
+- Recurring tasks `MT5R_*` (8) are the live set. **`MT5R_LiveTrades`** (added 2026-10-01):
+  every **30 min** runs `live_trade_updates.py` (pythonw, InteractiveToken) → one Telegram
+  HTML card with ALL open positions + balance/equity/floating via `notify(force=True)`,
+  silent when flat, logs to `logs/live_trades_update.log`. **Expires ~2026-12-30**
+  (inherits P90D/StopAtDurationEnd from MT5R_Analysis template) — re-create with
+  `schtasks /Create /TN "MT5R_LiveTrades" /XML` if it stops. Legacy `MT5_*`/`MT5LIVE_*` tasks were deleted 2026-09-25;
   admin-rights deletions still pending for VBS tasks (`schtasks /Delete` elevated).
 - Dashboards: 8080, 8082 (telegram health), 8050/8051, 8060. 8050/8060 have flapped (watchdog respawn vs MT5 IPC).
 - Accounts: Prop FundingPips2-SIM login 11911448 (`C:\Program Files\MetaTrader 5 Terminal\terminal64.exe`);
