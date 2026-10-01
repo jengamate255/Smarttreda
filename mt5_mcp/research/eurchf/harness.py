@@ -191,7 +191,7 @@ def sig_mr(P: Prepared, i: int, q: dict) -> Signal | None:
         conf = min(80.0, (r - (100 - q.get("rsi_th", 30.0))) * 2 + 50)
     if action is None:
         return None
-    if gate and (conf * 0.6 + 16.0) < 60.0:   # trade_score >= 60 as written
+    if gate and (conf * 0.6 + 24.0) < 60.0:   # trade_score = 0.6*conf + 0.4*zone(60), B3-fixed
         return None
     return Signal(action, sl, tp, f"rsi{r:.0f} adx{a:.0f} conf{conf:.0f}")
 
@@ -360,6 +360,35 @@ def sig_daybrk(P: Prepared, i: int, q: dict) -> Signal | None:
     return Signal(action, q.get("sl_atr", 1.5) * at, q.get("tp_atr", 2.5) * at, "")
 
 
+def sig_btct(P: Prepared, i: int, q: dict) -> Signal | None:
+    """btc_trend_following_strategy logic (multi_strategy.py), run on H4.
+
+    EMA50/200 trend alignment + RSI(14) pullback completion (cross >=40 for
+    BUY, <=60 for SELL); SL 2.5xATR / TP 4xATR; live validity gate 0.6*conf+24 >= 60.
+    """
+    if i < 1:
+        return None
+    at, r_now, r_prev = P.atr[i], P.rsi[i], P.rsi[i - 1]
+    if np.isnan(at) or at <= 0 or np.isnan(r_now) or np.isnan(r_prev):
+        return None
+    f, s = P.ema50[i], P.ema200[i]
+    if np.isnan(f) or np.isnan(s):
+        return None
+    action, conf = None, 0.0
+    if f > s and r_prev < 40.0 and r_now >= 40.0:
+        action = "BUY"
+        conf = min(80.0, 50 + (r_now - 40.0) * 1.5)
+    elif f < s and r_prev > 60.0 and r_now <= 60.0:
+        action = "SELL"
+        conf = min(80.0, 50 + (60.0 - r_now) * 1.5)
+    if action is None:
+        return None
+    if q.get("validity_gate", True) and (conf * 0.6 + 24.0) < 60.0:
+        return None
+    return Signal(action, q.get("sl_atr", 2.5) * at, q.get("tp_atr", 4.0) * at,
+                  f"rsi{r_now:.0f}")
+
+
 SIGNALS: dict[str, Callable[[Prepared, int, dict], Signal | None]] = {
     "mr": sig_mr,
     "mb": sig_mb,
@@ -369,6 +398,7 @@ SIGNALS: dict[str, Callable[[Prepared, int, dict], Signal | None]] = {
     "pull": sig_pull,
     "sqz": sig_sqz,
     "daybrk": sig_daybrk,
+    "btct": sig_btct,
 }
 
 

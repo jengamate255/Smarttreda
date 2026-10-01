@@ -23,13 +23,15 @@ This file is the AI handoff context. Update it whenever state changes (services,
 
 - VBS services (start via `service.vbs` / `desk_service.vbs`): MT5 Gateway :8060, MT5 Prop Dashboard :8050,
   MT5 Trade Desk, MT5 Telegram Bot, MT5 Watch Daemon, research service.
-- Recurring tasks `MT5R_*` (8) are the live set. **`MT5R_LiveTrades`** (added 2026-10-01):
+- Recurring tasks `MT5R_*` (9) are the live set. **`MT5R_LiveTrades`** (added 2026-10-01):
   every **30 min** runs `live_trade_updates.py` (pythonw, InteractiveToken) → one Telegram
   HTML card with ALL open positions + balance/equity/floating via `notify(force=True)`,
   silent when flat, logs to `logs/live_trades_update.log`. **Expires ~2026-12-30**
   (inherits P90D/StopAtDurationEnd from MT5R_Analysis template) — re-create with
   `schtasks /Create /TN "MT5R_LiveTrades" /XML` if it stops. Legacy `MT5_*`/`MT5LIVE_*` tasks were deleted 2026-09-25;
   admin-rights deletions still pending for VBS tasks (`schtasks /Delete` elevated).
+  **`MT5R_Atlas`** (added 2026-10-01): weekly strategy sweep, Mon 06:00 — see
+  Strategy atlas section (no 90-day expiry; recreate cmd documented there).
 - Dashboards: 8080, 8082 (telegram health), 8050/8051, 8060. 8050/8060 have flapped (watchdog respawn vs MT5 IPC).
 - Accounts: Prop FundingPips2-SIM login 11911448 (`C:\Program Files\MetaTrader 5 Terminal\terminal64.exe`);
   Deriv-Demo 41204968 (`MT5_MCP_ACCOUNT=DERIV` routes here). Balance ~9642.
@@ -228,6 +230,44 @@ Modules added to fix zero-trade diagnosis and improve signal quality:
   (set starting balance), `/api/challenge/daily` (day-by-day P&L breakdown).
   Registered in `web_dashboard.py`.
 
+## Strategy atlas (since 2026-10-01)
+
+- **`mt5_mcp/research/atlas.py`** — per-pair strategy sweep: every family × every
+  symbol, gated selection, weekly re-run + drift check.
+  - Universe **24 symbols** (analysis majors/crosses + XAUUSD/XAGUSD/USOIL/JP225 +
+    USDJPY/BTCUSD/ETHUSD/SPX500/NDX100); variants = 5 routing families
+    (mean_reversion, momentum_breakout, ema_crossover, bb_mr_fade,
+    btc_trend_following@H4) + 4 candidates (donchian/pullback/squeeze/daybreak).
+  - Data: `copy_rates_range` from **2021** (bypasses the terminal MaxBars ~5k cap
+    that `client.rates` hits; 10k–46k H1 bars/symbol). Zero-spread history bars
+    (~57% pre-2024) backfilled with the symbol's median non-zero spread.
+  - Costs: gated on **realistic** (per-bar spread + 1pt slip); **canonical**
+    (15pt fixed × pip, vol-adjusted, 1 pip slip — backtest.py style) reported
+    alongside as `canonical.pf`. Most edges die under canonical → cost-sensitive.
+  - Robustness: full window + 70/30 chronological holdout, trade-thirds stability,
+    1000-draw bootstrap P(PF>1). Verdicts: **PROMOTE** (n≥50, PF≥1.25, thirds all
+    ≥1.0, boot ≥0.80, holdout n≥15 & PF≥1.0) / **PAPER** (n≥40, PF≥1.10, boot
+    ≥0.60, ≥2/3 thirds) / FAIL. Routing `CHANGE` proposals only from PROMOTE rows
+    beating current `BACKTEST_PF` by ≥0.1 (otherwise KEEP).
+  - Outputs: `mt5_mcp/memory/research_lab/atlas_<date>.json/.md` + one Telegram
+    summary (`notify("research_atlas")`); drift vs previous atlas reported
+    (PF ≥1.25→<1.10, or PROMOTE→FAIL = alert).
+  - Harness loaded **by file path** (`importlib`): `mt5_mcp/research.py` module
+    shadows the `research/` package (adding `__init__.py` would break
+    web_dashboard/web_research). Full run ~115 min under load; frames per symbol.
+- **Weekly task `MT5R_Atlas`** (Mon 06:00, InteractiveToken, **no 90-day expiry**;
+  action = `C:\Users\Dave\run_atlas_weekly.bat`, a no-space launcher copy — schtasks
+  `/TR` quoting chokes on the space in `Mt5 Ea`; the repo `run_atlas.bat` redirects
+  to `logs/atlas_weekly.log`). Recreate:
+  `schtasks /Create /TN "MT5R_Atlas" /TR "C:\Users\Dave\run_atlas_weekly.bat" /SC WEEKLY /D MON /ST 06:00 /IT /F`
+- **First sweep (2026-10-01): 216 runs = 205 FAIL / 11 PAPER / 0 PROMOTE ⇒
+  STRATEGY_ROUTING UNCHANGED.** PAPER: SPX500 btc_trend 1.65 (holdout 0.805),
+  EURCHF mean_reversion 1.51, AUDUSD btc_trend 1.29, SPX500 ema 1.21, GBPJPY ema
+  1.21, NDX100 ema 1.15, GBPCHF MR 1.15, NDX100 btc 1.14, USDCAD momentum 1.14
+  (its routed family), USDCHF MR 1.13, USDJPY squeeze 1.10. **EURCHF bb_mr_fade
+  FAILs full history (PF 0.90, n=711)** vs the research-window 1.25 → treat the
+  ~10-20 allowlist review skeptically. 0 errors across all symbols.
+
 ## Live state (2026-09-26 12:45)
 
 - **Consensus layer deployed 12:42**: desk/confirm/breakout restarted on
@@ -270,6 +310,17 @@ Modules added to fix zero-trade diagnosis and improve signal quality:
 
 ## Current / next steps
 
+- **2026-10-01 atlas session:** strategy atlas built + first full sweep (section above;
+  0 PROMOTE ⇒ routing unchanged), analysis router **generalized to all 5 planners**
+  (`analysis_agent.py` `planners` map + `strategy_source` field; live-verified —
+  GBPUSD emits mean-reversion reasons, USDCAD momentum-breakout), multi_strategy
+  B2/B3 fixed, `test_analysis_agent` 5/5, weekly `MT5R_Atlas` created. Telegram
+  409 incident: legacy root `telegram_bot.py` pair was running alongside
+  `run_telegram_bot.py` (conflict killed polling at 22:37) — killed legacy,
+  restarted `MT5R_Telegram`; getUpdates 200 OK, 8082 /health 200, pidfile tracks
+  run_telegram. All services verified up (ports 8010/8050/8055/8060/8080/8082;
+  MT5R_* running; watchdog had also respawned the 3 watchers + 8055 after a
+  22:57 incident — stable since 23:02).
 - **2026-09-30 session:** news feed fixed (disk-first + backoff, section above),
   consensus allowlist reset to the 11 PF-backed symbols, settings.json restored after
   the 16:02 clobber (incl. corrupted deriv token), tests: `test_news` 7/7,
@@ -287,16 +338,21 @@ Modules added to fix zero-trade diagnosis and improve signal quality:
   `rsi(frame,14)` DataFrame TypeError kills MR/EMAC/BTC strategies if ever called;
   B2 momentum_breakout close>high impossible; B3 MR validity gate unreachable;
   B4 `evaluate_all_strategies`/`pick_best_strategy` have zero production call sites).
+  **B1/B2/B3 all fixed 2026-10-01** (B2 now compares close vs prior-20-bar high/low;
+  B3 score uses `zone_strength` so the gate is reachable at conf ≥60); **B4 still open**.
 - **EURCHF paper-trade (since 2026-10-01):** research verdict `bb_mr_fade` (H1 BB(20,2.0)
   + RSI<30 fade, SL 1.5ATR/TP 2.0ATR, PF 1.25 / thin edge — report at
   `mt5_mcp/memory/research_lab/report_2026-09-30.md`) wired READ-ONLY into
   `analysis_agent` (router hook in `_analyze_symbol`, `STRATEGY_ROUTING["EURCHF"]` +
   `BACKTEST_PF=1.25`, confirmation contains `bb_mr_fade`). **EURCHF stays OFF the
   allowlist** — stack cannot fill it; review ~2026-10-20 and allowlist only if live
-  paper signals match the backtest. Structural RR 1.33 < floors ⇒ `avail=False` by
-  design (track via plan line + consensus stance). B1 `rsi(frame,...)` crash bug fixed
-  this session; B2 (momentum `close>high` impossible) and B3 (mean_reversion gate
-  unreachable) remain — none have production call sites (B4).
+  paper signals match the backtest. **Atlas caveat (2026-10-01): bb_mr_fade FAILs
+  full 5.75y history (PF 0.90, n=711) vs the research-window 1.25** — the edge may
+  be window-specific; re-check before any allowlist change. Structural RR 1.33 <
+  floors ⇒ `avail=False` by design (track via plan line + consensus stance). B1
+  `rsi(frame,...)` crash bug fixed this session; B2 (momentum `close>high`
+  impossible) and B3 (mean_reversion gate unreachable) also fixed 2026-10-01;
+  none have production call sites (B4, open).
 - **Pre-existing test failures (21, fail at HEAD too — not from this session):**
   `test_coach`/`test_memory`/`test_research` sqlite `separation_atr` (test-schema
   drift; live `journal.db` already has the column), `test_ml_ranker::test_build_dataset`

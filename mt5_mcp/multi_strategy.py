@@ -222,7 +222,7 @@ def mean_reversion_strategy(
         tp_pips = 50.0
         confidence = min(80, (30 - current_rsi) * 2 + 50)  # lower RSI = higher confidence
         zone_strength = 60.0
-        trade_score = confidence * 0.6 + 40 * 0.4  # weighted score
+        trade_score = confidence * 0.6 + zone_strength * 0.4  # valid reachable at conf >= 60 (B3)
 
     # SELL signal: RSI > 70 and price near upper BB
     elif current_rsi > 70 and current_close >= current_bb_upper * 0.998:
@@ -234,7 +234,7 @@ def mean_reversion_strategy(
         tp_pips = 50.0
         confidence = min(80, (current_rsi - 70) * 2 + 50)
         zone_strength = 60.0
-        trade_score = confidence * 0.6 + 40 * 0.4
+        trade_score = confidence * 0.6 + zone_strength * 0.4
 
     else:
         plan.reason = f"no mean reversion setup (RSI {current_rsi:.1f}, BB touch no)"
@@ -469,9 +469,10 @@ def momentum_breakout_strategy(
         plan.reason = f"market ranging (ADX {current_adx:.1f} < 25); breakout inactive"
         return plan
 
-    # Find recent 20-bar high/low
-    recent_high = float(frame["high"].iloc[-20:].max())
-    recent_low = float(frame["low"].iloc[-20:].min())
+    # Find recent 20-bar high/low (prior bars only — including bar[-1] would make
+    # close > max(high) impossible, B2)
+    recent_high = float(frame["high"].iloc[-21:-1].max())
+    recent_low = float(frame["low"].iloc[-21:-1].min())
     current_close = float(frame["close"].iloc[-1])
 
     pip = pip_size(info)

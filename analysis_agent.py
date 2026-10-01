@@ -269,16 +269,24 @@ def _analyze_symbol(client: Any, symbol: str) -> dict[str, Any]:
     try:
         plan = None
         try:
-            from mt5_mcp.multi_strategy import STRATEGY_ROUTING, bb_mr_fade_strategy
-            routed = STRATEGY_ROUTING.get(symbol, "")
-            planners = {"bb_mr_fade": bb_mr_fade_strategy}
-            if routed in planners:
-                plan = planners[routed](symbol)
+            from mt5_mcp import multi_strategy as ms
+            routed = ms.STRATEGY_ROUTING.get(symbol, "")
+            planners = {
+                "mean_reversion": ms.mean_reversion_strategy,
+                "momentum_breakout": ms.momentum_breakout_strategy,
+                "btc_trend_following": ms.btc_trend_following_strategy,
+                "ema_crossover": ms.ema_crossover_strategy,
+                "bb_mr_fade": ms.bb_mr_fade_strategy,
+            }
+            planner = planners.get(routed)
+            if planner is not None:
+                plan = planner(symbol)
                 result["strategy_source"] = routed
         except Exception as exc:
             logger.warning("%s routed strategy failed, falling back to trend_zone: %s", symbol, exc)
         if plan is None:
             plan = evaluate_strategy(symbol=symbol, closed_confirmation=True)
+            result["strategy_source"] = "trend_zone"
     except Exception as exc:
         result["error"] = f"strategy failed: {exc}"
         return result
