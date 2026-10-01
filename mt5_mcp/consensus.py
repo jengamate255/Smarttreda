@@ -104,7 +104,19 @@ def _write_board(board: dict[str, Any]) -> None:
     try:
         with os.fdopen(fd, "w", encoding="utf-8") as fh:
             json.dump(board, fh, indent=1, default=str)
-        os.replace(tmp, BOARD_PATH)  # atomic on Windows
+        # atomic on Windows; retry — a concurrent reader can hold the target
+        # without FILE_SHARE_DELETE and turn os.replace into a transient WinError 5
+        last_exc: Exception | None = None
+        for attempt in range(3):
+            try:
+                os.replace(tmp, BOARD_PATH)
+                last_exc = None
+                break
+            except OSError as exc:
+                last_exc = exc
+                time.sleep(0.05 * (attempt + 1))
+        if last_exc is not None:
+            raise last_exc
     except Exception as exc:
         logger.warning("board write failed (%s)", exc)
         try:

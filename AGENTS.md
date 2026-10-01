@@ -264,6 +264,26 @@ Modules added to fix zero-trade diagnosis and improve signal quality:
   (`max_daily_loss_percent` 3.0, `max_risk_percent` 0.5 — the live 4.0/1.0 retunes
   had drifted 6 gate tests) + stubbing `symbol_info` for the unknown-symbol test.
   `analysis_agent --once`, `diagnose_pipeline.py`, `consensus.py` board all verified.
+- **EURCHF research (2026-09-30, research-only, no config edits):** new bbmr
+  mean-reversion idea (H1: BB(20,2.0) touch + RSI<30, SL 1.5×ATR, TP 2.0×ATR)
+  qualifies at the *minimum* bar — PF 1.25 realistic (69 tr, halves 1.46/1.08,
+  thirds 1.26/1.25/1.24, plateau median 1.15 over 28 cells, bootstrap P(PF>1)=0.80) —
+  proposed `STRATEGY_ROUTING["EURCHF"]="bb_mr_fade"`, `BACKTEST_PF=1.25`, NOT applied.
+  Report + all 50+ tested variants: `mt5_mcp/memory/research_lab/report_2026-09-30.md`,
+  harness in `mt5_mcp/research/eurchf/`. **4 multi_strategy bugs found** (B1
+  `rsi(frame,14)` DataFrame TypeError kills MR/EMAC/BTC strategies if ever called;
+  B2 momentum_breakout close>high impossible; B3 MR validity gate unreachable;
+  B4 `evaluate_all_strategies`/`pick_best_strategy` have zero production call sites).
+- **EURCHF paper-trade (since 2026-10-01):** research verdict `bb_mr_fade` (H1 BB(20,2.0)
+  + RSI<30 fade, SL 1.5ATR/TP 2.0ATR, PF 1.25 / thin edge — report at
+  `mt5_mcp/memory/research_lab/report_2026-09-30.md`) wired READ-ONLY into
+  `analysis_agent` (router hook in `_analyze_symbol`, `STRATEGY_ROUTING["EURCHF"]` +
+  `BACKTEST_PF=1.25`, confirmation contains `bb_mr_fade`). **EURCHF stays OFF the
+  allowlist** — stack cannot fill it; review ~2026-10-20 and allowlist only if live
+  paper signals match the backtest. Structural RR 1.33 < floors ⇒ `avail=False` by
+  design (track via plan line + consensus stance). B1 `rsi(frame,...)` crash bug fixed
+  this session; B2 (momentum `close>high` impossible) and B3 (mean_reversion gate
+  unreachable) remain — none have production call sites (B4).
 - **Pre-existing test failures (21, fail at HEAD too — not from this session):**
   `test_coach`/`test_memory`/`test_research` sqlite `separation_atr` (test-schema
   drift; live `journal.db` already has the column), `test_ml_ranker::test_build_dataset`

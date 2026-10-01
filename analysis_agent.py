@@ -267,7 +267,18 @@ def _analyze_symbol(client: Any, symbol: str) -> dict[str, Any]:
     result["regime"] = health.get("regime")
 
     try:
-        plan = evaluate_strategy(symbol=symbol, closed_confirmation=True)
+        plan = None
+        try:
+            from mt5_mcp.multi_strategy import STRATEGY_ROUTING, bb_mr_fade_strategy
+            routed = STRATEGY_ROUTING.get(symbol, "")
+            planners = {"bb_mr_fade": bb_mr_fade_strategy}
+            if routed in planners:
+                plan = planners[routed](symbol)
+                result["strategy_source"] = routed
+        except Exception as exc:
+            logger.warning("%s routed strategy failed, falling back to trend_zone: %s", symbol, exc)
+        if plan is None:
+            plan = evaluate_strategy(symbol=symbol, closed_confirmation=True)
     except Exception as exc:
         result["error"] = f"strategy failed: {exc}"
         return result
