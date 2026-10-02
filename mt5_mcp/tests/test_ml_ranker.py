@@ -1,6 +1,6 @@
 import json
 
-from ml_ranker import build_dataset, load_result_trades, rank_signal
+from ml_ranker import FEATURES, build_dataset, load_result_trades, rank_signal
 
 SAMPLE_TRADES = [
     {"entry": 1.15, "entry_time": "2026-01-19T10:00:00", "pnl": 25.0, "rr": 3.0,
@@ -14,7 +14,7 @@ SAMPLE_TRADES = [
 
 def test_build_dataset():
     X, y, meta = build_dataset(SAMPLE_TRADES)
-    assert X.shape == (2, 6)
+    assert X.shape == (2, len(FEATURES))
     assert y.tolist() == [1, 0]
     assert meta[0]["confirmation_confidence"] == 0.6
 

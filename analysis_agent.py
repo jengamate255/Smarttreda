@@ -416,6 +416,11 @@ def main() -> int:
     parser.add_argument("--interval-minutes", type=int, default=INTERVAL_MINUTES)
     args = parser.parse_args()
     try:
+        from mt5_mcp.settings_guard import verify_settings
+        verify_settings()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("settings guard failed: %s", exc)
+    try:
         if args.loop and not args.once:
             _setup_logging()
             logger.info("loop mode every %d minutes", args.interval_minutes)

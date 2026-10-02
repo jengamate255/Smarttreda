@@ -337,9 +337,11 @@ def market_health(
             spread_points = (
                 float(tick.get("ask") or 0.0) - float(tick.get("bid") or 0.0)
             ) / point
+            # risk.max_spread_points=0 (spread never blocks); score still uses
+            # a 40-pt reference so wide spreads lower health/confluence.
             max_spread = float(risk.max_spread_points) or 40.0
             spread_score = round(max(0.0, 100.0 * (1.0 - spread_points / max_spread)), 1)
-            spread_note = f"spread {spread_points:.1f} points (limit {max_spread:.0f})"
+            spread_note = f"spread {spread_points:.1f} points (ref {max_spread:.0f}, score {spread_score:.0f})"
     except Exception as exc:  # noqa: BLE001
         spread_note = f"spread unavailable: {exc}"
     components.append(
@@ -351,7 +353,7 @@ def market_health(
         }
     )
     if spread_score < 50.0:
-        evidence.append("spread near or above the configured limit")
+        evidence.append("spread wide vs reference — sizing shrinks, health score cut")
 
     session_score = round(_session_score(session["primary"]), 1)
     components.append(

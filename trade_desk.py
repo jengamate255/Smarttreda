@@ -82,7 +82,7 @@ DESK_ENABLED = os.getenv("MT5_DESK_ENABLED", "0").strip().lower() in ("1", "true
 DESK_MODE = os.getenv("MT5_DESK_MODE", "SIM").strip().upper()
 DESK_RISK_PERCENT = float(os.getenv("MT5_DESK_RISK_PERCENT", "0.25"))
 # Fixed dollar risk per trade. When > 0 it overrides the percent-based sizing.
-DESK_RISK_FIXED = float(os.getenv("MT5_DESK_RISK_FIXED", "75"))
+DESK_RISK_FIXED = float(os.getenv("MT5_DESK_RISK_FIXED", "90"))
 SCAN_INTERVAL_MIN = float(os.getenv("MT5_DESK_SCAN_MINUTES", "30"))   # full scan cadence
 MANAGE_INTERVAL_SEC = float(os.getenv("MT5_DESK_MANAGE_SECONDS", "60"))  # mgmt cadence
 DESK_MIN_CONFLUENCE = float(os.getenv("MT5_DESK_MIN_CONFLUENCE", "75"))
@@ -605,21 +605,15 @@ def execute_pick(client, entry: dict[str, Any], dry_run: bool) -> dict[str, Any]
     except Exception:
         sl_pips = 0.0
 
-    verdict = gate(sym, str(direction), 0.01, sl_price=sl,
-                   confidence=float(entry.get("confluence") or 0))
-    if not verdict.get("allowed"):
-        return {"symbol": sym, "status": "blocked", "reason": "; ".join(verdict.get("violations", []))}
-
-    # consensus layer: allowlist + cross-engine veto (fail-open inside)
-    try:
-        from mt5_mcp.consensus import check as consensus_check
-        cver = consensus_check(sym, str(direction).upper(), "desk",
-                               score=float(entry.get("confluence") or 0))
-        if not cver.get("allowed"):
-            return {"symbol": sym, "status": "blocked",
-                    "reason": "; ".join(cver.get("violations", []))}
-    except Exception:
-        pass
+    # unified gate: consensus (fail-open) + compliance (hard veto)
+    from mt5_mcp.pipeline import run_gates
+    gate_verdict = run_gates(
+        symbol=sym, side=str(direction), lots=0.01,
+        sl_price=sl, confidence=float(entry.get("confluence") or 0),
+        source="desk", score=float(entry.get("confluence") or 0),
+    )
+    if not gate_verdict.allowed:
+        return {"symbol": sym, "status": "blocked", "reason": "; ".join(gate_verdict.violations)}
 
     # size by risk percent using proper pip value
     lots = _size_position(client, sym, sl_pips, levels["entry"], sl)
@@ -663,11 +657,34 @@ def execute_pick(client, entry: dict[str, Any], dry_run: bool) -> dict[str, Any]
            "confluence": entry.get("confluence")}
     if ok:
         journal = get_journal()
+        # Calculate RR if we have levels
+        rr = 0.0
+        if levels.get("entry") and levels.get("sl") and levels.get("tp"):
+            risk = abs(levels["entry"] - levels["sl"])
+            reward = abs(levels["tp"] - levels["entry"])
+            rr = reward / risk if risk > 0 else 0.0
+        
         journal.log_signal(
             signal_id=f"desk-{sym}-{int(time.time())}",
             symbol=sym, side=direction, setup=f"desk:{entry.get('pattern', 'confluence')}",
             entry=levels["entry"], sl=sl, tp=tp, lots=lots,
             confidence=float(entry.get("confluence") or 0),
+            sl_pips=sl_pips,
+            rr=rr,
+            filled=True,
+            trade_time=datetime.now(timezone.utc).isoformat(),
+        )
+        # Record trade with available features (desk doesn't have trend/confirmation confidence)
+        journal.record_trade(
+            ticket=int(payload.get("ticket") or 0),
+            symbol=sym, side=direction, setup=f"desk:{entry.get('pattern', 'confluence')}",
+            entry=levels["entry"], sl=sl, tp=tp, lots=lots,
+            open_time=datetime.now(timezone.utc).isoformat(),
+            confidence=float(entry.get("confluence") or 0),
+            trade_score=float(entry.get("confluence") or 0),
+            rr=rr,
+            sl_pips=sl_pips,
+            session_hour=datetime.now(timezone.utc).hour,
         )
         state = _load_state()
         today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
@@ -689,9 +706,33 @@ def _size_position(client, symbol: str, sl_pips: float, entry: float, sl: float)
     - Round DOWN to volume step (never round up past the risk cap).
     - Min-lot risk guard: if even volume_min risks more than 1.5x the cap,
       skip the trade (wide-SL symbols like USOIL are untradeable at $25).
+    - Consistency guard: reduce lot size if best day approaches 40% of total profit
+      (FundingPips consistency rule).
     """
     if sl_pips <= 0:
         return None
+
+    # Consistency risk check — reduce lot size if best day is too large
+    try:
+        from mt5_mcp.challenge_tracker import ChallengeTracker
+        ct = ChallengeTracker()
+        multiplier = ct.get_consistency_multiplier()
+        if multiplier <= 0.0:
+            logger.info(
+                "consistency block: best day >= 40%% of total profit, skipping %s",
+                symbol,
+            )
+            return None
+        if multiplier < 1.0:
+            logger.info(
+                "consistency reduction: applying %.0f%% lot size for %s (best day %.0f%% of total)",
+                multiplier * 100, symbol,
+                ct.get_status().get("consistency_ratio", 0),
+            )
+    except Exception as exc:
+        logger.warning("consistency check failed: %s", exc)
+        multiplier = 1.0
+
     try:
         info = client.symbol_info(symbol)
         tick_value = float(info.get("trade_tick_value") or 0.0)
@@ -707,11 +748,18 @@ def _size_position(client, symbol: str, sl_pips: float, entry: float, sl: float)
             if DESK_RISK_FIXED > 0
             else _equity() * (DESK_RISK_PERCENT / 100.0)
         )
+        risk_money *= multiplier  # apply consistency multiplier
         if risk_money <= 0:
             return None
         sl_distance = abs(entry - sl)
         if sl_distance <= 0:
             return None
+        # Spread never blocks, but it is real risk: add live spread to the
+        # SL distance so wide-spread fills size down instead of being invisible.
+        spread_points = float(info.get("spread") or 0.0)
+        point = float(info.get("point") or 0.0)
+        if spread_points > 0 and point > 0:
+            sl_distance += spread_points * point
         per_lot_risk = sl_distance * per_unit
         if per_lot_risk <= 0:
             return None
@@ -1094,10 +1142,10 @@ def scan_cycle(client, dry_run: bool) -> dict[str, Any]:
     _log_event("scan", summary)
     # publish desk stances to the consensus board (top-sheet directional reads)
     try:
-        from mt5_mcp.consensus import publish as consensus_publish
+        from mt5_mcp.pipeline import publish_stance
         for t in summary.get("top", []):
-            consensus_publish("desk", t.get("symbol", ""), t.get("dir", "NONE"),
-                              t.get("confluence", 0))
+            publish_stance("desk", t.get("symbol", ""), t.get("dir", "NONE"),
+                           float(t.get("confluence", 0)))
     except Exception:
         pass
     if executions:

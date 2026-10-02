@@ -23,7 +23,7 @@ This file is the AI handoff context. Update it whenever state changes (services,
 
 - VBS services (start via `service.vbs` / `desk_service.vbs`): MT5 Gateway :8060, MT5 Prop Dashboard :8050,
   MT5 Trade Desk, MT5 Telegram Bot, MT5 Watch Daemon, research service.
-- Recurring tasks `MT5R_*` (9) are the live set. **`MT5R_LiveTrades`** (added 2026-10-01):
+- Recurring tasks `MT5R_*` (10) are the live set. **`MT5R_LiveTrades`** (added 2026-10-01):
   every **30 min** runs `live_trade_updates.py` (pythonw, InteractiveToken) → one Telegram
   HTML card with ALL open positions + balance/equity/floating via `notify(force=True)`,
   silent when flat, logs to `logs/live_trades_update.log`. **Expires ~2026-12-30**
@@ -32,6 +32,9 @@ This file is the AI handoff context. Update it whenever state changes (services,
   admin-rights deletions still pending for VBS tasks (`schtasks /Delete` elevated).
   **`MT5R_Atlas`** (added 2026-10-01): weekly strategy sweep, Mon 06:00 — see
   Strategy atlas section (no 90-day expiry; recreate cmd documented there).
+  **`MT5R_DiskGuard`** (added 2026-10-02): daily 04:30 cache cleanup, action
+  `C:\Users\Dave\run_disk_guard.bat` (no-space launcher copy; repo bat
+  `run_disk_guard.bat` redirects to `logs/disk_guard.log`) — see Trading hardening.
 - Dashboards: 8080, 8082 (telegram health), 8050/8051, 8060. 8050/8060 have flapped (watchdog respawn vs MT5 IPC).
 - Accounts: Prop FundingPips2-SIM login 11911448 (`C:\Program Files\MetaTrader 5 Terminal\terminal64.exe`);
   Deriv-Demo 41204968 (`MT5_MCP_ACCOUNT=DERIV` routes here). Balance ~9642.
@@ -92,6 +95,34 @@ This file is the AI handoff context. Update it whenever state changes (services,
   allowlist is re-read per call and is hot).
 - Journal: `mt5_mcp/memory/journal.db` (`trades` has no `ts` column — use `open_time`/`close_time`).
   Desk events: `mt5_mcp/memory/desk_events.jsonl`, `desk_state.json`.
+
+## Trading hardening (since 2026-10-02)
+
+- **Spread-aware sizing (spread still never blocks):** live spread is added to the
+  SL distance in all three production siziers — `pipeline.size_position`,
+  `trade_desk._size_position`, `watcher_base._lot_size` — so a wide-spread fill
+  (e.g. BTCUSD 3222 pts) sizes DOWN instead of being invisible. Never blocks;
+  `risk.max_spread_points` stays 0. `market_intel` spread component (weight 0.10,
+  40-pt reference since the limit is off) still cuts health_score → desk
+  confluence and analysis health floor. NOTE: `info["spread"]` is read per-sizing
+  call — live tick at execution time.
+- **settings.json clobber guard:** `mt5_mcp/settings_guard.py` — sha256 baseline
+  `memory/settings.sha256` + last-known-good `memory/settings.good.json`. Any
+  change: critical keys (max_spread_points 0, confidence_floor 80, max_trades 2,
+  daily_loss 4.0, max_risk 1.0, allowlist 11) intact → Telegram alert
+  (`notify("settings_guard", ..., force=True)`) + re-baseline; broken/unparseable
+  → auto-restore good copy + alert. Wired into `analysis_agent.main()` (every
+  cycle, ~1 min). Re-baselining on any valid change means it alerts once per
+  external edit — deliberate. Tests: `tests/test_settings_guard.py` 4/4.
+- **Disk guard (C: was 0.33 GB free!):** `mt5_mcp/disk_guard.py` cleans pip/uv
+  caches, `%TEMP%` >7d, MT5 `*.hst/*.chr` >90d (best-effort, skips locked live
+  files); alerts Telegram when free <1 GB after cleanup (exit 2). Daily task
+  `MT5R_DiskGuard` 04:30. `UV_CACHE_DIR` set (User env) to
+  `E:\Project\Mt5 Ea\.cache\uv` so future uv fills E:. opencode snapshot store
+  (7.5 GB) and MetaQuotes (16.3 GB) are REPORT-ONLY — never touched (snapshot
+  store is the git-DB rescue path). C: freed 0.33 → ~2.8 GB in the first two runs
+  (note: `uv cache clean` times out at 300s on the old cache — warning only, run
+  continues).
 
 ## News feed (fixed 2026-09-30)
 
@@ -344,8 +375,10 @@ Modules added to fix zero-trade diagnosis and improve signal quality:
   `rsi(frame,14)` DataFrame TypeError kills MR/EMAC/BTC strategies if ever called;
   B2 momentum_breakout close>high impossible; B3 MR validity gate unreachable;
   B4 `evaluate_all_strategies`/`pick_best_strategy` have zero production call sites).
-  **B1/B2/B3 all fixed 2026-10-01** (B2 now compares close vs prior-20-bar high/low;
-  B3 score uses `zone_strength` so the gate is reachable at conf ≥60); **B4 still open**.
+   **B1/B2/B3 all fixed 2026-10-01** (B2 now compares close vs prior-20-bar high/low;
+   B3 score uses `zone_strength` so the gate is reachable at conf ≥60); **B4 closed
+   2026-10-02** (`evaluate_all_strategies`/`pick_best_strategy` deleted — the router +
+   `BACKTEST_PF`/`STRATEGY_ROUTING` already do this job).
 - **EURCHF paper-trade (since 2026-10-01):** research verdict `bb_mr_fade` (H1 BB(20,2.0)
   + RSI<30 fade, SL 1.5ATR/TP 2.0ATR, PF 1.25 / thin edge — report at
   `mt5_mcp/memory/research_lab/report_2026-09-30.md`) wired READ-ONLY into
@@ -357,12 +390,16 @@ Modules added to fix zero-trade diagnosis and improve signal quality:
   be window-specific; re-check before any allowlist change. Structural RR 1.33 <
   floors ⇒ `avail=False` by design (track via plan line + consensus stance). B1
   `rsi(frame,...)` crash bug fixed this session; B2 (momentum `close>high`
-  impossible) and B3 (mean_reversion gate unreachable) also fixed 2026-10-01;
-  none have production call sites (B4, open).
-- **Pre-existing test failures (21, fail at HEAD too — not from this session):**
-  `test_coach`/`test_memory`/`test_research` sqlite `separation_atr` (test-schema
-  drift; live `journal.db` already has the column), `test_ml_ranker::test_build_dataset`
-  (feature shape), `test_strategy` ×3, `test_trade_guard` ×2.
+   impossible) and B3 (mean_reversion gate unreachable) also fixed 2026-10-01;
+   B4 (aggregators) deleted 2026-10-02 — no dead code left in multi_strategy.
+- **Pre-existing test failures: ALL FIXED 2026-10-02** (suite was 21 red, now green):
+  sqlite `separation_atr`/`mtf_aligned`/`atr_val`/`zone_proximity`/`zone_touches`
+  columns added to both CREATE TABLE trades in `trade_journal.py` (test-schema drift);
+  `test_ml_ranker` shape now `(2, len(FEATURES))`; `test_strategy` ×3 fixed by an
+  autouse fixture pinning `strategy.rank_signal`→0.9 (live ML filter scored synthetic
+  plans 0.13 < 0.30) **and** `adaptive=False` + `min_confidence_percent=60` (live
+  adaptive state was tightening min_confidence above the fixtures' 91.1);
+  `test_trade_guard` ×2 fixed by the schema change.
 - **Services restarted 2026-09-30** after the settings restore (lru_cache holds the
   pre-restore values until restart; consensus allowlist is hot). Wave A = watchdog/1-min
   task respawn, wave B = batch-started (desk/gateway/8050/watch_daemon ×2/run_services)

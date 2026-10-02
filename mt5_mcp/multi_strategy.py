@@ -8,12 +8,11 @@ Strategies:
 5. ema_crossover — EMA20/50 cross + ADX trend filter for indices
 6. bb_mr_fade — Bollinger+RSI mean-reversion fade (EURCHF research 2026-09-30, PF 1.25)
 
-Each strategy returns a TradePlan. The system picks the highest-scoring valid plan.
-Conflicting signals (BUY vs SELL on same symbol) are resolved by score.
-
-NOTE: only the routed strategy per symbol is called in production — via
-analysis_agent's router hook (READ-ONLY paper path); evaluate_all_strategies /
-pick_best_strategy have no production call sites (B4, report 2026-09-30).
+Each strategy returns a TradePlan. Production calls the routed strategy per
+symbol directly (analysis_agent router hook, READ-ONLY paper path) — the
+aggregate helpers evaluate_all_strategies / pick_best_strategy were deleted
+2026-10-02 (B4: zero production call sites; score conflicts are resolved by
+the router via BACKTEST_PF/STRATEGY_ROUTING instead).
 
 Strategy routing (based on 2026-09-27 backtest):
 - EURJPY, GBPJPY, USDJPY, GBPUSD → mean_reversion (PF 1.52-2.65)
@@ -25,9 +24,8 @@ Strategy routing (based on 2026-09-27 backtest):
 - AUDUSD → no profitable strategy (skip or use tightest filters)
 
 Usage:
-    from mt5_mcp.multi_strategy import evaluate_all_strategies
-    plans = evaluate_all_strategies("EURUSD")
-    best = max(plans, key=lambda p: p.trade_score if p.valid else -1)
+    from mt5_mcp.multi_strategy import mean_reversion_strategy
+    plan = mean_reversion_strategy("EURJPY")   # routed strategy for this symbol
 """
 
 from __future__ import annotations
@@ -833,134 +831,3 @@ def ema_crossover_strategy(
     plan.reason = f"ema_crossover {action} ADX={current_adx:.1f} ATR={current_atr:.2f}"
 
     return plan
-
-
-def evaluate_all_strategies(
-    symbol: str,
-    risk_percent: float | None = None,
-) -> list[TradePlan]:
-    """Run all strategies and return their plans. Caller picks the best."""
-    plans: list[TradePlan] = []
-
-    # 1. Trend + zone (existing strategy)
-    try:
-        trend_plan = evaluate_strategy(symbol, risk_percent=risk_percent, adaptive=True)
-        trend_plan.confirmation = f"trend_zone: {trend_plan.confirmation}" if trend_plan.confirmation else "trend_zone"
-        plans.append(trend_plan)
-    except Exception as exc:
-        logger.warning("trend_zone strategy failed for %s: %s", symbol, exc)
-
-    # 2. Mean reversion
-    try:
-        mr_plan = mean_reversion_strategy(symbol, risk_percent=risk_percent)
-        plans.append(mr_plan)
-    except Exception as exc:
-        logger.warning("mean_reversion strategy failed for %s: %s", symbol, exc)
-
-    # 3. Momentum breakout
-    try:
-        mb_plan = momentum_breakout_strategy(symbol, risk_percent=risk_percent)
-        plans.append(mb_plan)
-    except Exception as exc:
-        logger.warning("momentum_breakout strategy failed for %s: %s", symbol, exc)
-
-    # 4. BTC trend following (only for BTCUSD)
-    if symbol == "BTCUSD":
-        try:
-            btc_plan = btc_trend_following_strategy(symbol, risk_percent=risk_percent)
-            plans.append(btc_plan)
-        except Exception as exc:
-            logger.warning("btc_trend_following strategy failed for %s: %s", symbol, exc)
-
-    # 5. EMA crossover (only for indices)
-    if symbol in INDEX_SYMBOLS:
-        try:
-            ema_plan = ema_crossover_strategy(symbol, risk_percent=risk_percent)
-            plans.append(ema_plan)
-        except Exception as exc:
-            logger.warning("ema_crossover strategy failed for %s: %s", symbol, exc)
-
-    return plans
-
-
-def _strategy_name_from_plan(plan: TradePlan) -> str:
-    """Extract strategy name from a plan's confirmation field."""
-    conf = (plan.confirmation or "").lower()
-    if "bb_mr_fade" in conf:
-        return "bb_mr_fade"
-    if "mean_reversion" in conf:
-        return "mean_reversion"
-    if "momentum_breakout" in conf or "momentum_brk" in conf:
-        return "momentum_breakout"
-    if "btc_trend_following" in conf:
-        return "btc_trend_following"
-    if "ema_crossover" in conf:
-        return "ema_crossover"
-    if "trend_zone" in conf:
-        return "trend_zone"
-    return "unknown"
-
-
-def pick_best_strategy(plans: list[TradePlan]) -> TradePlan | None:
-    """Pick the best valid plan from a list. Returns None if no valid plans.
-
-    Uses backtest profit factor as a score multiplier so strategies that
-    historically performed better on a given symbol get preferred.
-    Rejects strategies with PF < 1.0 (unprofitable in backtest).
-    """
-    valid = [p for p in plans if p.valid and p.action in ("BUY", "SELL")]
-    if not valid:
-        return None
-
-    symbol = valid[0].symbol
-
-    # Filter out strategies with PF < 1.0 (unprofitable in backtest)
-    def _get_pf(plan: TradePlan) -> float:
-        strat = _strategy_name_from_plan(plan)
-        return BACKTEST_PF.get((symbol, strat), 0.0)
-
-    profitable = [p for p in valid if _get_pf(p) >= 1.0]
-    if not profitable:
-        logger.info("no profitable strategy for %s (all PF < 1.0), skipping", symbol)
-        return None
-
-    valid = profitable
-
-    def _adjusted_score(plan: TradePlan) -> float:
-        strat = _strategy_name_from_plan(plan)
-        pf = BACKTEST_PF.get((symbol, strat), 1.0)
-        pf_boost = max(0.5, min(pf, 3.0))
-        return plan.trade_score * pf_boost
-
-    buys = [p for p in valid if p.action == "BUY"]
-    sells = [p for p in valid if p.action == "SELL"]
-
-    if buys and sells:
-        buy_score = max(_adjusted_score(p) for p in buys)
-        sell_score = max(_adjusted_score(p) for p in sells)
-        valid = buys if buy_score >= sell_score else sells
-        logger.info(
-            "strategy conflict on %s: BUY max=%.1f vs SELL max=%.1f → picked %s",
-            valid[0].symbol,
-            buy_score,
-            sell_score,
-            valid[0].action,
-        )
-
-    best = max(valid, key=_adjusted_score)
-
-    strat = _strategy_name_from_plan(best)
-    pf = BACKTEST_PF.get((symbol, strat), 0.0)
-    preferred = STRATEGY_ROUTING.get(symbol, "")
-    if preferred and strat != preferred:
-        logger.info(
-            "picked %s for %s (score %.1f, PF %.2f) over preferred %s",
-            strat, symbol, best.trade_score, pf, preferred,
-        )
-    else:
-        logger.info(
-            "picked %s for %s (score %.1f, PF %.2f)",
-            strat, symbol, best.trade_score, pf,
-        )
-
-    return best
