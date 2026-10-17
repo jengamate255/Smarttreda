@@ -1,5 +1,29 @@
 # AGENTS.md — Read This First
 
+## Git upload to GitHub (2026-10-17)
+
+- Pushed project to `https://github.com/jengamate255/Superbot-.git` (branch `master`,
+  local rewrite of 57 unpushed commits). Included code, configs, tests, scripts,
+  static assets, reports and service launchers; excluded venv/logs/caches/tmp/DBs
+  and large binaries via expanded `.gitignore`.
+- **Secrets scrubbed before push**: Deriv MT5 password and `deriv.api_token` were
+  in `mt5_mcp/settings.json` across 56 local commits — rewritten out of history
+  (`git filter-branch`) so GitHub never saw them; verified 0 secrets remain in any
+  tracked settings/env file across `origin/master` history. Remote test branch
+  `upload-test` deleted after connectivity check.
+- Live secrets now come only from `.env` (gitignored): `MT5_MCP_DERIV_MT5_PASSWORD`
+  was already there; **added `MT5_MCP_DERIV_API_TOKEN`** this session.
+  `config.py` `_apply_env_overrides` maps both — verified `get_settings()` loads
+  token (len 68) + password + login 41204968. Working-tree `settings.json` is
+  intentionally empty for both fields; do not paste secrets back into it.
+- Secrets backup (local, outside repo): `C:\Users\Dave\AppData\Local\Temp\opencode\settings_secrets_backup_20261017.json`.
+- Push needed `http.version=HTTP/1.1` after two HTTP 408 timeouts on the 248 MiB
+  pack; repo packed to 6714 objects / 248.61 MiB. Untracked root one-off scripts
+  (analyze_*, check_*, debug_*, tmp_* etc.) deliberately left untracked.
+- Runtime state files (`mt5_mcp/memory/consensus.json`, `desk_events.jsonl`,
+  forward-paper report/state) keep changing with services — leave dirty or commit
+  separately; not part of this upload decision.
+
 ## Read-only interim paper coverage report (2026-10-17)
 
 - Added standalone `scripts/report_forward_paper_interim.py`. It reads only saved
