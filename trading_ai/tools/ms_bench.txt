@@ -1,0 +1,1 @@
+﻿elapsed=14.878s highs=1302 lows=1335

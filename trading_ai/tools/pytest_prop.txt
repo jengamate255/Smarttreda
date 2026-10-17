@@ -1,0 +1,13 @@
+﻿........................................................................ [ 72%]
+.......FF.F..F.............                                              [100%]
+================================== FAILURES ===================================
+E:\Project\Mt5 Ea\trading_ai\tests\unit\test_self_learning.py:36: AssertionError: assert 'ERROR' in ('PROMOTE', 'REJECT')
+E:\Project\Mt5 Ea\trading_ai\tests\unit\test_self_learning.py:46: AssertionError: assert (0 + 0) == 3
+E:\Project\Mt5 Ea\trading_ai\tests\unit\test_self_learning.py:84: AssertionError: assert 'ERROR' in ('REJECT', 'PROMOTE')
+C:\Users\Dave\AppData\Local\hermes\hermes-agent\venv\Lib\site-packages\pandas\core\generic.py:1501: ValueError: The truth value of a DataFrame is ambiguous. Use a.empty, a.bool(), a.item(), a.any() or a.all().
+=========================== short test summary info ===========================
+FAILED trading_ai/tests/unit/test_self_learning.py::test_run_once_produces_result
+FAILED trading_ai/tests/unit/test_self_learning.py::test_run_n - AssertionErr...
+FAILED trading_ai/tests/unit/test_self_learning.py::test_promote_only_on_improvement
+FAILED trading_ai/tests/unit/test_self_learning.py::test_make_strategy_fn_returns_callable
+4 failed, 95 passed in 22.23s

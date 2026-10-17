@@ -1,0 +1,74 @@
+﻿================================================================
+[1] DATA GENERATOR
+  [PASS] generator runs -- 5000 candles
+  [PASS] prices realistic -- close=[0.9340, 1.2811] (expect ~0.7-1.5)
+  [PASS] no NaN
+  [PASS] OHLC consistent
+
+[2] FEATURE ENGINE
+  [PASS] features computed -- (5000, 16) in 0.38s
+  [PASS] features fast -- 0.38s
+  [PASS] structure NaN expected -- 10000 (no S/R configured)
+  [PASS] ROC warmup NaN expected -- 35
+  [PASS] no unexpected NaN -- other=0
+  [PASS] body_ratio in [0,1]
+  [PASS] ATR >= 0
+  [PASS] Bollinger >= 0
+  [PASS] bar_range >= 0
+  [PASS] sessions labelled -- {'asian': 1665, 'ny': 1253, 'london': 1040, 'overlap': 624, 'off': 418}
+  [PASS] no look-ahead (last bar) -- 0 rows changed
+  [PASS] no look-ahead (mid bar) -- 0 rows changed
+
+[3] MARKET STATE
+  [PASS] market state runs -- 0.2s
+  [PASS]   swing_highs populated -- 1302 items
+  [PASS]   swing_lows populated -- 1335 items
+  [PASS]   bos_events populated -- 2155 items
+  [PASS]   choch_events populated -- 3470 items
+  [PASS]   supply_zones populated -- 84 items
+  [PASS]   demand_zones populated -- 67 items
+  [PASS]   support_resistance populated -- 5 items
+  [PASS] regime valid -- RANGING
+  [PASS] volatility regime valid -- normal
+  [PASS] session classification -- 03:00=asianv, 10:00=londonv, 15:00=overlapv, 19:00=nyv, 23:00=offv
+  [PASS] volatility classify -- normal
+
+[4] STRATEGIES + GENOME
+    SupplyDemand: SIGNAL BUY @ 1.13339 RR=2.00 conf=0.70
+    Trend: no signal on scan
+    Breakout: no signal on scan
+    Momentum: no signal on scan
+    MeanRev: no signal on scan
+    Volatility: no signal on scan
+  [PASS] all 6 strategies run -- 1 signals on bullish MTF scan
+  [PASS] at least 1 strategy fires -- 1 signals; SupplyDemand:BUY conf=0.70 rr=2.00
+  [PASS] genome JSON roundtrip
+  [PASS] mutation creates child
+  [PASS] parent unmodified -- parent filters=0
+  [PASS] child has filter -- child filters=1
+  [PASS] protected key blocked -- ValueError
+
+[5] BACKTEST + RISK + PERFORMANCE
+  [PASS] backtest runs -- 5 trades in 0.5s, equity=101,813
+  [PASS] equity curve built -- 418 points
+  [PASS] risk approves valid RR=4 -- size=90909.0909 risk=500.00
+  [PASS] risk rejects RR=2
+  [PASS] risk rejects zero SL
+  [PASS] performance metrics -- wr=40.0% pf=2.82 sharpe=0.72 sortino=0.82 dd=2.31%
+
+[6] SUBSYSTEMS
+  [PASS] experiment engine
+  [PASS] trade journal -- recorded id=533554dc-07a3-4633-9870-a44e5490c94b, query=3
+  [PASS] research graph -- nodes 0f52d59e-23fd-4f3c-a7c9-5cfe0fd730fa, ef9d4df6-5141-431a-a070-394cd4197d1d
+  [PASS] gatekeeper -- min_sharpe=0.5 min_pf=1.2
+  [PASS] lineage -- e99279e5 -> 1225fff3
+  [PASS] research agent
+  [PASS] meta research agent
+  [PASS] paper broker -- balance=100000.0
+  [PASS] mt5 adapter (stub)
+  [PASS] health monitor
+  [PASS] orchestrator
+  [PASS] fastapi app -- 34 routes
+
+================================================================
+TOTAL: 53/53 passed in 34.6s

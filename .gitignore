@@ -101,3 +101,15 @@ data_check.png
 ws_check.js
 blank_check.js
 data_check.js
+
+# Junk empty / stray files at repo root
+/2026-09-25
+/strftime
+
+# Forward-paper runtime tick archives (regenerated each scan; large)
+reports/forward_paper_*/ticks/
+reports/forward_paper_*/bars/
+
+# RL replay buffers (large training state)
+dojo/models/**/replay_buffer.json
+dojo/models/**/progress.json

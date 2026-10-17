@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Trading Edge Analysis — What Actually Works</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+            color: #e0e0e0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(90deg, #00d2ff 0%, #3a7bd5 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 40px;
+            font-size: 1.1em;
+        }
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 25px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        .card h2 {
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: #00d2ff;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+        .highlight-box {
+            background: linear-gradient(135deg, rgba(0, 210, 255, 0.15) 0%, rgba(58, 123, 213, 0.15) 100%);
+            border: 2px solid #00d2ff;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .highlight-box h3 {
+            color: #00d2ff;
+            font-size: 1.3em;
+            margin-bottom: 10px;
+        }
+        .highlight-box .stat {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #4ade80;
+            margin: 10px 0;
+        }
+        .highlight-box .detail {
+            color: #aaa;
+            font-size: 1.1em;
+        }
+        .stats-row {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .stat-item {
+            text-align: center;
+            flex: 1;
+            min-width: 120px;
+        }
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #4ade80;
+        }
+        .stat-value.negative {
+            color: #f87171;
+        }
+        .stat-label {
+            color: #888;
+            font-size: 0.9em;
+            margin-top: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+        th {
+            background: rgba(0, 210, 255, 0.2);
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            color: #00d2ff;
+            border-bottom: 2px solid rgba(0, 210, 255, 0.3);
+        }
+        td {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        tr:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+        .positive {
+            color: #4ade80;
+            font-weight: 600;
+        }
+        .negative {
+            color: #f87171;
+            font-weight: 600;
+        }
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85em;
+            font-weight: 600;
+        }
+        .badge-profit {
+            background: rgba(74, 222, 128, 0.2);
+            color: #4ade80;
+        }
+        .badge-loss {
+            background: rgba(248, 113, 113, 0.2);
+            color: #f87171;
+        }
+        .insight {
+            background: rgba(250, 204, 21, 0.1);
+            border-left: 4px solid #facc15;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .insight-title {
+            color: #facc15;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        canvas {
+            max-width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Trading Edge Analysis</h1>
+        <p class="subtitle">What Actually Works — Based on 93 Live Trades</p>
+
+        <div class="highlight-box">
+            <h3>💎 The Sweet Spot</h3>
+            <div class="stat">+$289</div>
+            <div class="detail">
+                <strong>80%+ Confidence + London Session</strong><br>
+                10 trades · 70% Win Rate · +$289 profit
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h2>📊 Confidence Levels</h2>
+                <div class="chart-container">
+                    <canvas id="confidenceChart"></canvas>
+                </div>
+                <div class="stats-row">
+                    <div class="stat-item">
+                        <div class="stat-value">75%</div>
+                        <div class="stat-label">90%+ WR</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value">+$244</div>
+                        <div class="stat-label">90%+ P&L</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value negative">32.5%</div>
+                        <div class="stat-label">&lt;50% WR</div>
+                    </div>
+                </div>
+                <div class="insight">
+                    <div class="insight-title">Key Insight</div>
+                    Confidence is the #1 filter. Trades with 90%+ confidence have 75% win rate vs 32.5% for low confidence. The difference is massive.
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>🌍 Trading Sessions</h2>
+                <div class="chart-container">
+                    <canvas id="sessionChart"></canvas>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Session</th>
+                            <th>Trades</th>
+                            <th>Win Rate</th>
+                            <th>P&L</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>London (08-13)</td>
+                            <td>44</td>
+                            <td class="positive">43.2%</td>
+                            <td class="positive">+$234</td>
+                        </tr>
+                        <tr>
+                            <td>Asian (00-08)</td>
+                            <td>13</td>
+                            <td>23.1%</td>
+                            <td class="positive">+$76</td>
+                        </tr>
+                        <tr>
+                            <td>NY (13-22)</td>
+                            <td>36</td>
+                            <td>33.3%</td>
+                            <td class="negative">-$201</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="insight">
+                    <div class="insight-title">Key Insight</div>
+                    London session alone doesn't guarantee profit (43% WR). But combined with 80%+ confidence, it's the winning zone.
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>🏆 Top Profitable Symbols</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Trades</th>
+                        <th>Win Rate</th>
+                        <th>P&L</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>USOIL</strong></td>
+                        <td>12</td>
+                        <td class="positive">50.0%</td>
+                        <td class="positive">+$115</td>
+                        <td><span class="badge badge-profit">PROFITABLE</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Boom 900 Index</strong></td>
+                        <td>7</td>
+                        <td>28.6%</td>
+                        <td class="positive">+$100</td>
+                        <td><span class="badge badge-profit">PROFITABLE</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Crash 150 Index</strong></td>
+                        <td>2</td>
+                        <td class="positive">100%</td>
+                        <td class="positive">+$91</td>
+                        <td><span class="badge badge-profit">PROFITABLE</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>SPX500</strong></td>
+                        <td>1</td>
+                        <td class="positive">100%</td>
+                        <td class="positive">+$72</td>
+                        <td><span class="badge badge-profit">PROFITABLE</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>BOOM300</strong></td>
+                        <td>1</td>
+                        <td class="positive">100%</td>
+                        <td class="positive">+$41</td>
+                        <td><span class="badge badge-profit">PROFITABLE</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>Crash 50 Index</strong></td>
+                        <td>1</td>
+                        <td class="positive">100%</td>
+                        <td class="positive">+$39</td>
+                        <td><span class="badge badge-profit">PROFITABLE</span></td>
+                    </tr>
+                    <tr>
+                        <td><strong>BTCUSD</strong></td>
+                        <td>5</td>
+                        <td>40.0%</td>
+                        <td class="positive">+$37</td>
+                        <td><span class="badge badge-profit">PROFITABLE</span></td>
+                    </tr>
+                </tbody>
+            </table>
+            <div class="insight">
+                <div class="insight-title">Key Insight</div>
+                Synthetic indices (Boom/Crash) and commodities (USOIL) dominate the profit list. Forex pairs are underrepresented — they need higher confidence thresholds.
+            </div>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <h2>🎯 Confidence × Session Matrix</h2>
+                <div class="chart-container">
+                    <canvas id="zoneChart"></canvas>
+                </div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Zone</th>
+                            <th>Trades</th>
+                            <th>Win Rate</th>
+                            <th>P&L</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr style="background: rgba(74, 222, 128, 0.1);">
+                            <td><strong>80%+ + London</strong></td>
+                            <td>10</td>
+                            <td class="positive">70.0%</td>
+                            <td class="positive">+$289</td>
+                        </tr>
+                        <tr>
+                            <td>&lt;60% + London</td>
+                            <td>34</td>
+                            <td>35.3%</td>
+                            <td class="negative">-$55</td>
+                        </tr>
+                        <tr>
+                            <td>&lt;60% + NY</td>
+                            <td>36</td>
+                            <td>33.3%</td>
+                            <td class="negative">-$201</td>
+                        </tr>
+                        <tr>
+                            <td>&lt;60% + Asian</td>
+                            <td>13</td>
+                            <td>23.1%</td>
+                            <td class="positive">+$76</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="card">
+                <h2>💡 Actionable Rules</h2>
+                <div style="padding: 20px 0;">
+                    <div style="margin-bottom: 25px;">
+                        <div style="color: #4ade80; font-size: 1.2em; font-weight: 600; margin-bottom: 8px;">✓ DO TRADE</div>
+                        <ul style="list-style: none; padding-left: 0;">
+                            <li style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <strong>80%+ confidence + London session</strong><br>
+                                <span style="color: #888;">70% WR, +$289 — the sweet spot</span>
+                            </li>
+                            <li style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <strong>90%+ confidence (any session)</strong><br>
+                                <span style="color: #888;">75% WR, +$244 — high conviction trades</span>
+                            </li>
+                            <li style="padding: 8px 0;">
+                                <strong>Synthetics & Commodities</strong><br>
+                                <span style="color: #888;">USOIL, Boom 900, Crash 150 — proven profitable</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div>
+                        <div style="color: #f87171; font-size: 1.2em; font-weight: 600; margin-bottom: 8px;">✗ AVOID</div>
+                        <ul style="list-style: none; padding-left: 0;">
+                            <li style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <strong>&lt;60% confidence trades</strong><br>
+                                <span style="color: #888;">32.5% WR, -$180 — coin flip at best</span>
+                            </li>
+                            <li style="padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05);">
+                                <strong>NY session with low confidence</strong><br>
+                                <span style="color: #888;">33% WR, -$201 — worst combination</span>
+                            </li>
+                            <li style="padding: 8px 0;">
+                                <strong>Forex pairs without high confidence</strong><br>
+                                <span style="color: #888;">Underperforming vs synthetics/commodities</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>📈 Summary Statistics</h2>
+            <div class="stats-row">
+                <div class="stat-item">
+                    <div class="stat-value">93</div>
+                    <div class="stat-label">Total Trades</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value negative">36.6%</div>
+                    <div class="stat-label">Overall Win Rate</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value negative">-$117</div>
+                    <div class="stat-label">Total P&L</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">10</div>
+                    <div class="stat-label">Sweet Spot Trades</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">70%</div>
+                    <div class="stat-label">Sweet Spot WR</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value">+$289</div>
+                    <div class="stat-label">Sweet Spot P&L</div>
+                </div>
+            </div>
+            <div class="insight">
+                <div class="insight-title">The Bottom Line</div>
+                Out of 93 trades, only 10 (the sweet spot) generated all the profit. The other 83 trades lost money. The edge exists — but only in high-confidence London session trades. Everything else is noise.
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        // Confidence Chart
+        const confidenceCtx = document.getElementById('confidenceChart').getContext('2d');
+        new Chart(confidenceCtx, {
+            type: 'bar',
+            data: {
+                labels: ['<50%', '80-90%', '90%+'],
+                datasets: [{
+                    label: 'Win Rate (%)',
+                    data: [32.5, 50, 75],
+                    backgroundColor: [
+                        'rgba(248, 113, 113, 0.6)',
+                        'rgba(250, 204, 21, 0.6)',
+                        'rgba(74, 222, 128, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgba(248, 113, 113, 1)',
+                        'rgba(250, 204, 21, 1)',
+                        'rgba(74, 222, 128, 1)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: { color: '#888' },
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    },
+                    x: {
+                        ticks: { color: '#888' },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+
+        // Session Chart
+        const sessionCtx = document.getElementById('sessionChart').getContext('2d');
+        new Chart(sessionCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['London (+$234)', 'Asian (+$76)', 'NY (-$201)'],
+                datasets: [{
+                    data: [234, 76, 201],
+                    backgroundColor: [
+                        'rgba(74, 222, 128, 0.8)',
+                        'rgba(250, 204, 21, 0.8)',
+                        'rgba(248, 113, 113, 0.8)'
+                    ],
+                    borderColor: [
+                        'rgba(74, 222, 128, 1)',
+                        'rgba(250, 204, 21, 1)',
+                        'rgba(248, 113, 113, 1)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: '#e0e0e0', padding: 15 }
+                    }
+                }
+            }
+        });
+
+        // Zone Chart
+        const zoneCtx = document.getElementById('zoneChart').getContext('2d');
+        new Chart(zoneCtx, {
+            type: 'bar',
+            data: {
+                labels: ['80%+ London', '<60% London', '<60% NY', '<60% Asian'],
+                datasets: [{
+                    label: 'P&L ($)',
+                    data: [289, -55, -201, 76],
+                    backgroundColor: [
+                        'rgba(74, 222, 128, 0.6)',
+                        'rgba(248, 113, 113, 0.6)',
+                        'rgba(248, 113, 113, 0.6)',
+                        'rgba(250, 204, 21, 0.6)'
+                    ],
+                    borderColor: [
+                        'rgba(74, 222, 128, 1)',
+                        'rgba(248, 113, 113, 1)',
+                        'rgba(248, 113, 113, 1)',
+                        'rgba(250, 204, 21, 1)'
+                    ],
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        ticks: { color: '#888' },
+                        grid: { color: 'rgba(255,255,255,0.05)' }
+                    },
+                    x: {
+                        ticks: { color: '#888' },
+                        grid: { display: false }
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

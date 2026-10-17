@@ -1,0 +1,34 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.11.15, pytest-8.3.3, pluggy-1.6.0 -- C:\Users\Dave\AppData\Local\hermes\hermes-agent\venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: E:\Project\Mt5 Ea
+configfile: pyproject.toml
+plugins: anyio-4.15.1, asyncio-0.24.0, cov-5.0.0
+asyncio: mode=Mode.STRICT, default_loop_scope=function
+collecting ... collected 7 items
+
+tests\unit\test_self_learning_infra.py::test_credit_ledger_records FAILED [ 14%]
+tests\unit\test_self_learning_infra.py::test_credit_choose_prefers_better FAILED [ 28%]
+tests\unit\test_self_learning_infra.py::test_safety_daily_cap PASSED     [ 42%]
+tests\unit\test_self_learning_infra.py::test_safety_phase_transition_on_stagnation PASSED [ 57%]
+tests\unit\test_self_learning_infra.py::test_safety_circuit_breaker PASSED [ 71%]
+tests\unit\test_self_learning_infra.py::test_deployment_gate_flow PASSED [ 85%]
+tests\unit\test_self_learning_infra.py::test_paper_journal_bridge PASSED [100%]
+
+================================== FAILURES ===================================
+_________________________ test_credit_ledger_records __________________________
+tests\unit\test_self_learning_infra.py:25: in test_credit_ledger_records
+    ledger.record(MutationType.PARAMETER_CHANGE, True, delta_pf=0.2)
+evolution\credits.py:68: in record
+    rec.total_delta_pf += delta_pf
+E   TypeError: unsupported operand type(s) for +=: 'NoneType' and 'float'
+______________________ test_credit_choose_prefers_better ______________________
+tests\unit\test_self_learning_infra.py:36: in test_credit_choose_prefers_better
+    ledger.record(MutationType.SESSION_FILTER, True, delta_pf=0.4)
+evolution\credits.py:68: in record
+    rec.total_delta_pf += delta_pf
+E   TypeError: unsupported operand type(s) for +=: 'NoneType' and 'float'
+=========================== short test summary info ===========================
+FAILED tests\unit\test_self_learning_infra.py::test_credit_ledger_records - T...
+FAILED tests\unit\test_self_learning_infra.py::test_credit_choose_prefers_better
+========================= 2 failed, 5 passed in 9.34s =========================

@@ -1,0 +1,10 @@
+﻿iter1: PROMOTE improved=True parent_pf=0.6032621127455904 cand_pf=1.389894520099232 trades=10 err=None
+  reasons: ['Candidate meets all promotion criteria']
+iter2: REJECT improved=False parent_pf=1.389894520099232 cand_pf=0.6032621127455904 trades=10 err=None
+  reasons: ['Candidate meets all promotion criteria', 'No improvement: parent(pf=1.3899,exp=0.1949) cand(pf=0.6033,exp=-0.1984,tr=10)']
+iter3: REJECT improved=False parent_pf=1.389894520099232 cand_pf=0.6032621127455904 trades=10 err=None
+  reasons: ['Candidate meets all promotion criteria', 'No improvement: parent(pf=1.3899,exp=0.1949) cand(pf=0.6033,exp=-0.1984,tr=10)']
+iter4: REJECT improved=False parent_pf=1.389894520099232 cand_pf=0.6032621127455904 trades=10 err=None
+  reasons: ['Candidate meets all promotion criteria', 'No improvement: parent(pf=1.3899,exp=0.1949) cand(pf=0.6033,exp=-0.1984,tr=10)']
+status: {'iterations_completed': 4, 'promotions': 1, 'rejections': 3, 'errors': 0, 'best_genome_id': 'self-learn-000-Md07c77'}
+best_metrics: {'total_trades': 10, 'profit_factor': 1.389894520099232, 'expectancy': 0.19494726004961616}

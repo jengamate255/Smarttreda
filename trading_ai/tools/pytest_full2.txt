@@ -1,0 +1,13 @@
+﻿........................................................................ [ 72%]
+.................F.........                                              [100%]
+================================== FAILURES ===================================
+_______________________ test_credits_record_and_choose ________________________
+trading_ai\tests\unit\test_self_learning.py:179: in test_credits_record_and_choose
+    assert chosen == MutationType.SESSION_FILTER
+E   AssertionError: assert <MutationType...egime_filter'> == <MutationType...ssion_filter'>
+E     
+E     - session_filter
+E     + regime_filter
+=========================== short test summary info ===========================
+FAILED trading_ai/tests/unit/test_self_learning.py::test_credits_record_and_choose
+1 failed, 98 passed in 69.38s (0:01:09)

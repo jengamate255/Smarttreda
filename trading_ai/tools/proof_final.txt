@@ -1,0 +1,40 @@
+﻿BASELINE: {
+  "pf": 0.6033,
+  "exp": -0.1984,
+  "trades": 10,
+  "wr": 0.5
+}
+
+ITERATION LOG:
+  iter01 PROMOTE  pf 0.6033->1.3899 exp -0.1984->+0.1949 trades 10->10 PROMOTED
+  iter02 REJECT   pf 1.3899->0.6033 exp +0.1949->-0.1984 trades 10->10 
+  iter03 REJECT   pf 1.3899->0.6033 exp +0.1949->-0.1984 trades 10->10 
+  iter04 REJECT   pf 1.3899->0.6033 exp +0.1949->-0.1984 trades 10->10 
+  iter05 PROMOTE  pf 1.3899->2.1641 exp +0.1949->+0.4989 trades 10->7 PROMOTED
+  iter06 REJECT   pf 2.1641->2.1641 exp +0.4989->+0.4989 trades 7->7 
+  iter07 PROMOTE  pf 2.1641->10.0000 exp +0.4989->+0.0000 trades 7->1 PROMOTED
+  iter08 REJECT   pf 10.0000->10.0000 exp +0.0000->+0.0000 trades 1->1 
+  iter09 REJECT   pf 10.0000->10.0000 exp +0.0000->+0.0000 trades 1->1 
+  iter10 REJECT   pf 10.0000->10.0000 exp +0.0000->+0.0000 trades 1->1 
+  iter11 REJECT   pf 10.0000->10.0000 exp +0.0000->+0.0000 trades 1->1 
+  iter12 REJECT   pf 10.0000->10.0000 exp +0.0000->+0.0000 trades 1->1 
+
+FINAL:
+  baseline pf=0.6033 exp=-0.1984
+  best     pf=10.0000 exp=0.0000
+  iterations=12 promotions=3 rejections=9 errors=0
+  best_genome=self-learn-000-Md40d2c-M77c62c-M7c7079-Mdb8de0
+
+RECURSIVE IMPROVEMENT: YES (pf 0.6033 -> 10.0000)
+GENERATIONS: 3 promotions form the current lineage
+HISTORY (last 10):
+  {'iteration': 3, 'decision': 'REJECT', 'hypothesis_id': 'bootstrap-3', 'parent_id': 'self-learn-000-Md40d2c', 'candidate_id': 'self-learn-000-Md40d2c-Mb57790', 'improved': False, 'duration_s': 30.5, 'parent_pf': 1.389894520099232, 'cand_pf': 0.6032621127455904, 'parent_trades': 10, 'cand_trades': 10, 'mutation_type': 'exit_logic', 'phase': 'explore', 'oos_passed': None, 'error': None, 'at': '2026-09-24T16:15:40.308958+00:00'}
+  {'iteration': 4, 'decision': 'REJECT', 'hypothesis_id': 'bootstrap-4', 'parent_id': 'self-learn-000-Md40d2c', 'candidate_id': 'self-learn-000-Md40d2c-M6257a7', 'improved': False, 'duration_s': 20.53, 'parent_pf': 1.389894520099232, 'cand_pf': 0.6032621127455904, 'parent_trades': 10, 'cand_trades': 10, 'mutation_type': 'exit_logic', 'phase': 'explore', 'oos_passed': None, 'error': None, 'at': '2026-09-24T16:16:00.838724+00:00'}
+  {'iteration': 5, 'decision': 'PROMOTE', 'hypothesis_id': 'bootstrap-5', 'parent_id': 'self-learn-000-Md40d2c', 'candidate_id': 'self-learn-000-Md40d2c-M77c62c', 'improved': True, 'duration_s': 56.62, 'parent_pf': 1.389894520099232, 'cand_pf': 2.1641054950518335, 'parent_trades': 10, 'cand_trades': 7, 'mutation_type': 'regime_filter', 'phase': 'explore', 'oos_passed': None, 'error': None, 'at': '2026-09-24T16:16:57.454921+00:00'}
+  {'iteration': 6, 'decision': 'REJECT', 'hypothesis_id': 'bootstrap-6', 'parent_id': 'self-learn-000-Md40d2c-M77c62c', 'candidate_id': 'self-learn-000-Md40d2c-M77c62c-M18f451', 'improved': False, 'duration_s': 81.59, 'parent_pf': 2.1641054950518335, 'cand_pf': 2.1641054950518335, 'parent_trades': 7, 'cand_trades': 7, 'mutation_type': 'regime_filter', 'phase': 'explore', 'oos_passed': None, 'error': None, 'at': '2026-09-24T16:18:19.043306+00:00'}
+  {'iteration': 7, 'decision': 'PROMOTE', 'hypothesis_id': 'bootstrap-7', 'parent_id': 'self-learn-000-Md40d2c-M77c62c', 'candidate_id': 'self-learn-000-Md40d2c-M77c62c-M7c7079-Mdb8de0', 'improved': True, 'duration_s': 21.62, 'parent_pf': 2.1641054950518335, 'cand_pf': 10.0, 'parent_trades': 7, 'cand_trades': 1, 'mutation_type': 'parameter_change', 'phase': 'explore', 'oos_passed': None, 'error': None, 'at': '2026-09-24T16:18:40.666446+00:00'}
+  {'iteration': 8, 'decision': 'REJECT', 'hypothesis_id': 'bootstrap-8', 'parent_id': 'self-learn-000-Md40d2c-M77c62c-M7c7079-Mdb8de0', 'candidate_id': 'self-learn-000-Md40d2c-M77c62c-M7c7079-Mdb8de0-M3d177b', 'improved': False, 'duration_s': 10.35, 'parent_pf': 10.0, 'cand_pf': 10.0, 'parent_trades': 1, 'cand_trades': 1, 'mutation_type': 'exit_logic', 'phase': 'explore', 'oos_passed': None, 'error': None, 'at': '2026-09-24T16:18:51.016938+00:00'}
+  {'iteration': 9, 'decision': 'REJECT', 'hypothesis_id': 'bootstrap-9', 'parent_id': 'self-learn-000-Md40d2c-M77c62c-M7c7079-Mdb8de0', 'candidate_id': 'self-learn-000-Md40d2c-M77c62c-M7c7079-Mdb8de0-Mc5b865', 'improved': False, 'duration_s': 12.98, 'parent_pf': 10.0, 'cand_pf': 10.0, 'parent_trades': 1, 'cand_trades': 1, 'mutation_type': 'session_filter', 'phase': 'explore', 'oos_passed': None, 'error': None, 'at': '2026-09-24T16:19:03.994763+00:00'}
+  {'iteration': 10, 'decision': 'REJECT', 'hypothesis_id': 'bootstrap-10', 'parent_id': 'self-learn-000-Md40d2c-M77c62c-M7c7079-Mdb8de0', 'candidate_id': 'self-learn-000-Md40d2c-M77c62c-M7c7079-Mdb8de0-M2cdba1-M789100', 'improved': False, 'duration_s': 10.48, 'parent_pf': 10.0, 'cand_pf': 10.0, 'parent_trades': 1, 'cand_trades': 1, 'mutation_type': 'parameter_change', 'phase': 'explore', 'oos_passed': None, 'error': None, 'at': '2026-09-24T16:19:14.474366+00:00'}
+  {'iteration': 11, 'decision': 'REJECT', 'hypothesis_id': 'bootstrap-11', 'parent_id': 'self-learn-000-Md40d2c-M77c62c-M7c7079-Mdb8de0', 'candidate_id': 'self-learn-000-Md40d2c-M77c62c-M7c7079-Mdb8de0-M8bb165', 'improved': False, 'duration_s': 151.51, 'parent_pf': 10.0, 'cand_pf': 10.0, 'parent_trades': 1, 'cand_trades': 1, 'mutation_type': 'session_filter', 'phase': 'explore', 'oos_passed': None, 'error': None, 'at': '2026-09-24T16:21:45.983329+00:00'}
+  {'iteration': 12, 'decision': 'REJECT', 'hypothesis_id': 'bootstrap-12', 'parent_id': 'self-learn-000-Md40d2c-M77c62c-M7c7079-Mdb8de0', 'candidate_id': 'self-learn-000-Md40d2c-M77c62c-M7c7079-Mdb8de0-M40f6e2', 'improved': False, 'duration_s': 25.4, 'parent_pf': 10.0, 'cand_pf': 10.0, 'parent_trades': 1, 'cand_trades': 1, 'mutation_type': 'risk_management', 'phase': 'explore', 'oos_passed': None, 'error': None, 'at': '2026-09-24T16:22:11.383467+00:00'}

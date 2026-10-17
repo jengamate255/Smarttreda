@@ -1,0 +1,17 @@
+﻿============================= test session starts =============================
+platform win32 -- Python 3.11.15, pytest-8.3.3, pluggy-1.6.0 -- C:\Users\Dave\AppData\Local\hermes\hermes-agent\venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: E:\Project\Mt5 Ea
+configfile: pyproject.toml
+plugins: anyio-4.15.1, asyncio-0.24.0, cov-5.0.0
+asyncio: mode=Mode.STRICT, default_loop_scope=function
+collecting ... collected 14 items
+
+tests\unit\test_self_learning.py::test_loop_constructs PASSED            [  7%]
+tests\unit\test_self_learning.py::test_run_once_produces_result PASSED   [ 14%]
+tests\unit\test_self_learning.py::test_run_n PASSED                      [ 21%]
+tests\unit\test_self_learning.py::test_mutation_changes_genome PASSED    [ 28%]
+tests\unit\test_self_learning.py::test_promote_only_on_improvement PASSED [ 35%]
+tests\unit\test_self_learning.py::test_apply_genome_rules_enforces_min_rr PASSED [ 42%]
+tests\unit\test_self_learning.py::test_apply_genome_rules_confidence_gate PASSED [ 50%]
+tests\unit\test_self_learning.py::test_make_strategy_fn_returns_callable PASSED [ 57%]
