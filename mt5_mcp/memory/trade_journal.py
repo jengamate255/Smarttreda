@@ -230,7 +230,9 @@ class Journal:
             "tp": fields.get("tp"),
             "lots": fields.get("lots"),
             "open_time": fields.get("open_time"),
-            "close_time": fields.get("close_time") or now,
+            "close_time": fields.get("close_time") or (
+                now if fields.get("pnl") is not None and fields.get("outcome") in ("win", "loss", "breakeven") else None
+            ),
             "pnl": fields.get("pnl"),
             "outcome": fields.get("outcome"),
             "reason": fields.get("reason"),
@@ -274,6 +276,7 @@ class Journal:
                             data["ticket"],
                         ),
                     )
+                    conn.commit()
                     return int(existing["id"])
             cursor = conn.execute(
                 """INSERT INTO trades (
@@ -609,6 +612,26 @@ class Journal:
                 "by_setup": setup_stats,
             }
 
+    def _lookup_signal_fields(self, ticket: int, symbol: str) -> dict:
+        """Look up confidence/RR/score from the signals table for a given ticket.
+
+        Returns a dict of fields to enrich sync_from_mt5 records with."""
+        if not ticket:
+            return {}
+        try:
+            conn = self._conn()
+            row = conn.execute(
+                "SELECT confidence, rr, sl_pips, setup_confidence, "
+                "trend_confidence, confirmation_confidence, zone_strength "
+                "FROM signals WHERE ticket = ? ORDER BY created_at DESC LIMIT 1",
+                (ticket,),
+            ).fetchone()
+            if row:
+                return {k: row[k] for k in row.keys() if row[k] is not None}
+        except Exception:
+            pass
+        return {}
+
     def sync_from_mt5(self, client: Any, days: int = 30) -> dict:
         """Sync closed MT5 positions into the journal.
 
@@ -650,6 +673,7 @@ class Journal:
                     )
                     updated += 1
             else:
+                enriched = self._lookup_signal_fields(ticket, symbol)
                 self.record_trade(
                     ticket=ticket,
                     symbol=symbol,
@@ -673,6 +697,7 @@ class Journal:
                     if open_ts
                     else None,
                     duration_seconds=duration,
+                    **enriched,
                 )
                 added += 1
 

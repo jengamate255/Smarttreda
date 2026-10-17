@@ -4,10 +4,12 @@ import json
 import logging
 import threading
 import time
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
+from pydantic import BaseModel
 
 from mt5_mcp.forex_dojo import (
     ForexDojo,
@@ -472,3 +474,99 @@ def start_batch_training(
         results.append({"symbol": sym, "status": "started"})
 
     return {"status": "started", "symbols": results}
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Recursive Self-Improvement — trading_ai SelfLearningLoop
+#
+# Cycle: safety gate -> weakness analysis -> weighted mutation ->
+# multi-regime/OOS backtest -> gatekeeper -> promote/reject -> lineage.
+# Served to the Dojo UI so the loop, its safety state, the mutation-credit
+# ledger and every iteration decision are visible & controllable in-app.
+# ═══════════════════════════════════════════════════════════════════════════
+
+_si_singleton_lock = threading.Lock()
+_si_step_lock = threading.Lock()
+_self_improve = None  # lazily constructed SelfLearningLoop
+
+
+def _json_safe(obj: Any) -> Any:
+    """SelfLearningLoop metrics may hold numpy scalars — force plain JSON."""
+    return json.loads(json.dumps(obj, default=str))
+
+
+def _get_self_improve():
+    """Lazy singleton: importing trading_ai pulls the pandas/backtest stack,
+    so only pay for it the first time the panel is opened."""
+    global _self_improve
+    with _si_singleton_lock:
+        if _self_improve is None:
+            from trading_ai.evolution.self_learning import SelfLearningLoop
+
+            _self_improve = SelfLearningLoop(db_url_prefix="dojo_self_learn")
+        return _self_improve
+
+
+class SelfImproveStartBody(BaseModel):
+    interval_s: float = 30.0
+    max_iterations: int | None = None
+
+
+@router.get("/self-improve/status")
+def self_improve_status():
+    """Loop state: phase, safety, deployment queue, mutation credits."""
+    return _json_safe(_get_self_improve().get_status())
+
+
+@router.get("/self-improve/history")
+def self_improve_history(limit: int = Query(30, ge=1, le=200)):
+    """Recent iteration decisions (promote/reject/...) with metrics."""
+    return {"history": _json_safe(_get_self_improve().get_history(limit=limit))}
+
+
+@router.post("/self-improve/start")
+async def self_improve_start(body: SelfImproveStartBody | None = None):
+    """Start the background loop (async route: needs the running event loop)."""
+    req = body or SelfImproveStartBody()
+    loop = _get_self_improve()
+    try:
+        started = loop.start(interval_s=req.interval_s, max_iterations=req.max_iterations)
+    except RuntimeError as exc:  # no running loop etc.
+        raise HTTPException(500, f"failed to start loop: {exc}")
+    return {
+        "status": "started" if started else "already_running_or_safety_stopped",
+        "interval_s": req.interval_s,
+        "max_iterations": req.max_iterations,
+        "state": _json_safe(loop.get_status()),
+    }
+
+
+@router.post("/self-improve/stop")
+async def self_improve_stop():
+    loop = _get_self_improve()
+    was_running = loop.state.running
+    await loop.stop()
+    return {"status": "stopped" if was_running else "not_running", "state": _json_safe(loop.get_status())}
+
+
+@router.post("/self-improve/step")
+def self_improve_step():
+    """Run exactly one synchronous iteration (threadpool route — the
+    backtest would otherwise block the event loop)."""
+    loop = _get_self_improve()
+    if loop.state.running:
+        raise HTTPException(409, "Background loop is already running")
+    if not _si_step_lock.acquire(blocking=False):
+        raise HTTPException(409, "An iteration is already in progress")
+    try:
+        result = loop.run_once()
+        payload = _json_safe(asdict(result)) if hasattr(result, "__dataclass_fields__") else _json_safe(result)
+        payload["status"] = "ok"
+    except Exception as exc:  # noqa: BLE001 — surface, don't kill the route
+        logger.exception("self-improve step failed")
+        payload = {"status": "error", "error": f"{type(exc).__name__}: {exc}"}
+    finally:
+        _si_step_lock.release()
+    payload["state"] = _json_safe(loop.get_status())
+    return payload
+

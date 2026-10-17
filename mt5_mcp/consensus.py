@@ -10,8 +10,8 @@ before executing, engines call check() which enforces one shared policy:
 4. risk cap    - unified risk_percent every executor must size under
 
 Config: settings.json -> "consensus" (safe defaults if block absent).
-Fail-open by design: on any internal error consensus ALLOWS and logs -
-compliance.gate() remains the hard veto layer.
+Fail-closed since 2026-10-02: an internal error VETOES the entry and logs -
+the execution gate (mt5_mcp.execution_gate) is the last line of defence.
 
 CLI (part B of the consensus workflow - session routine):
     python -X utf8 mt5_mcp/consensus.py                 # board report
@@ -46,11 +46,14 @@ DEFAULTS: dict[str, Any] = {
     "min_agree": 0,
     "agree_min_score": 60.0,
     "risk_percent": 0.25,
-    # Backtested tradable set (2026-08-01, 42 terminal symbols) + explicit
-    # approvals. Anything not listed here is not executable by consensus.
+    # Live-positive set (2026-10-02 reconciliation of broker history:
+    # USOIL 31 trades +162, AUDUSD 5 +34, BTCUSD 10 +14, ETHUSD 4 +129,
+    # SPX500 1 +72; everything else is net negative over its sample).
+    # Small live-positive samples are not validated edge. Oct 12 atlas had
+    # no PROMOTE rows; keep routing/allowlist decisions manual.
+    # Anything not listed here is not executable by consensus.
     "allowed_symbols": [
-        "SPX500", "XAGUSD", "AUDUSD", "USDJPY", "EURUSD",
-        "XAUUSD", "JP225", "ETHUSD", "EURJPY",
+        "USOIL", "AUDUSD", "BTCUSD", "ETHUSD", "SPX500",
     ],
 }
 
@@ -156,7 +159,7 @@ def publish(source: str, symbol: str, side: Any, score: Any, note: str = "") -> 
 
 
 def check(symbol: str, side: str, source: str, score: float = 0.0) -> dict[str, Any]:
-    """Consensus verdict for an entry. Fail-open: internal errors allow.
+    """Consensus verdict for an entry. Fail-closed: internal errors veto.
 
     Returns {"allowed": bool, "violations": [..], "agree": n, "oppose": n,
              "risk_percent": float}.
@@ -214,7 +217,11 @@ def check(symbol: str, side: str, source: str, score: float = 0.0) -> dict[str, 
         out["allowed"] = not out["violations"]
         return out
     except Exception as exc:
-        logger.warning("check failed (fail-open) %s/%s: %s", symbol, side, exc)
+        logger.warning("check failed (fail-closed) %s/%s: %s", symbol, side, exc)
+        out["allowed"] = False
+        out["violations"].append(
+            f"consensus: check failed (fail-closed): {exc}"
+        )
         return out
 
 

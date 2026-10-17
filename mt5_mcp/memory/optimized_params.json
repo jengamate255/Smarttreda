@@ -1,0 +1,102 @@
+{
+  "optimization_date": "2026-10-05",
+  "method": "manual_analysis",
+  "notes": "Parameters adjusted based on backtest trade analysis. Focus on filtering weak setups and volatility-appropriate SL/TP.",
+  "universal_base": {
+    "min_confidence_percent": 70,
+    "min_trade_score": 70,
+    "min_rr": 2.0,
+    "min_zone_score": 70,
+    "risk_percent": 0.25
+  },
+  "symbols": {
+    "EURUSD": {
+      "strategy": "trend_zone",
+      "zone_timeframes": ["H1"],
+      "min_zone_score": 65,
+      "sl_min": 12,
+      "sl_max": 22,
+      "tp_min": 50,
+      "tp_max": 75,
+      "min_rr": 2.5,
+      "notes": "Only profitable symbol (PF 4.05, n=3). Tighter SL for low-vol forex."
+    },
+    "USDCAD": {
+      "strategy": "momentum_breakout",
+      "zone_timeframes": ["H1", "H4"],
+      "min_zone_score": 65,
+      "sl_min": 15,
+      "sl_max": 25,
+      "tp_min": 55,
+      "tp_max": 85,
+      "min_rr": 2.2,
+      "notes": "PF 0.77 (close to breakeven). Slightly tighter parameters."
+    },
+    "USDCHF": {
+      "strategy": "trend_zone",
+      "zone_timeframes": ["H1", "H4"],
+      "min_zone_score": 70,
+      "sl_min": 15,
+      "sl_max": 25,
+      "tp_min": 55,
+      "tp_max": 85,
+      "min_rr": 2.2,
+      "notes": "PF 0.64, WR 53.3%. Higher zone score to filter weak setups."
+    },
+    "XAUUSD": {
+      "strategy": "trend_zone",
+      "zone_timeframes": ["H1", "H4"],
+      "min_zone_score": 60,
+      "sl_min": 30,
+      "sl_max": 55,
+      "tp_min": 90,
+      "tp_max": 150,
+      "min_rr": 2.0,
+      "notes": "PF 0.28. Wider SL/TP for gold volatility. Lower zone score to allow more trades."
+    },
+    "ETHUSD": {
+      "strategy": "trend_zone",
+      "zone_timeframes": ["H1", "H4"],
+      "min_zone_score": 75,
+      "sl_min": 50,
+      "sl_max": 90,
+      "tp_min": 140,
+      "tp_max": 230,
+      "min_rr": 2.0,
+      "notes": "PF 0.17. Much higher zone score (only strongest zones). Wider SL/TP for crypto volatility."
+    },
+    "USOIL": {
+      "strategy": "trend_zone",
+      "zone_timeframes": ["H1", "H4"],
+      "min_zone_score": 75,
+      "sl_min": 35,
+      "sl_max": 65,
+      "tp_min": 100,
+      "tp_max": 170,
+      "min_rr": 2.0,
+      "notes": "PF 0.00. Higher zone score to filter setups. Wider SL for oil volatility."
+    },
+    "SPX500": {
+      "strategy": "ema_crossover",
+      "zone_timeframes": ["H1", "H4"],
+      "min_zone_score": 65,
+      "sl_min": 18,
+      "sl_max": 32,
+      "tp_min": 65,
+      "tp_max": 110,
+      "min_rr": 2.2,
+      "notes": "PF 0.37. Index needs moderate SL/TP."
+    },
+    "JP225": {
+      "strategy": "ema_crossover",
+      "zone_timeframes": ["H1", "H4"],
+      "min_zone_score": 65,
+      "sl_min": 18,
+      "sl_max": 32,
+      "tp_min": 65,
+      "tp_max": 110,
+      "min_rr": 2.2,
+      "notes": "0 trades in backtest. Similar to SPX500."
+    }
+  }
+}

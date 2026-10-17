@@ -1,0 +1,721 @@
+{
+  "at": "2026-10-06T19:55:28.258860+00:00",
+  "cycle": 2279,
+  "compliance_mode": "normal",
+  "results": [
+    {
+      "symbol": "EURUSD",
+      "bar": "2026-10-06 18:00:00",
+      "health_score": 84.6,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "strategy_source": "trend_zone",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 99.0,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong supply zone being revisited"
+      },
+      "available": false,
+      "reasons": [
+        "No strong supply zone being revisited",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "new_york",
+        "active": [
+          "new_york"
+        ],
+        "hour_utc": 19
+      }
+    },
+    {
+      "symbol": "GBPUSD",
+      "bar": "2026-10-06 18:00:00",
+      "health_score": 76.8,
+      "verdict": "tradeable",
+      "regime": "transition",
+      "strategy_source": "mean_reversion",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 0.0,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "market trending (ADX 25.8 >= 25); mean reversion inactive"
+      },
+      "available": false,
+      "reasons": [
+        "market trending (ADX 25.8 >= 25); mean reversion inactive",
+        "no executable direction",
+        "confidence 0.0 < 75",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "new_york",
+        "active": [
+          "new_york"
+        ],
+        "hour_utc": 19
+      }
+    },
+    {
+      "symbol": "USDCHF",
+      "bar": "2026-10-06 18:00:00",
+      "health_score": 80.0,
+      "verdict": "tradeable",
+      "regime": "transition",
+      "strategy_source": "trend_zone",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 93.3,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong demand zone being revisited"
+      },
+      "available": false,
+      "reasons": [
+        "No strong demand zone being revisited",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "new_york",
+        "active": [
+          "new_york"
+        ],
+        "hour_utc": 19
+      }
+    },
+    {
+      "symbol": "USDCAD",
+      "bar": "2026-10-06 18:00:00",
+      "health_score": 79.8,
+      "verdict": "tradeable",
+      "regime": "trending_bullish",
+      "strategy_source": "momentum_breakout",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 0.0,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "market ranging (ADX 23.3 < 25); breakout inactive"
+      },
+      "available": false,
+      "reasons": [
+        "market ranging (ADX 23.3 < 25); breakout inactive",
+        "no executable direction",
+        "confidence 0.0 < 75",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "new_york",
+        "active": [
+          "new_york"
+        ],
+        "hour_utc": 19
+      }
+    },
+    {
+      "symbol": "AUDUSD",
+      "bar": "2026-10-06 18:00:00",
+      "health_score": 81.5,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "strategy_source": "trend_zone",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 74.5,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "HTF trend is sideways; strategy waits for a directional trend"
+      },
+      "available": false,
+      "reasons": [
+        "HTF trend is sideways; strategy waits for a directional trend",
+        "no executable direction",
+        "confidence 74.5 < 75",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "new_york",
+        "active": [
+          "new_york"
+        ],
+        "hour_utc": 19
+      }
+    },
+    {
+      "symbol": "NZDUSD",
+      "bar": "2026-10-06 18:00:00",
+      "health_score": 81.9,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "strategy_source": "trend_zone",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 100.0,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong supply zone being revisited"
+      },
+      "available": false,
+      "reasons": [
+        "No strong supply zone being revisited",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "new_york",
+        "active": [
+          "new_york"
+        ],
+        "hour_utc": 19
+      }
+    },
+    {
+      "symbol": "CHFJPY",
+      "bar": "2026-10-06 18:00:00",
+      "health_score": 68.8,
+      "verdict": "cautious",
+      "regime": "quiet_contraction",
+      "strategy_source": "trend_zone",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 68.7,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "HTF trend is sideways; strategy waits for a directional trend"
+      },
+      "available": false,
+      "reasons": [
+        "HTF trend is sideways; strategy waits for a directional trend",
+        "no executable direction",
+        "confidence 68.7 < 75",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "new_york",
+        "active": [
+          "new_york"
+        ],
+        "hour_utc": 19
+      }
+    },
+    {
+      "symbol": "EURJPY",
+      "bar": "2026-10-06 18:00:00",
+      "health_score": 89.5,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "strategy_source": "mean_reversion",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 0.0,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "market trending (ADX 46.5 >= 25); mean reversion inactive"
+      },
+      "available": false,
+      "reasons": [
+        "market trending (ADX 46.5 >= 25); mean reversion inactive",
+        "no executable direction",
+        "confidence 0.0 < 75",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "new_york",
+        "active": [
+          "new_york"
+        ],
+        "hour_utc": 19
+      }
+    },
+    {
+      "symbol": "GBPJPY",
+      "bar": "2026-10-06 18:00:00",
+      "health_score": 64.8,
+      "verdict": "cautious",
+      "regime": "transition",
+      "strategy_source": "mean_reversion",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 0.0,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "market trending (ADX 37.4 >= 25); mean reversion inactive"
+      },
+      "available": false,
+      "reasons": [
+        "market trending (ADX 37.4 >= 25); mean reversion inactive",
+        "no executable direction",
+        "confidence 0.0 < 75",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "new_york",
+        "active": [
+          "new_york"
+        ],
+        "hour_utc": 19
+      }
+    },
+    {
+      "symbol": "NZDJPY",
+      "bar": "2026-10-06 18:00:00",
+      "health_score": 77.0,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "strategy_source": "trend_zone",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 100.0,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong supply zone being revisited"
+      },
+      "available": false,
+      "reasons": [
+        "No strong supply zone being revisited",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "new_york",
+        "active": [
+          "new_york"
+        ],
+        "hour_utc": 19
+      }
+    },
+    {
+      "symbol": "GBPCHF",
+      "bar": "2026-10-06 18:00:00",
+      "health_score": 72.6,
+      "verdict": "tradeable",
+      "regime": "ranging",
+      "strategy_source": "trend_zone",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 74.2,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong demand zone being revisited"
+      },
+      "available": false,
+      "reasons": [
+        "No strong demand zone being revisited",
+        "no executable direction",
+        "confidence 74.2 < 75",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "new_york",
+        "active": [
+          "new_york"
+        ],
+        "hour_utc": 19
+      }
+    },
+    {
+      "symbol": "NZDCAD",
+      "bar": "2026-10-06 18:00:00",
+      "health_score": 63.7,
+      "verdict": "cautious",
+      "regime": "quiet_contraction",
+      "strategy_source": "trend_zone",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 90.8,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 88.27410384460111,
+        "confirmation": "",
+        "reason": "no bearish confirmation candle found"
+      },
+      "available": false,
+      "reasons": [
+        "no bearish confirmation candle found",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "new_york",
+        "active": [
+          "new_york"
+        ],
+        "hour_utc": 19
+      }
+    },
+    {
+      "symbol": "AUDNZD",
+      "bar": "2026-10-06 18:00:00",
+      "health_score": 74.0,
+      "verdict": "tradeable",
+      "regime": "trending_bullish",
+      "strategy_source": "trend_zone",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 89.8,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong demand zone being revisited"
+      },
+      "available": false,
+      "reasons": [
+        "No strong demand zone being revisited",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "new_york",
+        "active": [
+          "new_york"
+        ],
+        "hour_utc": 19
+      }
+    },
+    {
+      "symbol": "EURAUD",
+      "bar": "2026-10-06 18:00:00",
+      "health_score": 80.3,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "strategy_source": "trend_zone",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 74.7,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong supply zone being revisited"
+      },
+      "available": false,
+      "reasons": [
+        "No strong supply zone being revisited",
+        "no executable direction",
+        "confidence 74.7 < 75",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "new_york",
+        "active": [
+          "new_york"
+        ],
+        "hour_utc": 19
+      }
+    },
+    {
+      "symbol": "EURCHF",
+      "bar": "2026-10-06 18:00:00",
+      "health_score": 83.1,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "strategy_source": "bb_mr_fade",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 0.0,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "no bb_mr_fade setup (RSI 66.0, close vs BB 0.93083/0.93704)"
+      },
+      "available": false,
+      "reasons": [
+        "no bb_mr_fade setup (RSI 66.0, close vs BB 0.93083/0.93704)",
+        "no executable direction",
+        "confidence 0.0 < 75",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "new_york",
+        "active": [
+          "new_york"
+        ],
+        "hour_utc": 19
+      }
+    },
+    {
+      "symbol": "XAUUSD",
+      "bar": "2026-10-06 18:00:00",
+      "health_score": 81.3,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "strategy_source": "trend_zone",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 85.9,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 79.7,
+        "confirmation": "",
+        "reason": "SKIPPED: SL 131.4 pips exceeds max 30.0"
+      },
+      "available": false,
+      "reasons": [
+        "SKIPPED: SL 131.4 pips exceeds max 30.0",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "new_york",
+        "active": [
+          "new_york"
+        ],
+        "hour_utc": 19
+      }
+    },
+    {
+      "symbol": "XAGUSD",
+      "bar": "2026-10-06 18:00:00",
+      "health_score": 72.1,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "strategy_source": "trend_zone",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 82.1,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 74.8,
+        "confirmation": "",
+        "reason": "SKIPPED: SL 626.4 pips exceeds max 30.0"
+      },
+      "available": false,
+      "reasons": [
+        "SKIPPED: SL 626.4 pips exceeds max 30.0",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "new_york",
+        "active": [
+          "new_york"
+        ],
+        "hour_utc": 19
+      }
+    },
+    {
+      "symbol": "USOIL",
+      "bar": "2026-10-06 18:00:00",
+      "health_score": 75.8,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "strategy_source": "trend_zone",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 72.8,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong demand zone being revisited"
+      },
+      "available": false,
+      "reasons": [
+        "No strong demand zone being revisited",
+        "no executable direction",
+        "confidence 72.8 < 75",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "new_york",
+        "active": [
+          "new_york"
+        ],
+        "hour_utc": 19
+      }
+    },
+    {
+      "symbol": "JP225",
+      "bar": "2026-10-06 18:00:00",
+      "health_score": 78.4,
+      "verdict": "tradeable",
+      "regime": "trending_bullish",
+      "strategy_source": "ema_crossover",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 0.0,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "no ema crossover (EMA20 70714.73 vs EMA50 70092.08, ADX 83.1)"
+      },
+      "available": false,
+      "reasons": [
+        "no ema crossover (EMA20 70714.73 vs EMA50 70092.08, ADX 83.1)",
+        "no executable direction",
+        "confidence 0.0 < 75",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "new_york",
+        "active": [
+          "new_york"
+        ],
+        "hour_utc": 19
+      }
+    }
+  ]
+}

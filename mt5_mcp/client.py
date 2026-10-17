@@ -20,13 +20,17 @@ _client_lock = threading.Lock()
 
 
 def _account_key() -> str:
-    """Return 'deriv' or 'prop' based on env var."""
+    """Return 'deriv', 'deriv_real', or 'prop' based on env var."""
     acct = os.getenv("MT5_MCP_ACCOUNT", "PROP").upper()
-    return "deriv" if acct == "DERIV" else "prop"
+    if acct == "DERIV":
+        return "deriv"
+    if acct == "DERIV_REAL":
+        return "deriv_real"
+    return "prop"
 
 
 def get_client(symbol: str | None = None):
-    """Get MT5 client for the active account (Prop or Deriv)."""
+    """Get MT5 client for the active account (Prop, Deriv demo, or Deriv real)."""
     key = _account_key()
     with _client_lock:
         if key not in _clients or _clients[key] is None:
@@ -35,6 +39,12 @@ def get_client(symbol: str | None = None):
                 cfg = getattr(settings, "deriv_mt5", None)
                 if cfg is None:
                     cfg = settings.mt5
+            elif key == "deriv_real":
+                cfg = getattr(settings, "deriv_real_mt5", None)
+                if cfg is None:
+                    raise RuntimeError(
+                        "DERIV_REAL account not configured: add 'deriv_real_mt5' to settings.json"
+                    )
             else:
                 cfg = settings.mt5
             _clients[key] = MT5Client(cfg)

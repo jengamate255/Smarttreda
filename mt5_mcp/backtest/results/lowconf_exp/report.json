@@ -1,0 +1,519 @@
+{
+  "variants": {
+    "A_baseline": {
+      "desc": "conf>=75 score>=70 risk=0.50%",
+      "agg": {
+        "trades": 35,
+        "wins": 11,
+        "net_pnl": -883.99,
+        "win_rate": 31.4,
+        "profit_factor": 0.0,
+        "avg_dd": 1.45,
+        "max_dd": 3.37,
+        "expectancy": -25.26,
+        "avg_conf": 82.5,
+        "symbols_with_trades": 7,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      "risk_pct": 0.5
+    },
+    "B_mid_small": {
+      "desc": "conf 55-75 score>=55 risk=0.20%",
+      "agg": {
+        "trades": 11,
+        "wins": 2,
+        "net_pnl": -178.81,
+        "win_rate": 18.2,
+        "profit_factor": 0.0,
+        "avg_dd": 0.28,
+        "max_dd": 0.63,
+        "expectancy": -16.26,
+        "avg_conf": 71.4,
+        "symbols_with_trades": 5,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      "risk_pct": 0.2
+    },
+    "C_low_micro": {
+      "desc": "conf 40-75 score>=40 risk=0.10%",
+      "agg": {
+        "trades": 11,
+        "wins": 2,
+        "net_pnl": -110.5,
+        "win_rate": 18.2,
+        "profit_factor": 0.0,
+        "avg_dd": 0.16,
+        "max_dd": 0.41,
+        "expectancy": -10.05,
+        "avg_conf": 71.4,
+        "symbols_with_trades": 5,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      "risk_pct": 0.1
+    },
+    "D_vlow_micro": {
+      "desc": "conf 30-75 score>=35 risk=0.05%",
+      "agg": {
+        "trades": 11,
+        "wins": 2,
+        "net_pnl": -78.25,
+        "win_rate": 18.2,
+        "profit_factor": 0.0,
+        "avg_dd": 0.11,
+        "max_dd": 0.41,
+        "expectancy": -7.11,
+        "avg_conf": 71.4,
+        "symbols_with_trades": 5,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      "risk_pct": 0.05
+    }
+  },
+  "combined": {
+    "B_mid_small": {
+      "trades": 46,
+      "net_pnl": -1062.8,
+      "verdict": "hurts"
+    },
+    "C_low_micro": {
+      "trades": 46,
+      "net_pnl": -994.49,
+      "verdict": "hurts"
+    },
+    "D_vlow_micro": {
+      "trades": 46,
+      "net_pnl": -962.24,
+      "verdict": "hurts"
+    }
+  },
+  "per_symbol": {
+    "A_baseline": [
+      {
+        "symbol": "AUDNZD",
+        "n": 6,
+        "wins": 2,
+        "pnl": -93.8,
+        "pf": 0.453,
+        "wr": 33.3,
+        "dd": 1.58,
+        "exp": -15.63,
+        "avg_conf": 81.8,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      {
+        "symbol": "EURJPY",
+        "n": 7,
+        "wins": 4,
+        "pnl": -28.23,
+        "pf": 0.82,
+        "wr": 57.1,
+        "dd": 1.03,
+        "exp": -4.03,
+        "avg_conf": 82.8,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      {
+        "symbol": "EURUSD",
+        "n": 0,
+        "wins": 0,
+        "pnl": 0,
+        "pf": 0.0,
+        "wr": 0.0,
+        "dd": 0.0,
+        "exp": 0.0,
+        "avg_conf": null,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      {
+        "symbol": "GBPUSD",
+        "n": 5,
+        "wins": 1,
+        "pnl": -168.14,
+        "pf": 0.179,
+        "wr": 20.0,
+        "dd": 1.68,
+        "exp": -33.63,
+        "avg_conf": 81.4,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      {
+        "symbol": "NZDCAD",
+        "n": 7,
+        "wins": 0,
+        "pnl": -337.11,
+        "pf": 0.0,
+        "wr": 0.0,
+        "dd": 3.37,
+        "exp": -48.16,
+        "avg_conf": 82.9,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      {
+        "symbol": "USDCAD",
+        "n": 4,
+        "wins": 2,
+        "pnl": -7.62,
+        "pf": 0.928,
+        "wr": 50.0,
+        "dd": 1.05,
+        "exp": -1.9,
+        "avg_conf": 80.1,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      {
+        "symbol": "USDJPY",
+        "n": 2,
+        "wins": 1,
+        "pnl": -13.93,
+        "pf": 0.747,
+        "wr": 50.0,
+        "dd": 0.55,
+        "exp": -6.96,
+        "avg_conf": 88.1,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      {
+        "symbol": "XAUUSD",
+        "n": 4,
+        "wins": 1,
+        "pnl": -235.16,
+        "pf": 0.093,
+        "wr": 25.0,
+        "dd": 2.35,
+        "exp": -58.79,
+        "avg_conf": 83.0,
+        "start": "2026-03-30T01:00:00",
+        "end": "2026-09-24T15:00:00"
+      }
+    ],
+    "B_mid_small": [
+      {
+        "symbol": "AUDNZD",
+        "n": 3,
+        "wins": 0,
+        "pnl": -63.13,
+        "pf": 0.0,
+        "wr": 0.0,
+        "dd": 0.63,
+        "exp": -21.04,
+        "avg_conf": 69.7,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      {
+        "symbol": "EURJPY",
+        "n": 4,
+        "wins": 2,
+        "pnl": -0.72,
+        "pf": 0.983,
+        "wr": 50.0,
+        "dd": 0.41,
+        "exp": -0.18,
+        "avg_conf": 71.9,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      {
+        "symbol": "EURUSD",
+        "n": 1,
+        "wins": 0,
+        "pnl": -36.7,
+        "pf": 0.0,
+        "wr": 0.0,
+        "dd": 0.37,
+        "exp": -36.7,
+        "avg_conf": 74.5,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      {
+        "symbol": "GBPUSD",
+        "n": 2,
+        "wins": 0,
+        "pnl": -39.62,
+        "pf": 0.0,
+        "wr": 0.0,
+        "dd": 0.4,
+        "exp": -19.81,
+        "avg_conf": 69.8,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      {
+        "symbol": "NZDCAD",
+        "n": 0,
+        "wins": 0,
+        "pnl": 0,
+        "pf": 0.0,
+        "wr": 0.0,
+        "dd": 0.0,
+        "exp": 0.0,
+        "avg_conf": null,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      {
+        "symbol": "USDCAD",
+        "n": 0,
+        "wins": 0,
+        "pnl": 0,
+        "pf": 0.0,
+        "wr": 0.0,
+        "dd": 0.0,
+        "exp": 0.0,
+        "avg_conf": null,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      {
+        "symbol": "USDJPY",
+        "n": 0,
+        "wins": 0,
+        "pnl": 0,
+        "pf": 0.0,
+        "wr": 0.0,
+        "dd": 0.0,
+        "exp": 0.0,
+        "avg_conf": null,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      {
+        "symbol": "XAUUSD",
+        "n": 1,
+        "wins": 0,
+        "pnl": -38.64,
+        "pf": 0.0,
+        "wr": 0.0,
+        "dd": 0.39,
+        "exp": -38.64,
+        "avg_conf": 74.8,
+        "start": "2026-03-30T01:00:00",
+        "end": "2026-09-24T15:00:00"
+      }
+    ],
+    "C_low_micro": [
+      {
+        "symbol": "AUDNZD",
+        "n": 3,
+        "wins": 0,
+        "pnl": -30.36,
+        "pf": 0.0,
+        "wr": 0.0,
+        "dd": 0.3,
+        "exp": -10.12,
+        "avg_conf": 69.7,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      {
+        "symbol": "EURJPY",
+        "n": 4,
+        "wins": 2,
+        "pnl": -0.27,
+        "pf": 0.987,
+        "wr": 50.0,
+        "dd": 0.21,
+        "exp": -0.07,
+        "avg_conf": 71.9,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      {
+        "symbol": "EURUSD",
+        "n": 1,
+        "wins": 0,
+        "pnl": -18.35,
+        "pf": 0.0,
+        "wr": 0.0,
+        "dd": 0.18,
+        "exp": -18.35,
+        "avg_conf": 74.5,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      {
+        "symbol": "GBPUSD",
+        "n": 2,
+        "wins": 0,
+        "pnl": -20.74,
+        "pf": 0.0,
+        "wr": 0.0,
+        "dd": 0.21,
+        "exp": -10.37,
+        "avg_conf": 69.8,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      {
+        "symbol": "NZDCAD",
+        "n": 0,
+        "wins": 0,
+        "pnl": 0,
+        "pf": 0.0,
+        "wr": 0.0,
+        "dd": 0.0,
+        "exp": 0.0,
+        "avg_conf": null,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      {
+        "symbol": "USDCAD",
+        "n": 0,
+        "wins": 0,
+        "pnl": 0,
+        "pf": 0.0,
+        "wr": 0.0,
+        "dd": 0.0,
+        "exp": 0.0,
+        "avg_conf": null,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      {
+        "symbol": "USDJPY",
+        "n": 0,
+        "wins": 0,
+        "pnl": 0,
+        "pf": 0.0,
+        "wr": 0.0,
+        "dd": 0.0,
+        "exp": 0.0,
+        "avg_conf": null,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      {
+        "symbol": "XAUUSD",
+        "n": 1,
+        "wins": 0,
+        "pnl": -40.78,
+        "pf": 0.0,
+        "wr": 0.0,
+        "dd": 0.41,
+        "exp": -40.78,
+        "avg_conf": 74.8,
+        "start": "2026-03-30T01:00:00",
+        "end": "2026-09-24T15:00:00"
+      }
+    ],
+    "D_vlow_micro": [
+      {
+        "symbol": "AUDNZD",
+        "n": 3,
+        "wins": 0,
+        "pnl": -17.63,
+        "pf": 0.0,
+        "wr": 0.0,
+        "dd": 0.18,
+        "exp": -5.88,
+        "avg_conf": 69.7,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      {
+        "symbol": "EURJPY",
+        "n": 4,
+        "wins": 2,
+        "pnl": -2.13,
+        "pf": 0.82,
+        "wr": 50.0,
+        "dd": 0.12,
+        "exp": -0.53,
+        "avg_conf": 71.9,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      {
+        "symbol": "EURUSD",
+        "n": 1,
+        "wins": 0,
+        "pnl": -7.34,
+        "pf": 0.0,
+        "wr": 0.0,
+        "dd": 0.07,
+        "exp": -7.34,
+        "avg_conf": 74.5,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      {
+        "symbol": "GBPUSD",
+        "n": 2,
+        "wins": 0,
+        "pnl": -10.37,
+        "pf": 0.0,
+        "wr": 0.0,
+        "dd": 0.1,
+        "exp": -5.19,
+        "avg_conf": 69.8,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      {
+        "symbol": "NZDCAD",
+        "n": 0,
+        "wins": 0,
+        "pnl": 0,
+        "pf": 0.0,
+        "wr": 0.0,
+        "dd": 0.0,
+        "exp": 0.0,
+        "avg_conf": null,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      {
+        "symbol": "USDCAD",
+        "n": 0,
+        "wins": 0,
+        "pnl": 0,
+        "pf": 0.0,
+        "wr": 0.0,
+        "dd": 0.0,
+        "exp": 0.0,
+        "avg_conf": null,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      {
+        "symbol": "USDJPY",
+        "n": 0,
+        "wins": 0,
+        "pnl": 0,
+        "pf": 0.0,
+        "wr": 0.0,
+        "dd": 0.0,
+        "exp": 0.0,
+        "avg_conf": null,
+        "start": "2026-03-27T04:00:00",
+        "end": "2026-09-24T15:00:00"
+      },
+      {
+        "symbol": "XAUUSD",
+        "n": 1,
+        "wins": 0,
+        "pnl": -40.78,
+        "pf": 0.0,
+        "wr": 0.0,
+        "dd": 0.41,
+        "exp": -40.78,
+        "avg_conf": 74.8,
+        "start": "2026-03-30T01:00:00",
+        "end": "2026-09-24T15:00:00"
+      }
+    ]
+  }
+}

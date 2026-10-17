@@ -1,0 +1,233 @@
+[
+  {
+    "filter": "all",
+    "patterns": "all",
+    "total_trades": 44,
+    "avg_win_rate": 38.63863636363636,
+    "avg_profit_factor": 1.329590909090909,
+    "total_pnl": 420.72,
+    "avg_expectancy": 9.55909090909091,
+    "max_drawdown": 2.39,
+    "symbols": [
+      {
+        "symbol": "EURUSD",
+        "trades": 15,
+        "win_rate": 33.3,
+        "profit_factor": 0.714,
+        "net_pnl": -118.78,
+        "return_pct": -1.19,
+        "max_drawdown_pct": 2.39,
+        "expectancy": -7.92
+      },
+      {
+        "symbol": "JP225",
+        "trades": 29,
+        "win_rate": 41.4,
+        "profit_factor": 1.648,
+        "net_pnl": 539.5,
+        "return_pct": 5.39,
+        "max_drawdown_pct": 2.34,
+        "expectancy": 18.6
+      }
+    ]
+  },
+  {
+    "filter": "top3",
+    "patterns": [
+      "morning_star",
+      "bullish_engulfing",
+      "hammer"
+    ],
+    "total_trades": 34,
+    "avg_win_rate": 38.226470588235294,
+    "avg_profit_factor": 1.5981764705882353,
+    "total_pnl": 598.84,
+    "avg_expectancy": 17.613235294117647,
+    "max_drawdown": 2.78,
+    "symbols": [
+      {
+        "symbol": "EURUSD",
+        "trades": 11,
+        "win_rate": 36.4,
+        "profit_factor": 0.804,
+        "net_pnl": -56.61,
+        "return_pct": -0.57,
+        "max_drawdown_pct": 1.89,
+        "expectancy": -5.15
+      },
+      {
+        "symbol": "JP225",
+        "trades": 23,
+        "win_rate": 39.1,
+        "profit_factor": 1.978,
+        "net_pnl": 655.45,
+        "return_pct": 6.55,
+        "max_drawdown_pct": 2.78,
+        "expectancy": 28.5
+      }
+    ]
+  },
+  {
+    "filter": "top4",
+    "patterns": [
+      "hammer",
+      "morning_star",
+      "bullish_engulfing",
+      "outside_bar"
+    ],
+    "total_trades": 37,
+    "avg_win_rate": 40.54594594594594,
+    "avg_profit_factor": 1.6919459459459458,
+    "total_pnl": 679.48,
+    "avg_expectancy": 18.365405405405404,
+    "max_drawdown": 2.52,
+    "symbols": [
+      {
+        "symbol": "EURUSD",
+        "trades": 11,
+        "win_rate": 36.4,
+        "profit_factor": 0.926,
+        "net_pnl": -22.22,
+        "return_pct": -0.22,
+        "max_drawdown_pct": 1.89,
+        "expectancy": -2.02
+      },
+      {
+        "symbol": "JP225",
+        "trades": 26,
+        "win_rate": 42.3,
+        "profit_factor": 2.016,
+        "net_pnl": 701.7,
+        "return_pct": 7.02,
+        "max_drawdown_pct": 2.52,
+        "expectancy": 26.99
+      }
+    ]
+  },
+  {
+    "filter": "top5",
+    "patterns": [
+      "morning_star",
+      "hammer",
+      "liquidity_sweep",
+      "bullish_engulfing",
+      "outside_bar"
+    ],
+    "total_trades": 40,
+    "avg_win_rate": 37.49999999999999,
+    "avg_profit_factor": 1.3733,
+    "total_pnl": 481.68999999999994,
+    "avg_expectancy": 12.045,
+    "max_drawdown": 2.53,
+    "symbols": [
+      {
+        "symbol": "EURUSD",
+        "trades": 12,
+        "win_rate": 33.3,
+        "profit_factor": 0.898,
+        "net_pnl": -31.49,
+        "return_pct": -0.31,
+        "max_drawdown_pct": 1.88,
+        "expectancy": -2.62
+      },
+      {
+        "symbol": "JP225",
+        "trades": 28,
+        "win_rate": 39.3,
+        "profit_factor": 1.577,
+        "net_pnl": 513.18,
+        "return_pct": 5.13,
+        "max_drawdown_pct": 2.53,
+        "expectancy": 18.33
+      }
+    ]
+  },
+  {
+    "filter": "no_bos",
+    "patterns": [
+      "morning_star",
+      "CHOCH",
+      "pin_bar",
+      "hammer",
+      "liquidity_sweep",
+      "fake_breakout",
+      "bearish_engulfing",
+      "shooting_star",
+      "bullish_engulfing",
+      "evening_star",
+      "outside_bar"
+    ],
+    "total_trades": 42,
+    "avg_win_rate": 38.099999999999994,
+    "avg_profit_factor": 1.4223333333333332,
+    "total_pnl": 555.0600000000001,
+    "avg_expectancy": 13.213333333333331,
+    "max_drawdown": 2.34,
+    "symbols": [
+      {
+        "symbol": "EURUSD",
+        "trades": 14,
+        "win_rate": 35.7,
+        "profit_factor": 0.953,
+        "net_pnl": -17.06,
+        "return_pct": -0.17,
+        "max_drawdown_pct": 1.91,
+        "expectancy": -1.22
+      },
+      {
+        "symbol": "JP225",
+        "trades": 28,
+        "win_rate": 39.3,
+        "profit_factor": 1.657,
+        "net_pnl": 572.12,
+        "return_pct": 5.72,
+        "max_drawdown_pct": 2.34,
+        "expectancy": 20.43
+      }
+    ]
+  },
+  {
+    "filter": "no_pinbar",
+    "patterns": [
+      "morning_star",
+      "CHOCH",
+      "shooting_star",
+      "hammer",
+      "BOS",
+      "liquidity_sweep",
+      "bearish_engulfing",
+      "fake_breakout",
+      "bullish_engulfing",
+      "evening_star",
+      "outside_bar"
+    ],
+    "total_trades": 42,
+    "avg_win_rate": 38.11904761904762,
+    "avg_profit_factor": 1.253357142857143,
+    "total_pnl": 321.37,
+    "avg_expectancy": 7.653571428571429,
+    "max_drawdown": 2.61,
+    "symbols": [
+      {
+        "symbol": "EURUSD",
+        "trades": 13,
+        "win_rate": 30.8,
+        "profit_factor": 0.547,
+        "net_pnl": -161.97,
+        "return_pct": -1.62,
+        "max_drawdown_pct": 2.61,
+        "expectancy": -12.46
+      },
+      {
+        "symbol": "JP225",
+        "trades": 29,
+        "win_rate": 41.4,
+        "profit_factor": 1.57,
+        "net_pnl": 483.34,
+        "return_pct": 4.83,
+        "max_drawdown_pct": 2.52,
+        "expectancy": 16.67
+      }
+    ]
+  }
+]

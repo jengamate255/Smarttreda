@@ -21,6 +21,9 @@ import numpy as np
 
 from mt5_mcp.backtest import BacktestParams, Backtester, BacktestResult, load_frames
 
+#: Fresh frames prefetched once by WalkForwardEngine.run(); fold workers reuse this.
+_PREFETCHED_FRAMES: dict[str, Any] = {}
+
 
 @dataclass
 class WalkForwardParams:
@@ -139,9 +142,12 @@ def _run_single_fold(args: tuple) -> FoldResult:
 
     try:
         # load frames for train window
-        frames = load_frames(symbol, sorted(set(
-            [trend_tf] + zone_tfs + ["H1"]
-        )), train_bars + test_bars + 500, use_cache=True, allow_mt5=False)
+        frames = _PREFETCHED_FRAMES if _PREFETCHED_FRAMES else load_frames(
+            symbol, sorted(set(
+                [trend_tf] + zone_tfs + ["H1"]
+            )), train_bars + test_bars + 500,
+            use_cache=True, allow_mt5=True, ttl=0.0,
+        )
 
         if not frames:
             return FoldResult(
@@ -213,6 +219,19 @@ class WalkForwardEngine:
 
         result.n_folds = len(folds)
 
+        # Prefetch fresh MT5 frames once (ttl=0 forces refetch; allow_mt5=True).
+        need_bars = p.train_bars + p.test_bars + 500
+        tfs = sorted(set([p.trend_timeframe] + list(p.zone_timeframes) + ["H1"]))
+        print(f"  prefetch fresh {p.symbol} {tfs} {need_bars} bars...", flush=True)
+        _PREFETCHED_FRAMES.clear()
+        _PREFETCHED_FRAMES.update(
+            load_frames(p.symbol, tfs, need_bars, use_cache=True, allow_mt5=True, ttl=0.0)
+        )
+        if not _PREFETCHED_FRAMES:
+            result.errors.append("fresh MT5 prefetch returned no frames")
+            result.elapsed_s = round(time.time() - t0, 2)
+            return result
+
         # build task args
         tasks = []
         for fi, start_idx in folds:
@@ -228,16 +247,12 @@ class WalkForwardEngine:
                         p.spread_points, p.tp_min, p.tp_max, p.sl_min, p.sl_max,
                     ))
 
-        # run folds (parallel if >4, else sequential to avoid overhead)
+        # Sequential only: ProcessPool crashes on Windows spawn (handle closed).
         all_folds: list[FoldResult] = []
-        if len(tasks) <= 12:
-            for task in tasks:
-                all_folds.append(_run_single_fold(task))
-        else:
-            with ProcessPoolExecutor(max_workers=4) as pool:
-                futures = {pool.submit(_run_single_fold, t): t for t in tasks}
-                for fut in as_completed(futures):
-                    all_folds.append(fut.result())
+        for i, task in enumerate(tasks, 1):
+            if i % 8 == 0 or i == len(tasks):
+                print(f"  fold task {i}/{len(tasks)}...", flush=True)
+            all_folds.append(_run_single_fold(task))
 
         # group by fold index and pick best IS result per fold
         by_fold: dict[int, list[FoldResult]] = {}

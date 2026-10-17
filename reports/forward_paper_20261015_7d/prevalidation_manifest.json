@@ -1,0 +1,163 @@
+{
+  "schema": 1,
+  "start": 1792018800.3506083,
+  "end": 1792623600.3506083,
+  "account": 11911448,
+  "server": "FundingPips2-SIM",
+  "currency": "USD",
+  "starting_balance": 9393.87,
+  "offset": 10800,
+  "symbols": [
+    "USOIL",
+    "AUDUSD",
+    "BTCUSD",
+    "ETHUSD",
+    "SPX500",
+    "XAUUSD"
+  ],
+  "risk_percent": 0.1,
+  "cost_r": 0.05,
+  "settings": {
+    "risk": {
+      "default_risk_percent": 0.5,
+      "max_risk_percent": 1.0,
+      "conservative_risk_percent": 0.1,
+      "max_daily_loss_percent": 4.0,
+      "max_weekly_loss_percent": 6.0,
+      "max_open_risk_percent": 3.0,
+      "max_drawdown_percent": 8.0,
+      "daily_conservative_ratio": 0.8,
+      "drawdown_conservative_ratio": 0.8,
+      "drawdown_halt_ratio": 0.95,
+      "min_risk_reward": 2.0,
+      "target_tp_min_pips": 80.0,
+      "target_tp_max_pips": 100.0,
+      "sl_min_pips": 20.0,
+      "sl_max_pips": 30.0,
+      "max_spread_points": 0.0,
+      "max_spread_relative": 0.0,
+      "max_positions": 3,
+      "max_trades_per_day": 2,
+      "max_trades_per_day_green_bonus": 1,
+      "max_consecutive_losses": 3,
+      "revenge_cooldown_minutes": 60.0,
+      "news_blackout_minutes": 30.0,
+      "news_stale_max_minutes": 0.0,
+      "liquidity_blackout_start": "00:00",
+      "liquidity_blackout_end": "00:15",
+      "confidence_floor_percent": 80.0,
+      "allowed_sessions": null,
+      "min_volume": null,
+      "max_volume": null,
+      "blocked_symbols": [
+        "DJI30",
+        "EURCAD",
+        "EURGBP",
+        "NZDUSD",
+        "NDX100",
+        "USDJPY",
+        "GBPUSD",
+        "GBPJPY",
+        "CHFJPY"
+      ],
+      "reject_orders": true,
+      "allowed_hours_utc": [
+        0,
+        2,
+        7,
+        8,
+        9,
+        17,
+        23
+      ],
+      "blocked_setup_prefixes": [
+        "desk-",
+        "desk:"
+      ]
+    },
+    "strategy": {
+      "trend_timeframe": "H4",
+      "zone_timeframes": [
+        "H1",
+        "H4"
+      ],
+      "confirmation_timeframe": "H1",
+      "trend_fast_ema": 50,
+      "trend_slow_ema": 200,
+      "min_zone_score": 60.0,
+      "min_trade_score": 60.0,
+      "min_confidence_percent": 80.0,
+      "lookback_candles": 400,
+      "require_mtf_alignment": false,
+      "mtf_min_aligned": 1
+    },
+    "quality": {
+      "enabled": true,
+      "entry_timeframe": "M5",
+      "max_entry_drift_atr": 0.25,
+      "max_zone_distance_atr": 0.5,
+      "shadow_db_path": "E:\\Project\\Mt5 Ea\\mt5_mcp\\memory\\entry_shadow.db",
+      "shadow_min_trades": 20,
+      "shadow_min_profit_factor": 1.2,
+      "shadow_min_expectancy_r": 0.1,
+      "shadow_cost_r": 0.05,
+      "shadow_horizon_bars": 72,
+      "broker_time_offsets": {
+        "FundingPips2-SIM": 10800
+      }
+    },
+    "performance_risk": {
+      "enabled": true,
+      "mode": "rolling",
+      "window": 20,
+      "min_trades": 20,
+      "lookback_days": 90,
+      "losing_percent": 0.1,
+      "winning_percent": 1.0,
+      "winning_profit_factor": 1.2,
+      "loss_streak_limit": 3
+    }
+  },
+  "adaptive": {
+    "timestamp": "2026-10-13T22:51:32.903612+00:00",
+    "performance": {
+      "total_trades": 72,
+      "win_rate": 41.7,
+      "consecutive_losses": 4,
+      "hours_since_last_trade": 12.6,
+      "avg_pnl": -12.12,
+      "profit_factor": 0.72
+    },
+    "adjustments": {
+      "zone_score": 1.15,
+      "trade_score": 1.15,
+      "confidence": 1.2,
+      "risk_reward": 1.1
+    },
+    "base": {
+      "zone_score": 60.0,
+      "trade_score": 60.0,
+      "confidence": 80.0,
+      "risk_reward": 2.0
+    },
+    "adapted": {
+      "min_zone_score": 69.0,
+      "min_trade_score": 69.0,
+      "min_confidence_percent": 95,
+      "min_risk_reward": 2.2
+    }
+  },
+  "hashes": {
+    "scripts/forward_strategy_paper.py": "f643a4facdb9a9250b0699294c12a4e1c27fc74e640b300733e0ea97d71d757c",
+    "mt5_mcp/strategy.py": "4e6f0b36354bce45a96afd4b8d3a450df666cd552e69b80cc4cb3ecaf55c5b4f",
+    "mt5_mcp/multi_strategy.py": "65347e2e883c7670e1d733e32d06e3091b044c00b2a41c76bd2f7718c103c22b",
+    "mt5_mcp/common.py": "45f7570bfc1d0fb48aad5baf5dacc00ce4cdbf6abdf5bc0be0daab60868328cc",
+    "mt5_mcp/indicators.py": "31f916a5668e1cb24980b9aa3148b9dceb3bccda31a0ced9fbb576d456ce3bc9",
+    "mt5_mcp/supply_demand.py": "baf7aa8558160b1f6cab4e17c5b20fa23f424b100250b5fc1790afc57d4164f4",
+    "mt5_mcp/price_action.py": "ad2083d4fd971bf6bbbb2d1ebab2cedfe5b515d136571ddc1ddcc6015691abd7",
+    "mt5_mcp/entry_quality.py": "e7fa9fd12192532958ad933ab8ceeab523140dc70bc8f6bd3b67233539298bf3",
+    "mt5_mcp/models/signal_ranker.json": "82665d3ffe9982b3774da23fa09d64cdbe78012bfa625b6d95b2e457988e257b"
+  },
+  "terminal_path": "C:\\Program Files\\MetaTrader 5 Terminal\\terminal64.exe",
+  "initialization_note": "Warmup only, no paper entries. Optional W1 advisory retrieval stalled; omitted from paper feed, all signal timeframes preserved. Source and base thresholds frozen before measurement."
+}

@@ -131,6 +131,11 @@ class BaseWatcher(ABC):
             )
             fh.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s"))
             log.addHandler(fh)
+            mt5_log = logging.getLogger("mt5_mcp.mt5")
+            mt5_log.setLevel(logging.WARNING)
+            mt5_log.propagate = False
+            if not mt5_log.handlers:
+                mt5_log.addHandler(fh)
         return log
 
     def _get_client(self) -> Any:
@@ -149,15 +154,56 @@ class BaseWatcher(ABC):
         risk_percent: float | None = None,
     ) -> float | None:
         """Compute lot size from risk budget using tick-value math."""
+        micro = getattr(self.args, "micro", False)
         risk_pct = risk_percent or getattr(self.args, "risk_percent", self.DEFAULT_RISK_PERCENT)
+        fixed_equity = getattr(self.args, "fixed_equity", None)
         try:
             equity = float(client.account_info().get("equity", 0))
         except Exception:
             return None
+        if fixed_equity and fixed_equity > 0:
+            equity = float(fixed_equity)
         if equity <= 0:
             return None
 
+        from mt5_mcp import performance_risk
+        policy_enabled = performance_risk.enabled()
+        if policy_enabled:
+            risk_pct = min(risk_pct,performance_risk.effective_percent(client,risk_pct)) if risk_percent is not None else performance_risk.effective_percent(client,risk_pct)
+
         budget = equity * (risk_pct / 100.0)
+
+        if not micro:
+            # Drawdown recovery: reduce budget when account drawdown exceeds threshold
+            try:
+                from mt5_mcp.drawdown_recovery import drawdown_recovery_risk_percent
+                dd_result = drawdown_recovery_risk_percent(
+                    equity=equity,
+                    max_risk_percent=risk_pct,
+                    enabled=True,
+                )
+                if dd_result["mode"] == "reduced":
+                    budget = min(budget,equity * (dd_result["risk_percent"] / 100.0))
+                    self.logger.info(
+                        "drawdown recovery: budget reduced to %.1f%% for %s (dd %.1f%%)",
+                        dd_result["risk_percent"], symbol, dd_result["drawdown_percent"],
+                    )
+            except Exception as exc:
+                self.logger.debug("drawdown recovery check failed in watcher: %s", exc)
+
+            # Equity curve sizing: adjust budget based on recent win/loss streak
+            try:
+                from mt5_mcp.pipeline import equity_curve_sizing_multiplier
+                ec = {"multiplier":1.0} if policy_enabled else equity_curve_sizing_multiplier()
+                budget *= ec["multiplier"]
+                if ec["multiplier"] != 1.0:
+                    self.logger.info(
+                        "equity curve sizing: multiplier %.2f for %s (streak=%d %s)",
+                        ec["multiplier"], symbol, abs(ec["streak"]), ec["streak_type"],
+                    )
+            except Exception as exc:
+                self.logger.debug("equity curve sizing failed in watcher: %s", exc)
+
         info = client.symbol_info(symbol)
         if not info:
             return None
@@ -179,13 +225,18 @@ class BaseWatcher(ABC):
         if loss_per_lot <= 0:
             return None
 
+        budget = performance_risk.limit_budget(client,budget)
         raw = budget / loss_per_lot
         vol_min, vol_max = self.volume_defaults()
         step = float(info.get("volume_step", 0.01))
         actual_min = float(info.get("volume_min", vol_min))
         actual_max = float(info.get("volume_max", vol_max))
 
-        return round_to_step(raw, step, floor=actual_min, ceil=actual_max)
+        import math
+        if not all(math.isfinite(v) and v > 0 for v in (budget,step,actual_min,actual_max)):
+            return None
+        lots = round(math.floor(min(raw,actual_max) / step + 1e-10) * step,8)
+        return lots if lots >= actual_min and lots * loss_per_lot <= budget + 1e-8 else None
 
     @staticmethod
     def _has_exposure(client: Any, symbol: str) -> bool:
@@ -196,7 +247,7 @@ class BaseWatcher(ABC):
 
     def _notify_order(self, result: Any, signal: Signal) -> None:
         """Standard notification dispatch after order acceptance."""
-        from mt5_mcp import telegram_alerts, trade_events, visual_notify
+        from mt5_mcp import telegram_alerts, trade_events
 
         ticket = None
         entry = signal.entry
@@ -211,11 +262,6 @@ class BaseWatcher(ABC):
         )
         if signal.tp:
             msg += f" TP={signal.tp:.5g}"
-
-        try:
-            visual_notify.popup(f"{self.SETUP}: {signal.side} {signal.symbol}", msg)
-        except Exception:
-            pass
 
         try:
             html = telegram_alerts.trade_entry_msg(
@@ -358,10 +404,11 @@ class BaseWatcher(ABC):
     def run(self) -> int:
         """Main loop: connect, scan, manage, sleep. Handles KeyboardInterrupt."""
         self.logger.info(
-            "starting %s (interval=%.0fs, risk=%.2f%%, symbols=%s)",
+            "starting %s (interval=%.0fs, risk=%.2f%%, fixed_equity=%s, symbols=%s)",
             self.SETUP,
             getattr(self.args, "interval", self.DEFAULT_INTERVAL),
             getattr(self.args, "risk_percent", self.DEFAULT_RISK_PERCENT),
+            getattr(self.args, "fixed_equity", None),
             self.symbols(),
         )
 

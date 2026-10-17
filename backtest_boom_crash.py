@@ -97,13 +97,14 @@ def get_historical_deriv(symbol: str, count: int) -> pd.DataFrame | None:
             if not data:
                 break
             all_candles = data + all_candles
-            end = data[-1]["time"]
+            end = data[0]["time"]  # step back to the oldest bar of the chunk
             remaining -= len(data)
             if len(data) < chunk:
                 break
         if not all_candles:
             return None
-        return _normalize(pd.DataFrame(all_candles))
+        frame = pd.DataFrame(all_candles).drop_duplicates(subset="time", keep="last")
+        return _normalize(frame)
     except Exception:
         return None
 
@@ -360,10 +361,14 @@ def run_one(
     min_bars_between_trades: int = 60,
     reward_risk_ratio: float = 1.5,
     sl_atr_buffer: float = 2.0,
-    max_spike_age: int = 30,
+    max_spike_age: int = 15,
+    lookback: int = 60,
     atr_series: pd.Series | None = None,
 ) -> tuple[list[Trade], dict[str, Any]]:
-    """Run the backtest for a single pre-loaded symbol frame."""
+    """Run the backtest for a single pre-loaded symbol frame.
+
+    Defaults mirror the live watcher: max_spike_age 15, lookback 60.
+    """
     if atr_series is None:
         atr_series = atr(df, period=14)
 
@@ -401,7 +406,7 @@ def run_one(
             times,
             i,
             symbol,
-            lookback=30,
+            lookback=lookback,
             spike_threshold_atr=spike_threshold_atr,
             min_spike_ticks=min_spike_ticks,
             reward_risk_ratio=reward_risk_ratio,

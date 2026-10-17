@@ -160,11 +160,42 @@ const DEFAULT_WATCH = ["EURUSD", "XAUUSD", "GBPUSD", "USDJPY", "USDCAD"];
 const POLL_MS = 5000;
 const CHART_MS = 30000;
 const SLOW_MS = 60000;
-const NEWS_MS = 300000;
+const NEWS_MS = 120000;
 const QUOTE_MS = 2500;
 const PREFS_KEY = "mt5dash.prefs";
 
-const $ = (id) => document.getElementById(id);
+const _NOOP_FN = () => {};
+const _ZERO_RECT = () => ({ width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0, x: 0, y: 0 });
+const $ = (id) => {
+  const el = document.getElementById(id.startsWith("#") ? id.slice(1) : id);
+  if (el) return el;
+  // Safe no-op proxy for missing elements — prevents null-crash in init functions
+  return new Proxy({}, {
+    get(_, prop) {
+      if (prop === Symbol.toPrimitive) return () => "";
+      if (prop === Symbol.iterator) return undefined;
+      if (prop === "classList") return { add() {}, remove() {}, toggle() {}, contains() { return false; } };
+      if (prop === "dataset") return {};
+      if (prop === "style") return {};
+      if (prop === "getBoundingClientRect") return _ZERO_RECT;
+      if (prop === "getAttribute") return () => "";
+      if (prop === "hasAttribute") return () => false;
+      if (prop === "querySelector") return () => null;
+      if (prop === "querySelectorAll") return () => [];
+      if (prop === "closest") return () => null;
+      if (prop === "clientWidth" || prop === "clientHeight" || prop === "offsetWidth" || prop === "offsetHeight" || prop === "scrollWidth" || prop === "scrollHeight") return 0;
+      if (typeof prop === "string") {
+        if (prop.startsWith("on")) return _NOOP_FN;
+        // common DOM methods -> no-op; data props -> ""
+        if (/^(addEventListener|removeEventListener|click|focus|blur|appendChild|append|prepend|before|after|remove|replaceWith|insertBefore|replaceChild|removeChild|cloneNode|setAttribute|removeAttribute|toggleAttribute|scrollIntoView|scrollTo|scrollBy|dispatchEvent|animate|requestFullscreen)$/.test(prop)) return _NOOP_FN;
+        return "";
+      }
+      return undefined;
+    },
+    set() { return true; },
+    getPrototypeOf() { return HTMLElement.prototype; },
+  });
+};
 
 /* ---------- Local prefs ---------- */
 function loadPrefs() {
@@ -195,18 +226,33 @@ function savePrefs() {
 }
 
 /* ---------- API ---------- */
-async function api(path) {
+async function api(path, opts) {
+  // opts: { method, body } - GET by default; body is JSON-encoded.
+  const o = opts || {};
+  const method = (o.method || "GET").toUpperCase();
   const headers = AUTH_TOKEN ? { "X-Auth-Token": AUTH_TOKEN } : {};
-  const res = await fetch(path, { headers });
+  let body;
+  if (o.body !== undefined) {
+    headers["Content-Type"] = "application/json";
+    body = typeof o.body === "string" ? o.body : JSON.stringify(o.body);
+  }
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), o.timeoutMs || 20000);
+  try {
+  const res = await fetch(path, { method, headers, body, signal: controller.signal, cache: "no-store" });
   if (!res.ok) {
     let detail = `HTTP ${res.status}`;
     try {
       const j = await res.json();
-      if (j && j.detail) detail = j.detail;
+      if (j && (j.detail || j.error)) detail = j.detail || j.error;
     } catch (e) { /* non-JSON error body */ }
     throw new Error(detail);
   }
-  return res.json();
+  return await res.json();
+  } catch (error) {
+    if (controller.signal.aborted) throw new Error("Request timed out. Try refreshing.");
+    throw error;
+  } finally { clearTimeout(timer); }
 }
 
 async function apiPost(path, body) {
@@ -240,6 +286,7 @@ async function apiDelete(path) {
 function setStatus(ok, text) {
   $("status-dot").className = `dot ${ok ? "on" : "off"}`;
   $("status-text").textContent = text;
+  document.getElementById("status-pill")?.classList.toggle("offline", !ok);
 }
 
 function esc(s) {
@@ -491,11 +538,13 @@ document.addEventListener("click", () => {
 
 /* ---------- Keyboard shortcuts ---------- */
 const SHORTCUTS = [
-  { key: "1", desc: "Focus symbol input", action: () => $("symbol-input").focus() },
-  { key: "2", desc: "Toggle chart panel", action: () => $("chart-wrap").classList.toggle("hidden") },
-  { key: "3", desc: "Focus watchlist", action: () => $("wl-add").focus() },
-  { key: "4", desc: "Open journal", action: () => { document.querySelector(".journal-panel")?.scrollIntoView({ behavior: "smooth" }); } },
-  { key: "5", desc: "Open backtesting", action: () => { document.querySelector(".backtest-panel")?.scrollIntoView({ behavior: "smooth" }); } },
+  { key: "1", desc: "Open Live", action: () => showSection("live") },
+  { key: "2", desc: "Open News", action: () => showSection("news") },
+  { key: "3", desc: "Open Alerts", action: () => showSection("alerts") },
+  { key: "4", desc: "Open Portfolio", action: () => showSection("portfolio") },
+  { key: "5", desc: "Open Risk", action: () => showSection("risk") },
+  { key: "6", desc: "Open Dojo", action: () => showSection("dojo") },
+  { key: "7", desc: "Open Diagnostic", action: () => showSection("diagnostic") },
   { key: "r", desc: "Refresh all data", action: () => { loadSummary(); loadEquity(); loadJournal(); loadRisk(); loadSessions(); loadNews(); loadBacktests(); toast("Refreshing...", "info"); } },
   { key: "h", desc: "Show help", action: showHelp },
   { key: "Escape", desc: "Close modals", action: closeModals },
@@ -773,9 +822,10 @@ function connectWs() {
     ws = new WebSocket(url);
   } catch (e) { return; }
   ws.onopen = () => {
-    setStatus(true, "Live");
     startWsLatency();
-    ws.send(JSON.stringify({ type: "subscribe", channel: "forex-breakout" }));
+    if (document.getElementById("fx-body")) {
+      ws.send(JSON.stringify({ type: "subscribe", channel: "forex-breakout" }));
+    }
   };
   ws.onmessage = (e) => {
     let m;
@@ -810,6 +860,8 @@ function connectWs() {
   };
   ws.onclose = () => {
     ws = null;
+    wsAliveAt = 0;
+    loadSummary();
     setTimeout(connectWs, 5000);
   };
 }
@@ -912,6 +964,15 @@ function updateConnectionMenu() {
 }
 
 function applyAccount(acc) {
+  if (!acc || !Number.isFinite(acc.balance) || !Number.isFinite(acc.equity)) {
+    throw new Error("Account data unavailable");
+  }
+  state.account = acc;
+  state.accountAt = Date.now();
+  $("h-balance").textContent = fmtMoney(acc.balance);
+  $("h-equity").textContent = fmtMoney(acc.equity);
+  setMoney($("h-pnl"), acc.floating_pnl);
+  window.dispatchEvent(new Event("dashboard-account"));
   $("h-login").textContent = acc.login;
   $("h-server-time").textContent = acc.server_time;
   $("h-pos-count").textContent = acc.daily_trades + " trades today";
@@ -987,4 +1048,3 @@ async function loadAccounts() {
     }
   });
 }
-

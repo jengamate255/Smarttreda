@@ -11,31 +11,22 @@ async function loadHealth() {
 }
 
 /* ---------- Account / positions / history ---------- */
+let summaryBusy = false;
 async function loadSummary() {
-  if (Date.now() - wsAliveAt < POLL_MS) return;
-  showSkeleton($("positions-body"), "rows", 5);
-  showSkeleton($("trades-body"), "rows", 5);
-  showSkeleton($("risk-body"), "bars", 4);
+  if (summaryBusy || Date.now() - wsAliveAt < POLL_MS) return;
+  summaryBusy = true;
   try {
-    const [acc, pos, hist, risk] = await Promise.all([
-      api("/api/account"),
-      api("/api/positions"),
-      api("/api/history?days=30"),
-      api("/api/risk"),
-    ]);
-    setStatus(true, "Connected");
+    // Account and positions must not depend on slower history/risk endpoints.
+    const [acc, pos] = await Promise.all([api("/api/account"), api("/api/positions")]);
     applyAccount(acc);
     renderPositions(pos.positions);
-    renderStats(hist.stats);
-    renderTrades(hist.recent);
-    renderCorrelationRisk(risk);
+    setStatus(true, "Connected");
   } catch (e) {
-    errorReport.capture(e.message || String(e), "loadSummary", 0, 0, e);
-    const msg = e && e.message ? e.message : "";
-    if (/not connected|terminal/i.test(msg)) setStatus(false, "MT5 disconnected");
-    else if (/no rates|not found|symbol/i.test(msg)) setStatus(false, "Data unavailable: " + msg);
-    else setStatus(false, "Offline");
-  }
+    setStatus(false, state.accountAt ? "Stale data" : "Offline");
+    if (!state.positionsAt) {
+      $("positions-list").innerHTML = `<div class="plan-empty">Positions unavailable: ${esc(e.message)}</div>`;
+    }
+  } finally { summaryBusy = false; }
 }
 
 /* ---------- Correlation Risk ---------- */
@@ -63,82 +54,56 @@ function _positionsSignature(positions) {
 }
 
 function renderPositions(positions) {
+  if (typeof TradeSound !== "undefined") TradeSound.observePositions(positions, state.account?.login);
   state.positions = positions || [];
-  $("pos-badge").textContent = state.positions.length;
-  const body = $("positions-body");
-
+  state.positionsAt = Date.now();
+  renderPositionsList();
+}
+function renderPositionsList() {
+  const plist = document.getElementById("positions-list");
+  if (!plist) return;
+  const badge = document.getElementById("pos-count");
+  if (badge) badge.textContent = state.positions.length;
+  $("c-positions").textContent = state.positions.length;
   if (!state.positions.length) {
-    if (body.dataset.sig !== "empty") {
-      body.innerHTML = '<tr class="empty-row"><td colspan="9">📁 No open positions — load a chart and execute a plan, or wait for the spike watcher</td></tr>';
-      body.dataset.sig = "empty";
-    }
-    return;
+    plist.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-3)">No open positions</div>';
+  } else {
+    plist.innerHTML = state.positions.map((p) => `
+      <div class="position-item" data-ticket="${p.ticket}">
+        <span class="position-symbol">${esc(p.symbol)}</span>
+        <div class="position-details">
+          <span>${esc(p.type)} ${p.volume}</span>
+          <span>@ ${fmtPrice(p.price_open)} &rarr; ${fmtPrice(p.price_current)}</span>
+          <span>SL ${p.sl ? fmtPrice(p.sl) : "--"} TP ${p.tp ? fmtPrice(p.tp) : "--"}</span>
+        </div>
+        <span class="position-pnl ${p.total >= 0 ? "profit" : "loss"}">${p.total >= 0 ? "+" : ""}${fmtMoney(p.total)}</span>
+        <button class="position-close" data-close="${p.ticket}" title="Close position">✕</button>
+      </div>`).join("");
   }
-
-  // Fast path: same position set -> patch volatile cells in place.
-  const sig = _positionsSignature(state.positions);
-  const existing = body.querySelectorAll("tr[data-ticket]");
-  if (sig === body.dataset.sig && existing.length === state.positions.length) {
-    let totalPnl = 0;
-    for (const p of state.positions) {
-      totalPnl += p.total;
-      const tr = body.querySelector(`tr[data-ticket="${p.ticket}"]`);
-      if (!tr) continue;
-      tr.children[4].textContent = fmtPrice(p.price_current);
-      const pnlTd = tr.children[7];
-      pnlTd.textContent = fmtMoney(p.total);
-      pnlTd.className = p.total >= 0 ? "pos" : "neg";
-    }
-    const tfoot = body.querySelector("tfoot td:last-child");
-    if (tfoot) {
-      tfoot.textContent = fmtMoney(totalPnl);
-      tfoot.className = totalPnl >= 0 ? "pos" : "neg";
-    }
-    return;
-  }
-
-  body.dataset.sig = sig;
-  body.innerHTML = "";
-  let totalPnl = 0;
-  for (const p of state.positions) {
-    totalPnl += p.total;
-    const tr = document.createElement("tr");
-    tr.dataset.ticket = p.ticket;
-    const isBuy = p.type === "BUY";
-    tr.innerHTML = `
-      <td>${esc(p.symbol)}</td>
-      <td style="color:${isBuy ? C.up : C.down}">${esc(p.type)}</td>
-      <td>${esc(p.volume)}</td>
-      <td>${fmtPrice(p.price_open)}</td>
-      <td>${fmtPrice(p.price_current)}</td>
-      <td>${p.sl ? fmtPrice(p.sl) : "--"}</td>
-      <td>${p.tp ? fmtPrice(p.tp) : "--"}</td>
-      <td class="${p.total >= 0 ? "pos" : "neg"}">${fmtMoney(p.total)}</td>
-      <td class="col-actions pos-actions">
-        <input class="sl-input" data-ticket="${p.ticket}" placeholder="SL" value="${p.sl || ""}">
-        <input class="tp-input" data-ticket="${p.ticket}" placeholder="TP" value="${p.tp || ""}">
-        <button class="btn tiny" data-act="sltp" data-ticket="${p.ticket}" title="Apply SL/TP" aria-label="Apply SL and TP for ticket">SL/TP</button>
-        <button class="btn tiny danger" data-act="close" data-ticket="${p.ticket}" title="Close position" aria-label="Close position">âœ•</button>
-      </td>`;
-    body.appendChild(tr);
-  }
-
-  const tfoot = document.createElement("tfoot");
-  tfoot.innerHTML = `
-    <tr><td colspan="8" style="text-align:right;color:${C.dim};font-weight:600">Total</td>
-    <td class="${totalPnl >= 0 ? "pos" : "neg"}" style="font-weight:600">${fmtMoney(totalPnl)}</td></tr>`;
-  body.appendChild(tfoot);
-
-  if (!window._positionsSortable) {
-    window._positionsSortable = makeSortable($("positions-table"), {
-      pageSize: 25,
-      numericCols: [2, 3, 4, 5, 6, 7, 8],
+  if (!window._positionsCloseWired) {
+    window._positionsCloseWired = true;
+    plist.addEventListener("click", async (e) => {
+      const btn = e.target.closest("[data-close]");
+      if (!btn) return;
+      const ticket = btn.getAttribute("data-close");
+      if (!confirm(`Close position ${ticket}?`)) return;
+      try {
+        btn.disabled = true;
+        const result = await apiPost(`/api/positions/${ticket}/close`);
+        if (!result.accepted) throw new Error(result.error || "Close rejected");
+        toast(`Position ${ticket} closed`, "up");
+        loadPositionsOnly();
+      } catch (err) {
+        toast(`Close failed: ${err.message}`, "down");
+      } finally { btn.disabled = false; }
     });
   }
-  window._positionsSortable.setRows($("positions-body").querySelectorAll("tr[data-ticket]"));
 }
 
-$("positions-body").addEventListener("click", async (e) => {
+
+const positionsBody = $("positions-body");
+if (positionsBody) {
+  positionsBody.addEventListener("click", async (e) => {
   const btn = e.target.closest("button[data-act]");
   if (!btn) return;
   const ticket = parseInt(btn.dataset.ticket, 10);
@@ -163,6 +128,7 @@ $("positions-body").addEventListener("click", async (e) => {
   }
   loadPositionsOnly();
 });
+}
 
 async function loadPositionsOnly() {
   try {
@@ -223,15 +189,24 @@ function renderTrades(trades) {
 }
 
 /* ---------- Trade plan ---------- */
+let planLoadSeq = 0;
 async function loadPlan() {
+  const seq = ++planLoadSeq;
+  const timeframe = state.timeframe;
   const symbol = state.symbol.trim().toUpperCase() || "EURUSD";
   try {
     const plan = await api(
       `/api/trade-plan?symbol=${encodeURIComponent(symbol)}&timeframe=${state.timeframe}&lookback=${state.count}`
     );
+    if (seq !== planLoadSeq || symbol !== state.symbol || timeframe !== state.timeframe) return;
     state.plan = plan;
+    state.planAt = Date.now();
     renderPlan(plan);
+    Operations.renderDecision();
   } catch (e) {
+    if (seq !== planLoadSeq) return;
+    state.plan = null;
+    Operations.renderDecision();
     $("plan-badge").className = "plan-badge hidden";
     $("plan-body").innerHTML =
       `<div class="plan-wait">Plan unavailable: ${esc(e && e.message ? e.message : "error")}</div>`;
@@ -287,10 +262,12 @@ function zoneLine(plan) {
     `${fmtPrice(plan.zone_lower)} â€“ ${fmtPrice(plan.zone_upper)}</div>`;
 }
 
-$("plan-body").addEventListener("click", async (e) => {
+const planBody = $("plan-body");
+if (planBody) {
+  planBody.addEventListener("click", async (e) => {
   if (e.target.id !== "plan-execute") return;
   const plan = state.plan;
-  if (!plan || plan.action === "NONE") return;
+  if (!plan || !plan.valid || plan.action === "NONE" || plan.symbol !== state.symbol || plan.timeframe !== state.timeframe || Date.now() - state.planAt > 90000) return;
   if (!confirm(`Execute ${plan.action} ${plan.symbol} ${plan.lots} lots?\nEntry ${fmtPrice(plan.entry)} Â· SL ${fmtPrice(plan.sl)} Â· TP ${fmtPrice(plan.tp)}`)) return;
   const btn = $("plan-execute");
   btn.disabled = true;
@@ -301,14 +278,17 @@ $("plan-body").addEventListener("click", async (e) => {
       timeframe: plan.timeframe || state.timeframe,
     });
     toast(r.accepted ? `Order sent â€” ticket #${r.ticket}` : `Rejected: ${r.error || r.retcode}`, r.accepted ? "up" : "down");
+    if (r.accepted && typeof TradeSound !== "undefined") TradeSound.confirmFill(plan.symbol);
   } catch (err) {
     toast(`Execute failed: ${err.message}`, "down");
   } finally {
     btn.disabled = false;
     btn.textContent = "Execute";
+    Operations.renderDecision();
   }
   loadPositionsOnly();
 });
+}
 
 /* ---------- Risk ---------- */
 async function loadRisk() {
@@ -617,65 +597,125 @@ async function loadSessions() {
 
 /* ---------- Alerts ---------- */
 async function loadAlerts() {
-  showSkeleton($("alerts-body"), "rows", 4);
+  if (state.alertsLoading) return;
+  state.alertsLoading = true;
   try {
-    const a = await api("/api/alerts");
-    if (a.error) throw new Error(a.error);
+    // Stored alerts must load even when the broker quote service is unavailable.
+    const a = await api("/api/alerts?include_prices=false");
+    if (a.error || !Array.isArray(a.alerts)) throw new Error(a.error || "Invalid alerts response");
     state.alerts = a.alerts || [];
+    const status = $("alerts-price-status");
+    if (status) status.textContent = "Updated " + new Date().toLocaleTimeString();
     renderAlerts();
   } catch (e) {
     errorReport.capture(e.message || String(e), "loadAlerts", 0, 0, e);
-    $("alerts-body").innerHTML = `<div class="plan-empty">Alerts unavailable: ${esc(e.message)}</div>`;
-  }
+    const el = $("alerts-list");
+    if (el) el.innerHTML = `<div class="alert-item"><div class="alert-content"><div class="alert-title">Alerts unavailable: ${esc(e.message)}</div></div></div>`;
+    const full = $("alerts-full-list");
+    const status = $("alerts-price-status");
+    if (status) status.textContent = "Price alerts unavailable: " + e.message + ". Use Refresh to retry.";
+    if (full && !state.alerts) full.innerHTML = '<div class="plan-empty">Unable to load price alerts. Use Refresh to retry.</div>';
+  } finally { state.alertsLoading = false; }
+}
+
+function initAlerts() {
+  if (state.alertsInitialized) return;
+  state.alertsInitialized = true;
+  $("alerts-refresh")?.addEventListener("click", refreshAlerts);
+  $("alert-form")?.addEventListener("submit", event => { event.preventDefault(); addAlert(); });
+}
+
+function refreshAlerts() {
+  loadAlerts();
+  loadAlertEvents();
+}
+
+function renderAlertEvents() {
+  const list = $("alerts-events-list");
+  if (!list) return;
+  const events = state.alertEvents || [];
+  list.innerHTML = events.length ? events.map(event => {
+    const time = new Date(event.ts);
+    const timestamp = Number.isNaN(time.getTime()) ? "Time unavailable" : time.toLocaleString();
+    return `<div class="alert-item"><div class="alert-icon signal" aria-hidden="true">•</div><div class="alert-content"><div class="alert-title">${esc(event.symbol || "")} ${esc(event.kind || "Event")} · ${esc(event.account || "")}</div><div class="alert-message">${esc(event.message || "")}</div><div class="alert-time">${esc(timestamp)}</div></div></div>`;
+  }).join("") : '<div class="plan-empty">No recorded trade activity yet.</div>';
+}
+
+async function loadAlertEvents() {
+  if (state.alertEventsLoading) return;
+  state.alertEventsLoading = true;
+  try {
+    // History is independent of the popup cursor: already-seen events stay visible.
+    const result = await api("/api/events?since=0&limit=100");
+    if (result.error || !Array.isArray(result.events)) throw new Error(result.error || "Invalid activity response");
+    state.alertEvents = result.events.slice().sort((a, b) => Number(b.id) - Number(a.id));
+    renderAlertEvents();
+    $("alerts-events-status").textContent = "Updated " + new Date().toLocaleTimeString();
+  } catch (error) {
+    $("alerts-events-status").textContent = "Activity unavailable: " + error.message + ". Use Refresh to retry.";
+    if (!state.alertEvents) $("alerts-events-list").innerHTML = '<div class="plan-empty">Unable to load activity. Use Refresh to retry.</div>';
+  } finally { state.alertEventsLoading = false; }
+}
+
+function _alertRow(a) {
+  const digits = String(a.symbol || "").includes("JPY") ? 3 : 5;
+  const price = Number(a.price);
+  const current = a.current_price == null ? NaN : Number(a.current_price);
+  const dist = Number.isFinite(current) && Number.isFinite(price) ? Math.abs(price - current).toFixed(digits) : "--";
+  const nowPx = Number.isFinite(current) ? current.toFixed(digits) : "--";
+  return `<div class="alert-item">
+    <div class="alert-icon ${a.active ? "signal" : "warning"}">${a.active ? "📡" : "⏸"}</div>
+    <div class="alert-content">
+      <div class="alert-title">${esc(a.symbol)} ${esc(a.condition)} ${Number.isFinite(price) ? price.toFixed(digits) : "Unavailable"}${a.name ? " — " + esc(a.name) : ""}</div>
+      <div class="alert-time">${a.triggered ? "Triggered · " + esc(a.triggered_at || "") : a.active ? `now ${nowPx} · ${dist} away` : "disabled"}</div>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:4px">
+      <button class="btn tiny" onclick="toggleAlert('${esc(a.id)}')">${a.active ? "Off" : "On"}</button>
+      <button class="btn tiny danger" onclick="deleteAlert('${esc(a.id)}')">×</button>
+    </div>
+  </div>`;
 }
 
 function renderAlerts() {
   const alerts = state.alerts || [];
-  
-  if (!alerts.length) {
-    $("alerts-body").innerHTML = `<div class="alert-empty">No alerts configured. Add one above.</div>`;
-    return;
+  const list = $("alerts-list");
+  if (list) {
+    list.innerHTML = alerts.length
+      ? alerts.map(_alertRow).join("")
+      : '<div class="alert-item"><div class="alert-content"><div class="alert-title">No alerts configured</div><div class="alert-time">create one on the Alerts tab</div></div></div>';
   }
-  
-  const rows = alerts.map(a => `
-    <div class="alert-row" data-id="${esc(a.id)}">
-      <div class="alert-header">
-        <span class="alert-symbol">${esc(a.symbol)}</span>
-        <span class="alert-condition ${a.condition}">${esc(a.condition)}</span>
-        <span class="alert-name">${esc(a.name || "â€”")}</span>
-        <span class="alert-price">${a.price.toFixed(a.symbol.includes("JPY") ? 3 : 5)}</span>
-      </div>
-      <div class="alert-actions">
-        <button class="btn small" onclick="toggleAlert('${esc(a.id)}')">${a.active ? "Disable" : "Enable"}</button>
-        <button class="btn small danger" onclick="deleteAlert('${esc(a.id)}')">Delete</button>
-      </div>
-    </div>
-  `).join("");
-  
-  $("alerts-body").innerHTML = `<div class="alert-list">${rows}</div>`;
+  const full = $("alerts-full-list");
+  if (full) {
+    full.innerHTML = alerts.length
+      ? `<div class="alert-list">${alerts.map(_alertRow).join("")}</div>`
+      : '<div style="padding:20px;text-align:center;color:var(--text-3)">No alerts configured.</div>';
+  }
 }
 
 async function addAlert() {
-  const symbol = $("#alert-symbol").value.trim().toUpperCase();
-  const price = parseFloat($("#alert-price").value);
-  const condition = $("#alert-condition").value;
-  const name = $("#alert-name").value.trim();
+  const symbol = $("alert-symbol").value.trim().toUpperCase();
+  const price = parseFloat($("alert-price").value);
+  const condition = $("alert-condition").value;
+  const name = $("alert-name").value.trim();
   
-  if (!symbol || isNaN(price)) {
-    toast("Symbol and price required", "error");
+  if (!symbol || !Number.isFinite(price) || price <= 0) {
+    toast("Symbol and a positive price required", "error");
     return;
   }
   
+  const button = $("alert-create");
+  if (button?.disabled) return;
+  if (button) button.disabled = true;
   try {
     const result = await api("/api/alerts", { method: "POST", body: JSON.stringify({ symbol, price, condition, name }) });
     if (result.error) throw new Error(result.error);
     toast("Alert added", "success");
-    $("#alert-price").value = "";
-    $("#alert-name").value = "";
+    $("alert-price").value = "";
+    $("alert-name").value = "";
     loadAlerts();
   } catch (e) {
     toast("Failed to add alert: " + e.message, "error");
-  }
+  } finally { if (button) button.disabled = false; }
 }
 
 async function deleteAlert(id) {
@@ -699,15 +739,86 @@ async function toggleAlert(id) {
 }
 
 /* ---------- News ---------- */
+function _newsImpactClass(imp) {
+  return imp === "high" ? "high" : imp === "medium" ? "medium" : "low";
+}
+
+function _fmtNewsWhen(timeStr) {
+  // API times are naive UTC strings "YYYY-MM-DD HH:MM"
+  const d = new Date(String(timeStr || "").replace(" ", "T") + "Z");
+  if (isNaN(d)) return { day: "", hhmm: String(timeStr || "") };
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diffDays = Math.round((day - today) / 86400000);
+  const dayLabel = diffDays === 0 ? "Today" : diffDays === 1 ? "Tomorrow"
+    : d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+  const hhmm = d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  return { day: dayLabel, hhmm };
+}
+
+function renderNewsPanels(n) {
+  const provider = $("news-provider");
+  if (provider) provider.textContent = n.provider || "";
+  const events = n.events || [];
+  const feed = $("news-feed");
+  if (feed) {
+    if (!events.length) {
+      feed.innerHTML = '<div class="news-item"><div class="news-title" style="color:var(--text-3)">No upcoming events in the next 48h (weekly calendar)</div></div>';
+    } else {
+      feed.innerHTML = events.slice(0, 14).map((ev) => {
+        const when = _fmtNewsWhen(ev.time);
+        return `<div class="news-item">` +
+          `<div class="news-time">${esc(when.day)} ${esc(when.hhmm)} · ${esc(ev.currency)}</div>` +
+          `<div class="news-title">${esc(ev.title)}</div>` +
+          `<div class="news-source">ForexFactory <span class="news-impact ${_newsImpactClass(ev.impact)}">${esc(String(ev.impact).toUpperCase())}</span></div>` +
+          `</div>`;
+      }).join("");
+    }
+  }
+  const macro = $("macro-calendar");
+  if (macro) {
+    const majors = events.filter((ev) => ev.impact === "high" || ev.impact === "medium").slice(0, 8);
+    if (!majors.length) {
+      macro.innerHTML = '<div class="macro-item"><span class="macro-event" style="color:var(--text-3)">No high/medium impact events in the next 48h</span></div>';
+    } else {
+      macro.innerHTML = majors.map((ev) => {
+        const when = _fmtNewsWhen(ev.time);
+        return `<div class="macro-item">` +
+          `<span class="macro-time">${esc(when.day)} ${esc(when.hhmm)}</span>` +
+          `<span class="macro-event">${esc(ev.currency)} ${esc(ev.title)}</span>` +
+          `<span class="macro-impact ${_newsImpactClass(ev.impact)}"></span>` +
+          `</div>`;
+      }).join("");
+    }
+  }
+  const full = $("news-full-feed");
+  if (full) {
+    if (!events.length) {
+      full.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-3)">No upcoming events in the next 48h (weekly calendar)</div>';
+    } else {
+      full.innerHTML = events.map((ev) => {
+        const when = _fmtNewsWhen(ev.time);
+        return `<div class="news-item">` +
+          `<div class="news-time">${esc(when.day)} ${esc(when.hhmm)} · ${esc(ev.currency)}</div>` +
+          `<div class="news-title">${esc(ev.title)}</div>` +
+          `<div class="news-source">ForexFactory <span class="news-impact ${_newsImpactClass(ev.impact)}">${esc(String(ev.impact).toUpperCase())}</span>` +
+          `${ev.forecast ? ` · forecast: ${esc(ev.forecast)}` : ""}${ev.previous ? ` · previous: ${esc(ev.previous)}` : ""}</div>` +
+          `</div>`;
+      }).join("");
+    }
+  }
+}
+
 async function loadNews() {
-  showSkeleton($("news-body"), "rows", 6);
   try {
-    const n = await api("/api/news?horizon_hours=24");
+    const n = await api("/api/news?horizon_hours=48");
     state.news = n;
-    $("news-provider").textContent = n.provider || "";
+    renderNewsPanels(n);
     const banner = $("news-banner");
+    if (!banner) return;
     if (n.trading_blocked && n.imminent_events && n.imminent_events.length) {
-      banner.classList.remove("hidden");
+      banner.style.display = "";
       $("news-banner-text").textContent = n.imminent_events
         .map((e) => `${e.currency} ${e.title}`).join(" Â· ");
       if (!lastImminent) {
@@ -716,31 +827,13 @@ async function loadNews() {
       }
       lastImminent = true;
     } else {
-      banner.classList.add("hidden");
+      banner.style.display = "none";
       lastImminent = false;
     }
-
-    const body = $("news-body");
-    body.innerHTML = "";
-    if (!n.events || !n.events.length) {
-      body.innerHTML = '<tr class="empty-row"><td colspan="6">No events in the next 24h (feed covers current week)</td></tr>';
-      return;
-    }
-    for (const ev of n.events) {
-      const imp = ev.impact;
-      const color = imp === "high" ? C.down : imp === "medium" ? C.yellow : C.dim;
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${esc(ev.time.slice(5))}</td>
-        <td>${esc(ev.currency)}</td>
-        <td><span class="impact" style="color:${color};border-color:${color}">${imp.toUpperCase()}</span></td>
-        <td style="text-align:left">${esc(ev.title)}</td>
-        <td>${esc(ev.forecast || "--")}</td>
-        <td>${esc(ev.previous || "--")}</td>`;
-      body.appendChild(tr);
-    }
   } catch (e) {
-    $("news-body").innerHTML = `<tr class="empty-row"><td colspan="6">News unavailable: ${esc(e.message)}</td></tr>`;
+    errorReport.capture(e.message || String(e), "loadNews", 0, 0, e);
+    const feed = $("news-feed");
+    if (feed) feed.innerHTML = `<div class="news-item"><div class="news-title" style="color:var(--text-3)">News unavailable: ${esc(e.message)}</div></div>`;
   }
 }
 
@@ -759,7 +852,9 @@ async function loadEquity() {
 
 function renderEquity(eq) {
   const canvas = $("equity-chart");
+  if (!canvas || typeof canvas.getContext !== "function") return;
   const ctx2 = canvas.getContext("2d");
+  if (!ctx2) return;
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.parentElement.getBoundingClientRect();
   canvas.width = Math.max(200, rect.width * dpr);
@@ -1131,4 +1226,3 @@ function renderDistributionChart() {
     <span>Largest Loss <b class="neg">${fmtMoney(dist.largest_loss)}</b></span>
   `;
 }
-

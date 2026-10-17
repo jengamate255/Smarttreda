@@ -270,7 +270,15 @@ def _analyze_symbol(client: Any, symbol: str) -> dict[str, Any]:
         plan = None
         try:
             from mt5_mcp import multi_strategy as ms
-            routed = ms.STRATEGY_ROUTING.get(symbol, "")
+            from mt5_mcp.routing_evidence import route as route_strategy
+
+            # Paper path: PAPER-grade evidence is enough to surface a setup,
+            # live execution still requires a walk-forward PROMOTE.
+            routed = route_strategy(
+                symbol,
+                candidate=ms.STRATEGY_ROUTING.get(symbol, ""),
+                allow_paper=True,
+            )
             planners = {
                 "mean_reversion": ms.mean_reversion_strategy,
                 "momentum_breakout": ms.momentum_breakout_strategy,
@@ -407,6 +415,47 @@ def run_once(dry_run: bool = False, symbols: list[str] | None = None) -> int:
     return 0
 
 
+RECONCILE_INTERVAL_SECONDS = 3600
+
+
+def _reconcile_throttled() -> None:
+    """Keep memory/journal.db and live_stats.json in sync with the broker.
+
+    The journal used to miss 123 of 213 closed positions (-528, i.e. 95% of
+    the total loss), which made every journal-based report wrong. Broker
+    history is the source of truth, so refresh it hourly from the analysis
+    cycle, including commission and swap.
+    """
+    import json as _json
+
+    last = 0.0
+    try:
+        stamp = _json.loads(
+            _reconcile_state().read_text(encoding="utf-8")
+        ).get("generated_at")
+        last = datetime.fromisoformat(str(stamp)).timestamp()
+    except Exception:  # noqa: BLE001 - never run before, or unreadable
+        last = 0.0
+    if time.time() - last < RECONCILE_INTERVAL_SECONDS:
+        return
+
+    from mt5_mcp.journal_reconcile import RECONCILE_DAYS, reconcile
+
+    stats = reconcile(days=RECONCILE_DAYS)
+    logger.info(
+        "journal reconcile: %s inserted, %s corrected (broker positions %s)",
+        stats.get("inserted"),
+        stats.get("corrected"),
+        stats.get("positions_from_broker"),
+    )
+
+
+def _reconcile_state():
+    from mt5_mcp.journal_reconcile import STATE_PATH
+
+    return STATE_PATH
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--once", action="store_true", help="run one scan (scheduler mode)")
@@ -420,6 +469,10 @@ def main() -> int:
         verify_settings()
     except Exception as exc:  # noqa: BLE001
         logger.warning("settings guard failed: %s", exc)
+    try:
+        _reconcile_throttled()
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("journal reconcile failed: %s", exc)
     try:
         if args.loop and not args.once:
             _setup_logging()

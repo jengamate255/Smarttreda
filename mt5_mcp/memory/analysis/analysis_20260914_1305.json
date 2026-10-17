@@ -1,0 +1,44 @@
+{
+  "at": "2026-09-14T13:05:32.725369+00:00",
+  "cycle": 2,
+  "compliance_mode": "normal",
+  "results": [
+    {
+      "symbol": "EURUSD",
+      "bar": "2026-09-14 12:00:00",
+      "health_score": 80.9,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 78.5,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "MTF conflict: H8, M5 disagree with bullish bias"
+      },
+      "available": false,
+      "reasons": [
+        "MTF conflict: H8, M5 disagree with bullish bias",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "new_york",
+        "active": [
+          "new_york",
+          "london"
+        ],
+        "hour_utc": 13
+      }
+    }
+  ]
+}

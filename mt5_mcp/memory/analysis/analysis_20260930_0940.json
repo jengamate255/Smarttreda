@@ -1,0 +1,688 @@
+{
+  "at": "2026-09-30T09:40:31.989923+00:00",
+  "cycle": 1190,
+  "compliance_mode": "conservative",
+  "results": [
+    {
+      "symbol": "EURUSD",
+      "bar": "2026-09-30 08:00:00",
+      "health_score": 92.2,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 97.3,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong supply zone being revisited"
+      },
+      "available": false,
+      "reasons": [
+        "No strong supply zone being revisited",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "london",
+        "active": [
+          "london"
+        ],
+        "hour_utc": 9
+      }
+    },
+    {
+      "symbol": "GBPUSD",
+      "bar": "2026-09-30 08:00:00",
+      "health_score": 90.7,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 79.1,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "HTF trend is sideways; strategy waits for a directional trend"
+      },
+      "available": false,
+      "reasons": [
+        "HTF trend is sideways; strategy waits for a directional trend",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "london",
+        "active": [
+          "london"
+        ],
+        "hour_utc": 9
+      }
+    },
+    {
+      "symbol": "USDCHF",
+      "bar": "2026-09-30 08:00:00",
+      "health_score": 88.1,
+      "verdict": "tradeable",
+      "regime": "trending_bullish",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 96.9,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong demand zone being revisited"
+      },
+      "available": false,
+      "reasons": [
+        "No strong demand zone being revisited",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "london",
+        "active": [
+          "london"
+        ],
+        "hour_utc": 9
+      }
+    },
+    {
+      "symbol": "USDCAD",
+      "bar": "2026-09-30 08:00:00",
+      "health_score": 91.4,
+      "verdict": "tradeable",
+      "regime": "trending_bullish",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 80.0,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "HTF trend is sideways; strategy waits for a directional trend"
+      },
+      "available": false,
+      "reasons": [
+        "HTF trend is sideways; strategy waits for a directional trend",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "london",
+        "active": [
+          "london"
+        ],
+        "hour_utc": 9
+      }
+    },
+    {
+      "symbol": "AUDUSD",
+      "bar": "2026-09-30 08:00:00",
+      "health_score": 84.3,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 64.7,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "HTF trend is sideways; strategy waits for a directional trend"
+      },
+      "available": false,
+      "reasons": [
+        "HTF trend is sideways; strategy waits for a directional trend",
+        "no executable direction",
+        "confidence 64.7 < 75",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "london",
+        "active": [
+          "london"
+        ],
+        "hour_utc": 9
+      }
+    },
+    {
+      "symbol": "NZDUSD",
+      "bar": "2026-09-30 08:00:00",
+      "health_score": 89.5,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 100.0,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong supply zone being revisited"
+      },
+      "available": false,
+      "reasons": [
+        "No strong supply zone being revisited",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "london",
+        "active": [
+          "london"
+        ],
+        "hour_utc": 9
+      }
+    },
+    {
+      "symbol": "CHFJPY",
+      "bar": "2026-09-30 08:00:00",
+      "health_score": 83.4,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 80.0,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "HTF trend is sideways; strategy waits for a directional trend"
+      },
+      "available": false,
+      "reasons": [
+        "HTF trend is sideways; strategy waits for a directional trend",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "london",
+        "active": [
+          "london"
+        ],
+        "hour_utc": 9
+      }
+    },
+    {
+      "symbol": "EURJPY",
+      "bar": "2026-09-30 08:00:00",
+      "health_score": 78.0,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 93.4,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 100.0,
+        "confirmation": "",
+        "reason": "no bearish confirmation candle found"
+      },
+      "available": false,
+      "reasons": [
+        "no bearish confirmation candle found",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "london",
+        "active": [
+          "london"
+        ],
+        "hour_utc": 9
+      }
+    },
+    {
+      "symbol": "GBPJPY",
+      "bar": "2026-09-30 08:00:00",
+      "health_score": 81.5,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 96.6,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 78.4,
+        "confirmation": "",
+        "reason": "no bearish confirmation candle found"
+      },
+      "available": false,
+      "reasons": [
+        "no bearish confirmation candle found",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "london",
+        "active": [
+          "london"
+        ],
+        "hour_utc": 9
+      }
+    },
+    {
+      "symbol": "NZDJPY",
+      "bar": "2026-09-30 08:00:00",
+      "health_score": 84.8,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 100.0,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong supply zone being revisited"
+      },
+      "available": false,
+      "reasons": [
+        "No strong supply zone being revisited",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "london",
+        "active": [
+          "london"
+        ],
+        "hour_utc": 9
+      }
+    },
+    {
+      "symbol": "GBPCHF",
+      "bar": "2026-09-30 08:00:00",
+      "health_score": 78.0,
+      "verdict": "tradeable",
+      "regime": "trending_bullish",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 77.7,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong demand zone being revisited"
+      },
+      "available": false,
+      "reasons": [
+        "No strong demand zone being revisited",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "london",
+        "active": [
+          "london"
+        ],
+        "hour_utc": 9
+      }
+    },
+    {
+      "symbol": "NZDCAD",
+      "bar": "2026-09-30 08:00:00",
+      "health_score": 77.1,
+      "verdict": "tradeable",
+      "regime": "transition",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 88.0,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong supply zone being revisited"
+      },
+      "available": false,
+      "reasons": [
+        "No strong supply zone being revisited",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "london",
+        "active": [
+          "london"
+        ],
+        "hour_utc": 9
+      }
+    },
+    {
+      "symbol": "AUDNZD",
+      "bar": "2026-09-30 08:00:00",
+      "health_score": 58.9,
+      "verdict": "cautious",
+      "regime": "volatile_breakout",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 90.1,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong demand zone being revisited"
+      },
+      "available": false,
+      "reasons": [
+        "No strong demand zone being revisited",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "london",
+        "active": [
+          "london"
+        ],
+        "hour_utc": 9
+      }
+    },
+    {
+      "symbol": "EURAUD",
+      "bar": "2026-09-30 08:00:00",
+      "health_score": 72.6,
+      "verdict": "tradeable",
+      "regime": "trending_bullish",
+      "plan": {
+        "action": "SELL",
+        "valid": false,
+        "confidence": 87.4,
+        "trade_score": 95.9,
+        "entry": 1.62921,
+        "sl": 1.63218,
+        "tp": 1.62021,
+        "sl_pips": 29.7,
+        "tp_pips": 90.0,
+        "risk_reward": 3.03,
+        "zone_strength": 94.50417889308802,
+        "confirmation": "shooting_star (bearish, conf 0.79)",
+        "reason": "HTF trend bearish (EMA50/200, conf 73%); supply zone 1.62849-1.63141 strength 95/100 touches 1; confirmation: shooting_star (bearish, 79%); RR 3.03 (min 1.6), risk 1.0% = 95.28 USD; MTF confluence: 1/2 timeframes aligned with bearish (+10% bonus)"
+      },
+      "available": false,
+      "reasons": [
+        "HTF trend bearish (EMA50/200, conf 73%); supply zone 1.62849-1.63141 strength 95/100 touches 1; confirmation: shooting_star (bearish, 79%); RR 3.03 (min 1.6), risk 1.0% = 95.28 USD; MTF confluence: 1/2 timeframes aligned with bearish (+10% bonus)"
+      ],
+      "session": {
+        "primary": "london",
+        "active": [
+          "london"
+        ],
+        "hour_utc": 9
+      }
+    },
+    {
+      "symbol": "EURCHF",
+      "bar": "2026-09-30 08:00:00",
+      "health_score": 79.9,
+      "verdict": "tradeable",
+      "regime": "trending_bullish",
+      "plan": {
+        "action": "BUY",
+        "valid": false,
+        "confidence": 85.0,
+        "trade_score": 93.6,
+        "entry": 0.94674,
+        "sl": 0.94439,
+        "tp": 0.95574,
+        "sl_pips": 23.5,
+        "tp_pips": 90.0,
+        "risk_reward": 3.84,
+        "zone_strength": 84.7046659760825,
+        "confirmation": "bullish_engulfing (bullish, conf 0.73)",
+        "reason": "HTF trend bullish (EMA50/200, conf 82%); demand zone 0.94469-0.94624 strength 85/100 touches 32; confirmation: bullish_engulfing (bullish, 73%); RR 3.84 (min 1.6), risk 1.0% = 95.28 USD; MTF confluence: 1/2 timeframes aligned with bullish (+10% bonus)"
+      },
+      "available": false,
+      "reasons": [
+        "HTF trend bullish (EMA50/200, conf 82%); demand zone 0.94469-0.94624 strength 85/100 touches 32; confirmation: bullish_engulfing (bullish, 73%); RR 3.84 (min 1.6), risk 1.0% = 95.28 USD; MTF confluence: 1/2 timeframes aligned with bullish (+10% bonus)"
+      ],
+      "session": {
+        "primary": "london",
+        "active": [
+          "london"
+        ],
+        "hour_utc": 9
+      }
+    },
+    {
+      "symbol": "XAUUSD",
+      "bar": "2026-09-30 08:00:00",
+      "health_score": 77.0,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 84.6,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong supply zone being revisited"
+      },
+      "available": false,
+      "reasons": [
+        "No strong supply zone being revisited",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "london",
+        "active": [
+          "london"
+        ],
+        "hour_utc": 9
+      }
+    },
+    {
+      "symbol": "XAGUSD",
+      "bar": "2026-09-30 08:00:00",
+      "health_score": 70.0,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 58.9,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "HTF trend is sideways; strategy waits for a directional trend"
+      },
+      "available": false,
+      "reasons": [
+        "HTF trend is sideways; strategy waits for a directional trend",
+        "no executable direction",
+        "confidence 58.9 < 75",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "london",
+        "active": [
+          "london"
+        ],
+        "hour_utc": 9
+      }
+    },
+    {
+      "symbol": "USOIL",
+      "bar": "2026-09-30 08:00:00",
+      "health_score": 71.6,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 79.8,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong demand zone being revisited"
+      },
+      "available": false,
+      "reasons": [
+        "No strong demand zone being revisited",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "london",
+        "active": [
+          "london"
+        ],
+        "hour_utc": 9
+      }
+    },
+    {
+      "symbol": "JP225",
+      "bar": "2026-09-30 08:00:00",
+      "health_score": 74.9,
+      "verdict": "tradeable",
+      "regime": "trending_bullish",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 74.3,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong demand zone being revisited"
+      },
+      "available": false,
+      "reasons": [
+        "No strong demand zone being revisited",
+        "no executable direction",
+        "confidence 74.3 < 75",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "london",
+        "active": [
+          "london"
+        ],
+        "hour_utc": 9
+      }
+    }
+  ]
+}

@@ -713,9 +713,5 @@ const Portfolio = (function () {
   };
 })();
 
-// Auto-initialise when the DOM is ready.
-if (document.readyState === "loading") {
-  document.addEventListener("DOMContentLoaded", () => Portfolio.init());
-} else {
-  Portfolio.init();
-}
+// Navigation initializes this view on its first visit, avoiding research calls
+// during live dashboard startup.

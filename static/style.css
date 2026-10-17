@@ -508,6 +508,12 @@ header {
 }
 
 .chart-status.hidden { display: none; }
+.chart-status.compact {
+  inset: auto 8px 8px 8px;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+}
 
 .tooltip {
   position: absolute;
@@ -647,6 +653,14 @@ header {
 .wl-chip.active { color: #fff; border-color: var(--accent); background: rgba(41, 98, 255, 0.15); }
 .wl-chip.dragging { opacity: 0.4; }
 .wl-chip.drop-hint { border-color: var(--accent); box-shadow: 0 0 4px var(--accent); }
+
+/* live price inside watchlist chips */
+.wl-chip .wl-sym { margin-right: 6px; }
+.wl-chip .wl-px { color: var(--text); font-weight: 600; }
+.wl-chip .wl-px.flash-up { animation: wlFlashUp 0.8s ease-out; }
+.wl-chip .wl-px.flash-down { animation: wlFlashDown 0.8s ease-out; }
+@keyframes wlFlashUp { 0% { color: var(--up, #26a69a); } 100% { color: var(--text); } }
+@keyframes wlFlashDown { 0% { color: var(--down, #ef5350); } 100% { color: var(--text); } }
 
 .wl-remove {
   background: none;
@@ -2215,6 +2229,8 @@ a:focus-visible {
 .table-striped tbody tr:nth-child(even) { background: var(--panel2); }
 
 .tooltip { position: relative; }
+#tooltip.tooltip { position: absolute; }
+#tooltip.tooltip::after { display: none; }
 .tooltip::after {
   content: attr(data-tooltip);
   position: absolute;

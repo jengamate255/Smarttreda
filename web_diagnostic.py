@@ -2,6 +2,7 @@
 
 import json
 import logging
+import os
 import time
 from datetime import datetime, timezone
 from pathlib import Path
@@ -52,6 +53,69 @@ def _all_engine_symbols() -> set[str]:
     for syms in ENGINE_SYMBOLS.values():
         all_syms.update(syms)
     return all_syms
+
+
+@router.get("/learning")
+def diagnostic_learning() -> dict[str, Any]:
+    from mt5_mcp.learning_loop import learning_snapshot
+
+    return learning_snapshot()
+
+
+@router.get("/quality")
+def diagnostic_quality() -> dict[str, Any]:
+    from mt5_mcp.config import get_settings
+    from mt5_mcp.paper_learning import snapshot
+
+    quality = get_settings().quality
+    return {"enabled": quality.enabled, "entry_timeframe": quality.entry_timeframe,
+            "max_entry_drift_atr": quality.max_entry_drift_atr,
+            "max_zone_distance_atr": quality.max_zone_distance_atr,
+            "ml_role": "advisory", "paper_min_trades": quality.shadow_min_trades,
+            "paper_min_profit_factor": quality.shadow_min_profit_factor,
+            "paper_min_expectancy_r": quality.shadow_min_expectancy_r,
+            "shadow": snapshot() if quality.enabled else None}
+
+
+@router.get("/runtime")
+def diagnostic_runtime() -> dict[str, Any]:
+    """Sanitized runtime telemetry; never returns credentials or changes policy."""
+    from mt5_mcp.config import get_settings
+    from mt5_mcp.consensus import _cfg
+    from mt5_mcp.compliance import evaluate
+
+    risk = get_settings().risk
+    consensus = _cfg()  # Consensus config is hot-read by the executors.
+    disk = _load_settings().get("risk", {})
+    keys = ("max_risk_percent", "max_daily_loss_percent", "max_trades_per_day",
+            "confidence_floor_percent", "reject_orders", "blocked_symbols", "max_spread_points", "max_spread_relative",
+            "blocked_setup_prefixes", "allowed_hours_utc")
+    drift = [key for key in keys if key in disk and disk[key] != getattr(risk, key, None)]
+    try:
+        comp = evaluate()
+        # Explicit allowlist protects this read-only endpoint from future additions.
+        compliance = {key: comp.get(key) for key in (
+            "mode", "halt_reason", "daily_pnl", "daily_limit", "remaining_daily_buffer",
+            "open_risk", "max_open_risk", "remaining_drawdown_buffer",
+            "overall_drawdown_percent", "trades_today", "max_trades_per_day",
+            "per_trade_risk_cap_percent", "news_blocked", "news_blocked_reason",
+            "news_stale", "trading_allowed", "warnings", "performance_risk", "prop_risk")}
+    except Exception as exc:
+        logger.warning("runtime compliance unavailable: %s", exc)
+        compliance = {"error": "Compliance telemetry unavailable"}
+    return {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "desk": {"mode": os.getenv("MT5_DESK_MODE", "SIM").upper(),
+                 "enabled": os.getenv("MT5_DESK_ENABLED", "false").lower() == "true"},
+        "risk": {key: getattr(risk, key, None) for key in keys},
+        "quality": {"enabled":bool(getattr(getattr(get_settings(),"quality",None),"enabled",False)),"ml_role":"advisory"},
+        "consensus": {key: consensus.get(key) for key in (
+            "enabled", "allowed_symbols", "risk_percent", "veto_score",
+            "min_agree", "agree_min_score", "vote_ttl_sec")},
+        "settings_drift": drift,
+        "policy_scope": "Dashboard process; executor processes may retain cached settings",
+        "compliance": compliance,
+    }
 
 
 @router.get("/summary")

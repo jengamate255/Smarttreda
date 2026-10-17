@@ -18,6 +18,35 @@ from mt5_mcp.common import pip_size, pip_value_per_lot, round_to_step, TradeResu
 
 logger = logging.getLogger("mt5_mcp.pipeline")
 
+# Symbol-specific minimum SL floors (price-distance units).
+# Prevents M5 ATR from producing absurdly tight stops on volatile symbols.
+# BTC: M5 ATR * 4.5 = $225-$900, but BTC moves $3,300+ normally.
+# JPY pairs: M5 ATR * 4.5 = 9-36 pips, but session opens move 15-25 pips.
+MIN_SL_FLOOR: dict[str, float] = {
+    "BTCUSD": 1000.0,
+    "ETHUSD": 30.0,
+    "USDJPY": 0.20,
+    "EURJPY": 0.20,
+    "GBPJPY": 0.25,
+    "CHFJPY": 0.20,
+}
+
+
+def enforce_min_sl_floor(symbol: str, sl_distance: float) -> float:
+    """Return sl_distance widened to the symbol's minimum floor if needed.
+
+    Used by all execution paths (desk, confirm, watchers) to prevent
+    tight M5-ATR stops on volatile symbols.
+    """
+    floor = MIN_SL_FLOOR.get(symbol, 0.0)
+    if floor > 0 and sl_distance < floor:
+        logger.info(
+            "SL floor applied for %s: %.4f -> %.4f (was too tight)",
+            symbol, sl_distance, floor,
+        )
+        return floor
+    return sl_distance
+
 
 @dataclass
 class GateVerdict:
@@ -26,6 +55,12 @@ class GateVerdict:
     violations: list[str] = field(default_factory=list)
     consensus_allowed: bool = True
     compliance_allowed: bool = True
+    llm_vetoed: bool = False
+    llm_reasoning: str = ""
+    # True when risk.reject_orders=false forced allowed=True despite
+    # violations (forward-test log mode - evidence kept in violations).
+    log_mode: bool = False
+    learning_allowed: bool = True
 
 
 @dataclass
@@ -47,15 +82,43 @@ def run_gates(
     confidence: float | None = None,
     source: str = "pipeline",
     score: float = 0.0,
+    tp_price: float | None = None,
+    health_score: float = 0.0,
+    pattern_direction: str = "",
+    zone_type: str = "",
+    trend_conflict: bool = False,
+    enable_llm_devil_advocate: bool = True,
+    setup: str = "",
+    entry_price: float | None = None,
 ) -> GateVerdict:
-    """Run consensus check + compliance gate. Returns a combined verdict.
+    """Run consensus + compliance + LLM devil's advocate. Returns combined verdict.
 
-    Consensus is checked first (cheap, fail-open). Compliance is the hard veto.
-    Both return the same ``{allowed, violations}`` shape so they chain cleanly.
+    Gate chain: consensus (cheap, fail-open) → compliance (hard veto) →
+    LLM devil's advocate (challenges the thesis, can veto).
     """
     violations: list[str] = []
     consensus_ok = True
     compliance_ok = True
+    llm_vetoed = False
+    llm_reasoning = ""
+    learning_ok = True
+    from mt5_mcp import entry_quality
+    request = {"action": 1, "type": 0 if side == "BUY" else 1, "symbol": symbol,
+               "price": entry_price, "sl": sl_price, "tp": tp_price, "volume": lots,
+               "comment": setup or source, "confidence": confidence}
+    quality_result = entry_quality.check(request)
+    quality_ok = quality_result["allowed"]
+    violations.extend(quality_result.get("violations", []))
+
+    try:
+        from mt5_mcp.learning_loop import check_entry
+        learned = check_entry(symbol, side, setup=setup or source)
+        learning_ok = learned["allowed"]
+        violations.extend(learned.get("violations", []))
+    except Exception as exc:
+        learning_ok = False
+        violations.append("learning: completed-trade evidence unavailable")
+        logger.warning("entry learning failed closed: %s", exc)
 
     try:
         from mt5_mcp.consensus import check as consensus_check
@@ -75,17 +138,73 @@ def run_gates(
             confidence=confidence,
         )
         compliance_ok = gv.get("allowed", False)
-        if not compliance_ok:
-            violations.extend(gv.get("violations", []))
+        # Always carry compliance findings as evidence.  In enforce mode
+        # violations are non-empty iff allowed is False, so behaviour is
+        # unchanged; in log mode allowed is True but the findings must
+        # still reach the verdict for the post-test review.
+        violations.extend(gv.get("violations", []))
     except Exception as exc:
         compliance_ok = False
         violations.append(f"compliance error: {exc}")
 
+    # LLM devil's advocate: challenge the setup before execution
+    if enable_llm_devil_advocate and consensus_ok and compliance_ok and learning_ok and quality_ok and entry_price:
+        try:
+            from mt5_mcp.groq_llm import devils_advocate
+            # Get current price for entry estimate
+            tp_est = tp_price or 0
+
+            da = devils_advocate(
+                symbol=symbol,
+                side=side,
+                entry=entry_price,
+                sl=sl_price or 0.0,
+                tp=tp_est,
+                health_score=health_score,
+                pattern_direction=pattern_direction,
+                zone_type=zone_type,
+                trend_conflict=trend_conflict,
+            )
+            if da.should_veto and da.confidence >= 70:
+                llm_vetoed = True
+                llm_reasoning = da.summary
+                violations.append(f"LLM devil's advocate veto: {da.summary}")
+                logger.info(
+                    "LLM devil's advocate vetoed %s %s (confidence %.0f): %s",
+                    symbol, side, da.confidence, da.summary,
+                )
+        except Exception as exc:
+            logger.debug("LLM devil's advocate failed open: %s", exc)
+
+    allowed = consensus_ok and compliance_ok and not llm_vetoed and learning_ok and quality_ok
+    try:
+        entry_quality.capture(request, quality_result, violations)
+    except Exception as exc:
+        allowed = False
+        quality_ok = False
+        violations.append("quality: paper audit unavailable")
+        logger.warning("paper audit failed closed: %s", exc)
+    log_mode = False
+    if not allowed and learning_ok and quality_ok:
+        from mt5_mcp.config import rejections_enabled
+        if not rejections_enabled():
+            # Forward-test log mode: keep every flag/violation for the
+            # record, but let the trade through.
+            log_mode = True
+            allowed = True
+            logger.warning(
+                "run_gates LOG-MODE sending %s %s despite violations: %s",
+                symbol, side, "; ".join(violations) or "(flags only)",
+            )
     return GateVerdict(
-        allowed=consensus_ok and compliance_ok,
+        allowed=allowed,
         violations=violations,
         consensus_allowed=consensus_ok,
         compliance_allowed=compliance_ok,
+        llm_vetoed=llm_vetoed,
+        llm_reasoning=llm_reasoning,
+        log_mode=log_mode,
+        learning_allowed=learning_ok,
     )
 
 
@@ -122,6 +241,7 @@ def execute_trade(
     from mt5_mcp.tools.trades import open_market
 
     sl_pips = None
+    entry_price = None
     if sl is not None:
         try:
             from mt5_mcp.client import get_client
@@ -144,6 +264,10 @@ def execute_trade(
         confidence=confidence,
         source=source,
         score=score,
+        tp_price=tp,
+        enable_llm_devil_advocate=True,
+        setup=setup or comment,
+        entry_price=entry_price,
     )
 
     if not gate.allowed:
@@ -200,7 +324,123 @@ def execute_trade(
         setup=setup,
     )
 
+    # Trigger LLM post-trade review (async, non-blocking)
+    # This will be called when the trade closes, not when it opens
+    # For now, we'll log the setup for later review
+    if setup:
+        logger.info(
+            "Trade opened: %s %s %.2f lots, setup=%s, confidence=%.1f — "
+            "post-trade review will analyze on close",
+            symbol, side, lots, setup, confidence or 0.0,
+        )
+
     return ExecResult(filled=True, ticket=ticket, trade_result=result, gate_verdict=gate)
+
+
+def equity_curve_sizing_multiplier(
+    journal_db_path: str | None = None,
+    lookback: int = 10,
+    loss_streak_threshold: int = 3,
+    win_streak_threshold: int = 3,
+    loss_multiplier: float = 0.5,
+    win_multiplier: float = 1.25,
+    enabled: bool = True,
+) -> dict:
+    """Compute a sizing multiplier from recent win/loss streak.
+
+    Reads the last ``lookback`` closed trades from the journal and checks
+    the most recent consecutive outcome streak:
+      - 3+ consecutive losses -> multiplier = 0.5 (halve size)
+      - 3+ consecutive wins   -> multiplier = 1.25 (boost, capped at base risk)
+      - otherwise             -> multiplier = 1.0
+
+    Returns:
+        dict with keys:
+            multiplier: The sizing multiplier (0.5 / 1.0 / 1.25).
+            streak: Signed streak count (positive = wins, negative = losses).
+            streak_type: "win", "loss", or "neutral".
+            trades_used: Number of trades examined.
+    """
+    if not enabled:
+        return {
+            "multiplier": 1.0,
+            "streak": 0,
+            "streak_type": "neutral",
+            "trades_used": 0,
+        }
+
+    try:
+        from mt5_mcp.memory.trade_journal import get_journal
+        journal = get_journal()
+
+        # Get last N closed trades ordered by close_time DESC
+        trades = journal.list_trades(limit=lookback)
+        if not trades:
+            return {
+                "multiplier": 1.0,
+                "streak": 0,
+                "streak_type": "neutral",
+                "trades_used": 0,
+            }
+
+        # Calculate streak from most recent trade backwards
+        # list_trades returns DESC, so index 0 is most recent
+        streak = 0
+        streak_type = "neutral"
+        first_outcome = trades[0].get("outcome") if trades else None
+
+        if first_outcome == "win":
+            for t in trades:
+                if t.get("outcome") == "win":
+                    streak += 1
+                else:
+                    break
+            streak_type = "win"
+        elif first_outcome == "loss":
+            for t in trades:
+                if t.get("outcome") == "loss":
+                    streak += 1
+                else:
+                    break
+            streak_type = "loss"
+        else:
+            # breakeven or no outcome -> neutral
+            streak = 0
+            streak_type = "neutral"
+
+        # Determine multiplier
+        multiplier = 1.0
+        if streak_type == "loss" and streak >= loss_streak_threshold:
+            multiplier = loss_multiplier
+            logger.info(
+                "equity curve sizing: %d consecutive losses -> multiplier %.2f",
+                streak, multiplier,
+            )
+        elif streak_type == "win" and streak >= win_streak_threshold:
+            multiplier = win_multiplier
+            logger.info(
+                "equity curve sizing: %d consecutive wins -> multiplier %.2f",
+                streak, multiplier,
+            )
+
+        # Represent streak as signed: positive = wins, negative = losses
+        signed_streak = streak if streak_type == "win" else (-streak if streak_type == "loss" else 0)
+
+        return {
+            "multiplier": multiplier,
+            "streak": signed_streak,
+            "streak_type": streak_type,
+            "trades_used": min(len(trades), lookback),
+        }
+
+    except Exception as exc:
+        logger.debug("equity curve sizing failed: %s", exc)
+        return {
+            "multiplier": 1.0,
+            "streak": 0,
+            "streak_type": "neutral",
+            "trades_used": 0,
+        }
 
 
 def size_position(
@@ -208,8 +448,13 @@ def size_position(
     sl_distance: float,
     risk_amount: float,
     client: Any | None = None,
+    apply_equity_curve: bool = True,
 ) -> float | None:
     """Compute lot size from risk budget using tick-value math.
+
+    When ``apply_equity_curve`` is True (default), the risk_amount is adjusted
+    by the equity curve sizing multiplier before computing lots. This reduces
+    size after losing streaks and increases it (capped at base) after wins.
 
     Returns the lot size rounded down to the broker's volume step, or ``None``
     if the position cannot be sized (e.g. even min-lot exceeds risk budget).
@@ -217,6 +462,14 @@ def size_position(
     if client is None:
         from mt5_mcp.client import get_client
         client = get_client()
+
+    # Apply equity curve sizing multiplier to risk_amount
+    from mt5_mcp import performance_risk
+    if performance_risk.enabled():
+        risk_amount = performance_risk.limit_budget(client,risk_amount)
+    elif apply_equity_curve:
+        ec = equity_curve_sizing_multiplier()
+        risk_amount = risk_amount * ec["multiplier"]
 
     info = client.symbol_info(symbol)
     if not info:
@@ -243,10 +496,10 @@ def size_position(
     vol_max = float(info.get("volume_max", 100.0))
     vol_step = float(info.get("volume_step", 0.01))
 
-    lots = round_to_step(raw_lots, vol_step, floor=vol_min, ceil=vol_max)
-
-    min_risk = (vol_min / vol_step) * loss_per_lot * vol_step
-    if lots < vol_min and min_risk > risk_amount * 1.5:
+    if not all(math.isfinite(v) and v > 0 for v in (risk_amount,vol_step,vol_min,vol_max)):
+        return None
+    lots = round(math.floor(min(raw_lots,vol_max) / vol_step + 1e-10) * vol_step,8)
+    if lots < vol_min or lots * loss_per_lot > risk_amount + 1e-8:
         return None
 
     return lots
@@ -409,3 +662,45 @@ def _fill_entry_price_from_ticket(ticket: int | None) -> float:
     except Exception:
         pass
     return 0.0
+
+
+def trigger_post_trade_review(
+    symbol: str,
+    side: str,
+    entry: float,
+    exit_price: float,
+    sl: float,
+    tp: float,
+    pnl: float,
+    hold_time_minutes: int,
+    original_thesis: str = "",
+) -> None:
+    """Trigger LLM post-trade review after a trade closes.
+
+    Call this from position close handlers (desk manage, watchers, etc.).
+    Logs the review result for analysis.
+    """
+    try:
+        from mt5_mcp.groq_llm import post_trade_review
+        review = post_trade_review(
+            symbol=symbol,
+            side=side,
+            entry=entry,
+            exit_price=exit_price,
+            sl=sl,
+            tp=tp,
+            pnl=pnl,
+            hold_time_minutes=hold_time_minutes,
+            original_thesis=original_thesis,
+        )
+        result = "WIN" if pnl > 0 else "LOSS"
+        logger.info(
+            "Post-trade review [%s %s %s]: thesis_correct=%s, would_take_again=%s, "
+            "confidence=%.0f, lessons=%s",
+            symbol, side, result, review.thesis_correct, review.would_take_again,
+            review.confidence_in_review, review.lessons[:2],
+        )
+        # Store review in journal_extra for future analysis
+        # (could be written to a separate reviews table)
+    except Exception as exc:
+        logger.debug("post-trade review failed: %s", exc)

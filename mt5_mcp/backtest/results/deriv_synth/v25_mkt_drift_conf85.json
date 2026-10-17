@@ -1,0 +1,152 @@
+{
+ "label": "v25_mkt_drift_conf85",
+ "cfg": {
+  "spike_threshold_atr": 2.5,
+  "min_spike_ticks": 8,
+  "max_hold_bars": 120,
+  "fill_deadline_bars": 30,
+  "min_bars_between_trades": 60,
+  "reward_risk_ratio": 1.5,
+  "sl_atr_buffer": 2.0,
+  "max_spike_age": 30,
+  "retrace_primary": 0.382,
+  "retrace_secondary": 0.5,
+  "entry_buffer_atrs": 1.5,
+  "lookback": 30,
+  "entry_mode": "market",
+  "exit_mode": "chandelier",
+  "trail_arm_r": 1.0,
+  "trail_distance_atr": 1.0,
+  "partial_fraction": 0.0,
+  "direction_allow": "drift",
+  "retrace_allow": "both",
+  "age_min": 0,
+  "rsi_gate": null,
+  "conf_floor": 85,
+  "atr_regime": null,
+  "hours_allow": null,
+  "honor_fill_deadline": false,
+  "cluster_gap": 0
+ },
+ "counters": {
+  "signals": 705474,
+  "near": 128469,
+  "fills": 0,
+  "fill_rate_pct": 0.0
+ },
+ "pooled": {
+  "trades": 0
+ },
+ "train": {
+  "trades": 0
+ },
+ "holdout": {
+  "trades": 0
+ },
+ "by_pair": {},
+ "by_pair_train": {},
+ "by_pair_holdout": {},
+ "trades": [],
+ "per_symbol_counters": {
+  "BOOM1000": {
+   "signals": 33798,
+   "fills": 0,
+   "trades": 0
+  },
+  "BOOM900": {
+   "signals": 34288,
+   "fills": 0,
+   "trades": 0
+  },
+  "BOOM600": {
+   "signals": 36589,
+   "fills": 0,
+   "trades": 0
+  },
+  "BOOM500": {
+   "signals": 37812,
+   "fills": 0,
+   "trades": 0
+  },
+  "BOOM300": {
+   "signals": 38207,
+   "fills": 0,
+   "trades": 0
+  },
+  "BOOM200": {
+   "signals": 37892,
+   "fills": 0,
+   "trades": 0
+  },
+  "BOOM150": {
+   "signals": 35941,
+   "fills": 0,
+   "trades": 0
+  },
+  "BOOM100": {
+   "signals": 34265,
+   "fills": 0,
+   "trades": 0
+  },
+  "BOOM99": {
+   "signals": 33867,
+   "fills": 0,
+   "trades": 0
+  },
+  "BOOM50": {
+   "signals": 30623,
+   "fills": 0,
+   "trades": 0
+  },
+  "CRASH1000": {
+   "signals": 33236,
+   "fills": 0,
+   "trades": 0
+  },
+  "CRASH900": {
+   "signals": 33998,
+   "fills": 0,
+   "trades": 0
+  },
+  "CRASH600": {
+   "signals": 36908,
+   "fills": 0,
+   "trades": 0
+  },
+  "CRASH500": {
+   "signals": 37619,
+   "fills": 0,
+   "trades": 0
+  },
+  "CRASH300": {
+   "signals": 37984,
+   "fills": 0,
+   "trades": 0
+  },
+  "CRASH200": {
+   "signals": 37285,
+   "fills": 0,
+   "trades": 0
+  },
+  "CRASH150": {
+   "signals": 36345,
+   "fills": 0,
+   "trades": 0
+  },
+  "CRASH100": {
+   "signals": 34011,
+   "fills": 0,
+   "trades": 0
+  },
+  "CRASH99": {
+   "signals": 33690,
+   "fills": 0,
+   "trades": 0
+  },
+  "CRASH50": {
+   "signals": 31116,
+   "fills": 0,
+   "trades": 0
+  }
+ }
+}

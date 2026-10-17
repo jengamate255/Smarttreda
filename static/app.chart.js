@@ -69,8 +69,10 @@ function closeJournalEditor() {
   $("journal-editor").classList.add("hidden");
 }
 
-$("je-cancel").addEventListener("click", closeJournalEditor);
-$("je-save").addEventListener("click", async () => {
+const jeCancel = $("je-cancel");
+const jeSave = $("je-save");
+if (jeCancel) jeCancel.addEventListener("click", closeJournalEditor);
+if (jeSave) jeSave.addEventListener("click", async () => {
   const ed = $("journal-editor");
   const ticket = parseInt(ed.dataset.ticket, 10);
   try {
@@ -130,11 +132,16 @@ function populateJournalFilters() {
 }
 
 function initJournalTools() {
-  $("jf-symbol").addEventListener("change", (e) => { state.journalFilters.symbol = e.target.value; renderJournal(); });
-  $("jf-setup").addEventListener("change", (e) => { state.journalFilters.setup = e.target.value; renderJournal(); });
-  $("jf-outcome").addEventListener("change", (e) => { state.journalFilters.outcome = e.target.value; renderJournal(); });
-  $("jf-csv").addEventListener("click", exportJournalCsv);
-  $("jf-sync").addEventListener("click", async () => {
+  const jfSymbol = $("jf-symbol");
+  if (jfSymbol) jfSymbol.addEventListener("change", (e) => { state.journalFilters.symbol = e.target.value; renderJournal(); });
+  const jfSetup = $("jf-setup");
+  if (jfSetup) jfSetup.addEventListener("change", (e) => { state.journalFilters.setup = e.target.value; renderJournal(); });
+  const jfOutcome = $("jf-outcome");
+  if (jfOutcome) jfOutcome.addEventListener("change", (e) => { state.journalFilters.outcome = e.target.value; renderJournal(); });
+  const jfCsv = $("jf-csv");
+  if (jfCsv) jfCsv.addEventListener("click", exportJournalCsv);
+  const jfSync = $("jf-sync");
+  if (jfSync) jfSync.addEventListener("click", async () => {
     try {
       const r = await apiPost("/api/journal?limit=1&sync=true", undefined);
       toast(`Sync done (${r.entries?.length || 0} rows loaded)`, "up");
@@ -145,6 +152,7 @@ function initJournalTools() {
   });
 }
 
+const _wlLastPx = {};
 /* ---------- Watchlist ---------- */
 function renderWatchlist() {
   const box = $("watchlist");
@@ -153,7 +161,7 @@ function renderWatchlist() {
   for (const s of state.watchlist) {
     const chip = document.createElement("span");
     chip.className = "wl-chip" + (s === state.symbol ? " active" : "");
-    chip.textContent = s;
+    chip.innerHTML = `<span class="wl-sym">${esc(s)}</span><span class="wl-px" data-px="${esc(s)}">--</span>`;
     chip.draggable = !touch; // HTML5 DnD is desktop-only (item #10)
     chip.dataset.symbol = s;
     chip.title = touch
@@ -210,19 +218,44 @@ function addToWatchlist(sym) {
   if (state.watchlist.length > 12) state.watchlist.shift();
   savePrefs();
   renderWatchlist();
+  pollWatchQuotes();
+}
+
+/* Live top-of-book prices for the watchlist chips (/api/quote). */
+async function pollWatchQuotes() {
+  for (const s of state.watchlist) {
+    try {
+      const q = await api(`/api/quote?symbol=${encodeURIComponent(s)}`);
+      const px = document.querySelector(`[data-px="${CSS.escape(s)}"]`);
+      if (!px) continue;
+      if (!q || !q.bid) { px.textContent = "--"; continue; }
+      const bid = q.bid;
+      const prev = _wlLastPx[s];
+      px.textContent = fmtPrice(bid);
+      if (prev != null && bid !== prev) {
+        px.classList.remove("flash-up", "flash-down");
+        void px.offsetWidth; // restart animation
+        px.classList.add(bid > prev ? "flash-up" : "flash-down");
+      }
+      _wlLastPx[s] = bid;
+    } catch (e) {
+      const px = document.querySelector(`[data-px="${CSS.escape(s)}"]`);
+      if (px) px.textContent = "--";
+    }
+  }
 }
 
 /* ============================================================
    Chart (TradingView lightweight-charts v4)
    ============================================================ */
-const chartWrap = document.querySelector(".chart-wrap");
+const chartWrap = document.querySelector(".chart-container");
 const priceEl = $("price-chart");
 const rsiEl = $("rsi-chart");
 const macdEl = $("macd-chart");
 const tooltip = $("tooltip");
 const chartStatus = document.createElement("div");
 chartStatus.className = "chart-status hidden";
-chartWrap.appendChild(chartStatus);
+if (chartWrap) chartWrap.appendChild(chartStatus);
 
 let priceChart = null, rsiChart = null, macdChart = null;
 let candleSeries = null, ema50Series = null, ema200Series = null;
@@ -232,6 +265,9 @@ let zonePriceLines = [];
 let zoneSeries = [];
 let syncGuard = false;
 let chartLoadSeq = 0;
+let chartDisplayedKey = "";
+let chartLoading = false;
+let quotePending = false;
 
 const CHART_OPTS = {
   layout: { background: { type: "solid", color: C.bg }, textColor: C.dim, fontSize: 11 },
@@ -244,6 +280,7 @@ const CHART_OPTS = {
 };
 
 function paneSizes() {
+  if (!chartWrap) return { mainH: 0, rsiH: 0, macdH: 0 };
   const h = chartWrap.getBoundingClientRect().height;
   const showRsi = state.indicators.rsi;
   const showMacd = state.indicators.macd;
@@ -261,6 +298,7 @@ function layoutPanes() {
   const s = paneSizes();
   const apply = (chart, el, h, hidden) => {
     if (!chart) return;
+    el.classList.toggle("hidden", hidden);
     if (hidden) {
       el.style.height = "0px";
       el.style.visibility = "hidden";
@@ -277,9 +315,10 @@ function layoutPanes() {
   apply(macdChart, macdEl, s.macd, !s.macd);
 }
 
-function showChartStatus(message, kind = "loading") {
+function showChartStatus(message, kind = "loading", compact = false) {
   chartStatus.textContent = message;
-  chartStatus.className = `chart-status ${kind}`;
+  chartStatus.className = `chart-status ${kind}${compact ? " compact" : ""}`;
+  chartStatus.setAttribute("role", "status");
 }
 
 function hideChartStatus() {
@@ -288,10 +327,18 @@ function hideChartStatus() {
 }
 
 async function chartApi(path, timeoutMs = 20000) {
-  const timeout = new Promise((_, reject) => {
-    setTimeout(() => reject(new Error("Chart data request timed out")), timeoutMs);
-  });
-  return Promise.race([api(path), timeout]);
+  return api(path, { timeoutMs });
+}
+
+function syncChartCrosshair(chart, series, values, param) {
+  const index = state.timeIndex?.get(param.time);
+  const value = index == null ? null : values?.[index];
+  if (!param.point || param.time == null || !Number.isFinite(value) ||
+      series.priceToCoordinate(value) == null || chart.timeScale().timeToCoordinate(param.time) == null) {
+    chart.clearCrosshairPosition();
+    return;
+  }
+  chart.setCrosshairPosition(value, param.time, series);
 }
 
 function setupCharts() {
@@ -329,8 +376,13 @@ function setupCharts() {
     src.subscribeCrosshairMove((param) => {
       if (syncGuard) return;
       syncGuard = true;
-      for (const o of others) o && o.setCrosshairPosition(param.point, param.time);
-      syncGuard = false;
+      try {
+        for (const o of others) {
+          const series = o === priceChart ? candleSeries : o === rsiChart ? rsiSeries : macdLineSeries;
+          const values = o === priceChart ? state.data?.close : o === rsiChart ? state.data?.rsi : state.data?.macd;
+          syncChartCrosshair(o, series, values, param);
+        }
+      } finally { syncGuard = false; }
     });
   }
 
@@ -344,7 +396,7 @@ function setupCharts() {
     if (chart && el) {
       el.addEventListener("dblclick", () => {
         chart.timeScale().resetTimeScale();
-        chart.priceScale().resetPriceScale();
+        chart.priceScale("right").applyOptions({ autoScale: true });
       });
     }
   });
@@ -353,7 +405,7 @@ function setupCharts() {
   priceChart.subscribeCrosshairMove((param) => updateTooltip(param));
 
   layoutPanes();
-  new ResizeObserver(() => { layoutPanes(); }).observe(chartWrap);
+  if (chartWrap) new ResizeObserver(() => { layoutPanes(); }).observe(chartWrap);
   window.addEventListener("resize", () => { layoutPanes(); renderEquity(state.equity); });
 }
 
@@ -365,16 +417,28 @@ function isFin(v) {
   return v != null && Number.isFinite(v);
 }
 
-function setSeriesData() {
+function setSeriesData(fit = false) {
   const d = state.data;
   if (!d || !candleSeries) return;
   state.timeIndex = new Map(d.times.map((t, idx) => [t, idx]));
-  const n = d.count;
+  const precision = Number.isInteger(d.digits) ? Math.max(0, Math.min(8, d.digits)) : 5;
+  const minMove = isFin(d.point) && d.point > 0 ? d.point : 10 ** -precision;
+  const priceFormat = { type: "price", precision, minMove };
+  for (const series of [candleSeries, ema50Series, ema200Series, btSlSeries, btTpSeries]) {
+    series.applyOptions({ priceFormat });
+  }
+  const macdPrecision = Math.min(8, precision + 1);
+  for (const series of [macdLineSeries, macdSignalSeries, macdHistSeries]) {
+    series.applyOptions({ priceFormat: { type: "price", precision: macdPrecision, minMove: 10 ** -macdPrecision } });
+  }
+  const n = Math.min(d.count, d.times.length, d.open.length, d.high.length, d.low.length, d.close.length);
   const candles = [];
   const ema50 = [], ema200 = [], rsi = [], macdL = [], macdS = [], macdH = [];
   let emaStarted = false;
   for (let i = 0; i < n; i++) {
     const t = d.times[i];
+    if (![t, d.open[i], d.high[i], d.low[i], d.close[i]].every(isFin)) continue;
+    if (candles.length && t <= candles[candles.length - 1].time) continue;
     candles.push({ time: t, open: d.open[i], high: d.high[i], low: d.low[i], close: d.close[i] });
     const e50 = d.ema50[i], e200 = d.ema200[i];
     if (isFin(e50) && isFin(e200)) { emaStarted = true; }
@@ -399,17 +463,20 @@ function setSeriesData() {
   if (state.indicators.macd) { macdLineSeries.setData(macdL); macdSignalSeries.setData(macdS); macdHistSeries.setData(macdH); }
   else { macdLineSeries.setData([]); macdSignalSeries.setData([]); macdHistSeries.setData([]); }
 
-  state.lastBar = { time: d.times[n - 1], open: d.open[n - 1], high: d.high[n - 1], low: d.low[n - 1], close: d.close[n - 1] };
+  state.lastBar = candles.length ? candles[candles.length - 1] : null;
+  state.candleTimes = new Set(candles.map(candle => candle.time));
   layoutPanes();
-  priceChart.timeScale().fitContent();
-  if (rsiChart) rsiChart.timeScale().fitContent();
-  if (macdChart) macdChart.timeScale().fitContent();
+  if (fit) {
+    priceChart.timeScale().fitContent();
+    if (rsiChart) rsiChart.timeScale().fitContent();
+    if (macdChart) macdChart.timeScale().fitContent();
+  }
   drawMarkers();
   drawPriceLines();
 }
 
 function setMarkersCommon(markers) {
-  if (candleSeries) candleSeries.setMarkers(markers);
+  if (candleSeries) candleSeries.setMarkers(markers.filter(marker => state.candleTimes?.has(marker.time)).sort((a, b) => a.time - b.time));
 }
 
 /* Bot-analysis bars can outnumber chart bars: the bot indexes the last
@@ -471,8 +538,8 @@ function drawMarkers() {
     for (const s of state.signals) {
       if (s.type !== "parameter") continue;
       const color = s.strength > 0.5 ? C.up : C.down;
-      markers.push({ time: d.times[mid], position: "belowBar", color, shape: "triangleDown", text: `${s.confidence_floor}% floor`, size: 8 });
-      markers.push({ time: d.times[mid], position: "aboveBar", color, shape: "triangleUp", text: `${s.size_multiplier}x size`, size: 8 });
+      markers.push({ time: d.times[mid], position: "belowBar", color, shape: "arrowDown", text: `${s.confidence_floor}% floor`, size: 8 });
+      markers.push({ time: d.times[mid], position: "aboveBar", color, shape: "arrowUp", text: `${s.size_multiplier}x size`, size: 8 });
     }
   }
   appendBtMarkers(markers, d);
@@ -565,13 +632,16 @@ function drawBtSegments() {
 
 async function loadBtOverlay(symbol) {
   const ov = state.btOverlay;
+  const seq = chartLoadSeq;
   if (!ov || !ov.name) { ov.trades = []; return; }
   if (ov.symbol !== (symbol || state.symbol)) { ov.trades = []; return; }
   try {
     const res = await api(`/api/backtest/trades?name=${encodeURIComponent(ov.name)}`);
+    if (seq !== chartLoadSeq || ov !== state.btOverlay) return;
     ov.trades = (res && res.trades) || [];
     if (res && res.symbol) ov.symbol = res.symbol;
   } catch (e) {
+    if (seq !== chartLoadSeq || ov !== state.btOverlay) return;
     ov.trades = [];
     console.warn("Could not load backtest overlay:", e);
   }
@@ -613,6 +683,7 @@ function hexToRgba(hex, alpha) {
 }
 
 function drawZoneRect(z, d) {
+  if (![z.lower, z.upper].every(isFin) || z.upper < z.lower) return;
   const n = d.count;
   if (n === 0) return;
   const fromIdx = botChartIndex(z.formation_index);
@@ -623,6 +694,7 @@ function drawZoneRect(z, d) {
   if (toIdx >= fromRef && toIdx < n) tTo = d.times[toIdx];
   else tTo = d.times[n - 1];
   if (tTo < tFrom) tTo = d.times[n - 1];
+  if (!isFin(tFrom) || !isFin(tTo) || tTo <= tFrom) return;
 
   const base = z.type === "supply" ? C.down : C.up;
   const strengthFrac = Math.max(0.1, Math.min(1, z.strength / 100));
@@ -630,6 +702,7 @@ function drawZoneRect(z, d) {
   const fill = hexToRgba(base, alpha);
 
   const s = priceChart.addBaselineSeries({
+    autoscaleInfoProvider: () => null,
     baseValue: { type: "price", price: z.lower },
     topLineColor: z.broken ? "rgba(120,123,134,0.25)" : hexToRgba(base, 0.35 + 0.5 * strengthFrac),
     bottomLineColor: "rgba(0,0,0,0)",
@@ -641,7 +714,6 @@ function drawZoneRect(z, d) {
     priceLineVisible: false,
     lastValueVisible: false,
     crosshairMarkerVisible: false,
-    autoscaleInfoProvider: () => null,
   });
   s.setData([
     { time: tFrom, value: z.upper },
@@ -783,7 +855,9 @@ function updateTooltip(param) {
     }
   }
   tooltip.innerHTML = rows.join("");
+  tooltip.classList.remove("hidden");
   tooltip.classList.add("visible");
+  if (!chartWrap) return;
   const left = param.point.x + 14;
   tooltip.style.left = (left + tooltip.offsetWidth > chartWrap.clientWidth ? param.point.x - tooltip.offsetWidth - 14 : left) + "px";
   // Track the crosshair vertically, clamped to the chart area (item #9).
@@ -793,7 +867,7 @@ function updateTooltip(param) {
 }
 
 /* ---------- Live strategy overlay ---------- */
-async function loadOverlay() {
+async function loadOverlay(seq = chartLoadSeq) {
   if (!state.indicators.overlay) {
     state.overlay = null;
     drawPriceLines();
@@ -801,36 +875,46 @@ async function loadOverlay() {
   }
   try {
     const o = await api(`/api/live-overlay?symbol=${encodeURIComponent(state.symbol)}&range_bars=24`);
+    if (seq !== chartLoadSeq) return;
     state.overlay = o || null;
     drawPriceLines();
   } catch (e) {
+    if (seq !== chartLoadSeq) return;
     state.overlay = null;
   }
 }
 
-async function loadChart() {
+async function loadChart({ background = false } = {}) {
+  if (background && chartLoading) return;
+  chartLoading = true;
   const seq = ++chartLoadSeq;
   const symbol = state.symbol.trim() || "EURUSD";
-  showChartStatus(`Loading ${symbol} ${state.timeframe} candles...`);
+  const key = `${symbol}|${state.timeframe}|${state.count}`;
+  const hasCandles = chartDisplayedKey === key && !!state.lastBar;
+  showChartStatus(hasCandles ? "Updating candles..." : `Loading ${symbol} ${state.timeframe} candles...`, "loading", hasCandles);
   try {
     const q = `symbol=${encodeURIComponent(symbol)}&timeframe=${state.timeframe}&count=${state.count}`;
-    const [d, bot] = await Promise.all([
-      chartApi(`/api/rates?${q}`),
-      chartApi(`/api/bot-analysis?${q}`, 20000).catch(() => null),
-    ]);
+    const d = await chartApi(`/api/rates?${q}`);
     if (seq !== chartLoadSeq) return;
     if (!d || !d.count || !Array.isArray(d.times) || !d.times.length) {
       throw new Error(`No candle data returned for ${symbol}`);
     }
     state.data = d;
-    state.bot.data = bot;
+    state.bot.data = null;
+    state.signals = [];
+    state.overlay = null;
     state.symbol = d.symbol;
     $("symbol-input").value = d.symbol;
     const t = d.tick;
-    $("chart-tick").textContent = `Bid ${fmtPrice(t.bid)}  Ask ${fmtPrice(t.ask)}  Spread ${t.spread}`;
+    $("chart-tick").textContent = t ? `Bid ${fmtPrice(t.bid)}  Ask ${fmtPrice(t.ask)}  Spread ${t.spread}` : `${symbol} ${state.timeframe}`;
     updateBotBadge();
     savePrefs();
     renderWatchlist();
+    setSeriesData(chartDisplayedKey !== key);
+    chartDisplayedKey = key;
+    hideChartStatus();
+    loadPlan();
+    startQuoteTimer();
 
     // Auto-connect WebSocket on page load (after a short delay to let MT5 init)
     setTimeout(() => {
@@ -838,22 +922,26 @@ async function loadChart() {
     }, 3000);
 
     // Fetch trading signals, bt overlay, and chart overlay in parallel
-    const [sigResp, , ] = await Promise.all([
+    const [sigResp, bot] = await Promise.all([
       api(`/api/signals?symbol=${encodeURIComponent(state.symbol)}&timeframe=${state.timeframe}&count=${state.count}`).catch(() => ({ signals: [] })),
+      chartApi(`/api/bot-analysis?${q}`).catch(() => null),
       loadBtOverlay(symbol),
-      loadOverlay(),
+      loadOverlay(seq),
     ]);
+    if (seq !== chartLoadSeq) return;
     state.signals = sigResp.signals || [];
-    setSeriesData();
+    state.bot.data = bot;
+    updateBotBadge();
+    drawMarkers();
+    drawPriceLines();
     drawBtSegments();
-    hideChartStatus();
-    loadPlan();
-    startQuoteTimer();
   } catch (e) {
     if (seq !== chartLoadSeq) return;
     const message = e && e.message ? e.message : String(e);
-    $("chart-tick").textContent = "No data for " + symbol;
-    showChartStatus(`${symbol} chart unavailable: ${message}`, "error");
+    if (!hasCandles) $("chart-tick").textContent = "No data for " + symbol;
+    showChartStatus(hasCandles ? `Update failed. Showing last loaded candles. ${message}` : `${symbol} chart unavailable: ${message}`, "error", hasCandles);
+  } finally {
+    if (seq === chartLoadSeq) chartLoading = false;
   }
 }
 
@@ -886,24 +974,30 @@ async function updatePriceDisplay() {
 function startQuoteTimer() {
   if (state.quoteTimer) clearInterval(state.quoteTimer);
   state.quoteTimer = setInterval(async () => {
-    if (document.hidden) return;
+    if (document.hidden || quotePending) return;
+    const seq = chartLoadSeq;
+    const symbol = state.symbol;
+    quotePending = true;
     try {
-      const t = await api("/api/quote?symbol=" + encodeURIComponent(state.symbol));
+      const t = await api("/api/quote?symbol=" + encodeURIComponent(symbol));
+      if (seq !== chartLoadSeq || symbol !== state.symbol) return;
+      if (!t || !Number.isFinite(t.bid) || !Number.isFinite(t.ask) || t.bid <= 0 || t.ask <= 0) return;
       $("chart-tick").textContent = "Bid " + fmtPrice(t.bid) + " Ask " + fmtPrice(t.ask) + " Spread " + t.spread;
       if (state.lastBar && candleSeries && state.data) {
         const close = state.symbol.indexOf("XAU") >= 0 || state.symbol.indexOf("XAG") >= 0 ? t.ask : t.bid;
-        candleSeries.update({
+        state.lastBar = {
           ...state.lastBar,
           high: Math.max(state.lastBar.high, close),
           low: Math.min(state.lastBar.low, close),
           close,
-        });
+        };
+        candleSeries.update(state.lastBar);
       }
     } catch (e) {
       /* Transient quote failures (MT5 reconnecting, symbol switch) must not
          wipe the last known tick - overwriting with "No data for ..." made a
          healthy chart look broken. The next successful poll refreshes it. */
-    }
+    } finally { quotePending = false; }
   }, 3000);
 }
 
@@ -934,6 +1028,7 @@ function setTf(tf) {
 
 function buildTfButtons() {
   const group = $("tf-group");
+  group.replaceChildren();
   for (const tf of TFs) {
     const btn = document.createElement("button");
     btn.className = "tf-btn" + (tf === state.timeframe ? " active" : "");
@@ -957,6 +1052,7 @@ function initControls() {
   const cfg = { ema: "chk-ema", rsi: "chk-rsi", macd: "chk-macd", bot: "chk-bot", sd: "chk-sd", overlay: "chk-strat" };
   for (const key in cfg) {
     const el = $(cfg[key]);
+    if (!el) continue; // toggle not present in this page variant
     el.checked = key === "bot" ? state.bot.on : !!state.indicators[key];
     el.addEventListener("change", (e) => {
       if (key === "bot") state.bot.on = e.target.checked;
@@ -968,36 +1064,46 @@ function initControls() {
     });
   }
 
-  $("count-select").addEventListener("change", (e) => {
-    state.count = parseInt(e.target.value, 10);
-    savePrefs();
-    loadChart();
-  });
+  const countSelect2 = $("count-select");
+  if (countSelect2) {
+    countSelect2.addEventListener("change", (e) => {
+      state.count = parseInt(e.target.value, 10);
+      savePrefs();
+      loadChart();
+    });
+  }
 
-  $("chk-bt").addEventListener("change", (e) => {
-    if (!e.target.checked) {
-      state.btOverlay = { name: null, symbol: null, trades: [] };
-      drawMarkers();
-      drawBtSegments();
-      return;
-    }
-    if (bt.detail && bt.detail.params) showBtOnChart(bt.detail);
-    else {
-      toast("Open a backtest result first (Backtests tab), then Show on chart", "down");
-      e.target.checked = false;
-    }
-  });
+  const chkBt2 = $("chk-bt");
+  if (chkBt2) {
+    chkBt2.addEventListener("change", (e) => {
+      if (!e.target.checked) {
+        state.btOverlay = { name: null, symbol: null, trades: [] };
+        drawMarkers();
+        drawBtSegments();
+        return;
+      }
+      if (bt.detail && bt.detail.params) showBtOnChart(bt.detail);
+      else {
+        toast("Open a backtest result first (Backtests tab), then Show on chart", "down");
+        e.target.checked = false;
+      }
+    });
+  }
 
-  $("eq-balance").addEventListener("change", (e) => toggleEquityOpt("balance", e.target));
-  $("eq-floating").addEventListener("change", (e) => toggleEquityOpt("floating", e.target));
-  $("eq-ma5").addEventListener("change", (e) => toggleEquityOpt("ma5", e.target));
-  $("eq-dd").addEventListener("change", (e) => toggleEquityOpt("dd", e.target));
+  const eqBalance2 = $("eq-balance");
+  if (eqBalance2) eqBalance2.addEventListener("change", (e) => toggleEquityOpt("balance", e.target));
+  const eqFloating2 = $("eq-floating");
+  if (eqFloating2) eqFloating2.addEventListener("change", (e) => toggleEquityOpt("floating", e.target));
+  const eqMa52 = $("eq-ma5");
+  if (eqMa52) eqMa52.addEventListener("change", (e) => toggleEquityOpt("ma5", e.target));
+  const eqDd2 = $("eq-dd");
+  if (eqDd2) eqDd2.addEventListener("change", (e) => toggleEquityOpt("dd", e.target));
 
-  const wlInput = $("wl-add");
-  wlInput.addEventListener("keydown", (e) => {
+  const wlInput2 = $("wl-add");
+  if (wlInput2) wlInput2.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
-      addToWatchlist(wlInput.value);
-      wlInput.value = "";
+      addToWatchlist(wlInput2.value);
+      wlInput2.value = "";
     }
   });
 

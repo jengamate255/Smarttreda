@@ -1,0 +1,159 @@
+{
+  "at": "2026-09-24T21:02:15.392487+00:00",
+  "cycle": 96,
+  "compliance_mode": "normal",
+  "results": [
+    {
+      "symbol": "EURUSD",
+      "bar": "2026-09-24 20:00:00",
+      "health_score": 74.2,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "error": "strategy failed: 'StrategyConfig' object has no attribute 'require_mtf_alignment'"
+    },
+    {
+      "symbol": "GBPUSD",
+      "bar": "2026-09-24 20:00:00",
+      "health_score": 71.6,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "error": "strategy failed: 'StrategyConfig' object has no attribute 'require_mtf_alignment'"
+    },
+    {
+      "symbol": "USDCHF",
+      "bar": "2026-09-24 20:00:00",
+      "health_score": 64.3,
+      "verdict": "cautious",
+      "regime": "trending_bullish",
+      "error": "strategy failed: 'StrategyConfig' object has no attribute 'require_mtf_alignment'"
+    },
+    {
+      "symbol": "USDCAD",
+      "bar": "2026-09-24 20:00:00",
+      "health_score": 80.9,
+      "verdict": "tradeable",
+      "regime": "trending_bullish",
+      "error": "strategy failed: 'StrategyConfig' object has no attribute 'require_mtf_alignment'"
+    },
+    {
+      "symbol": "AUDUSD",
+      "bar": "2026-09-24 20:00:00",
+      "health_score": 76.0,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "error": "strategy failed: 'StrategyConfig' object has no attribute 'require_mtf_alignment'"
+    },
+    {
+      "symbol": "NZDUSD",
+      "bar": "2026-09-24 20:00:00",
+      "health_score": 77.1,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "error": "strategy failed: 'StrategyConfig' object has no attribute 'require_mtf_alignment'"
+    },
+    {
+      "symbol": "CHFJPY",
+      "bar": "2026-09-24 20:00:00",
+      "health_score": 74.2,
+      "verdict": "tradeable",
+      "regime": "trending_bullish",
+      "error": "strategy failed: 'StrategyConfig' object has no attribute 'require_mtf_alignment'"
+    },
+    {
+      "symbol": "EURJPY",
+      "bar": "2026-09-24 20:00:00",
+      "health_score": 77.2,
+      "verdict": "tradeable",
+      "regime": "trending_bullish",
+      "error": "strategy failed: 'StrategyConfig' object has no attribute 'require_mtf_alignment'"
+    },
+    {
+      "symbol": "GBPJPY",
+      "bar": "2026-09-24 20:00:00",
+      "health_score": 73.6,
+      "verdict": "tradeable",
+      "regime": "trending_bullish",
+      "error": "strategy failed: 'StrategyConfig' object has no attribute 'require_mtf_alignment'"
+    },
+    {
+      "symbol": "NZDJPY",
+      "bar": "2026-09-24 20:00:00",
+      "health_score": 60.0,
+      "verdict": "cautious",
+      "regime": "transition",
+      "error": "strategy failed: 'StrategyConfig' object has no attribute 'require_mtf_alignment'"
+    },
+    {
+      "symbol": "GBPCHF",
+      "bar": "2026-09-24 20:00:00",
+      "health_score": 70.4,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "error": "strategy failed: 'StrategyConfig' object has no attribute 'require_mtf_alignment'"
+    },
+    {
+      "symbol": "NZDCAD",
+      "bar": "2026-09-24 20:00:00",
+      "health_score": 68.8,
+      "verdict": "cautious",
+      "regime": "trending_bearish",
+      "error": "strategy failed: 'StrategyConfig' object has no attribute 'require_mtf_alignment'"
+    },
+    {
+      "symbol": "AUDNZD",
+      "bar": "2026-09-24 20:00:00",
+      "health_score": 66.3,
+      "verdict": "cautious",
+      "regime": "transition",
+      "error": "strategy failed: 'StrategyConfig' object has no attribute 'require_mtf_alignment'"
+    },
+    {
+      "symbol": "EURAUD",
+      "bar": "2026-09-24 20:00:00",
+      "health_score": 62.6,
+      "verdict": "cautious",
+      "regime": "trending_bullish",
+      "error": "strategy failed: 'StrategyConfig' object has no attribute 'require_mtf_alignment'"
+    },
+    {
+      "symbol": "EURCHF",
+      "bar": "2026-09-24 20:00:00",
+      "health_score": 63.5,
+      "verdict": "cautious",
+      "regime": "trending_bearish",
+      "error": "strategy failed: 'StrategyConfig' object has no attribute 'require_mtf_alignment'"
+    },
+    {
+      "symbol": "XAUUSD",
+      "bar": "2026-09-24 20:00:00",
+      "health_score": 87.8,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "error": "strategy failed: 'StrategyConfig' object has no attribute 'require_mtf_alignment'"
+    },
+    {
+      "symbol": "XAGUSD",
+      "bar": "2026-09-24 20:00:00",
+      "health_score": 78.5,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "error": "strategy failed: 'StrategyConfig' object has no attribute 'require_mtf_alignment'"
+    },
+    {
+      "symbol": "USOIL",
+      "bar": "2026-09-24 20:00:00",
+      "health_score": 66.5,
+      "verdict": "cautious",
+      "regime": "trending_bearish",
+      "error": "strategy failed: 'StrategyConfig' object has no attribute 'require_mtf_alignment'"
+    },
+    {
+      "symbol": "JP225",
+      "bar": "2026-09-24 20:00:00",
+      "health_score": 79.5,
+      "verdict": "tradeable",
+      "regime": "trending_bullish",
+      "error": "strategy failed: 'StrategyConfig' object has no attribute 'require_mtf_alignment'"
+    }
+  ]
+}

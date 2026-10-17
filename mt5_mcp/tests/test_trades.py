@@ -12,6 +12,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import client as client_module
 from config import get_settings
 from tools.trades import (
+    MIN_DEVIATION_POINTS,
+    _deviation,
     break_even,
     calc_lots,
     close_position,
@@ -113,6 +115,34 @@ class TestPreflight:
         result = open_market(EURUSD, "BUY", 0.087, sl=1.19500)
         assert result.accepted
         assert fake_client.requests[-1]["volume"] == 0.09
+
+
+class TestSlippageAllowance:
+    """deviation=0 means "fill at this exact price or reject" (retcode 10004).
+
+    Gold reports trade_stops_level=0, so the old code sent 0 for every XAUUSD
+    order.
+    """
+
+    def test_zero_broker_stop_level_uses_floor(self):
+        assert _deviation({"trade_stops_level": 0}) == MIN_DEVIATION_POINTS
+
+    def test_missing_stop_level_uses_floor(self):
+        assert _deviation({}) == MIN_DEVIATION_POINTS
+
+    def test_broker_min_stop_distance_wins_when_larger(self):
+        assert _deviation({"trade_stops_level": 150}) == 150
+
+    def test_market_order_sends_slippage_allowance(self, fake_client):
+        result = open_market(EURUSD, "BUY", 0.09, sl=1.19500, tp=1.21500)
+        assert result.accepted
+        assert fake_client.requests[-1]["deviation"] >= MIN_DEVIATION_POINTS
+
+    def test_close_order_sends_slippage_allowance(self, fake_client):
+        fake_client._positions.append(_buy_position())
+        result = close_position(1001)
+        assert result.accepted
+        assert fake_client.requests[-1]["deviation"] >= MIN_DEVIATION_POINTS
 
 
 class TestPending:

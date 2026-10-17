@@ -35,8 +35,8 @@ MIN_LIVE_TRADES = 5
 MIN_PRIOR_TRADES = 50
 DEFAULT_PARAMS = {
     "enabled": True,
-    "confidence_floor": 90.0,
-    "max_spike_age": 15,
+    "confidence_floor": 75.0,
+    "max_spike_age": 45,
     "spike_threshold_atr": 2.5,
     "size_multiplier": 1.0,
 }

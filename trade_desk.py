@@ -87,7 +87,7 @@ SCAN_INTERVAL_MIN = float(os.getenv("MT5_DESK_SCAN_MINUTES", "30"))   # full sca
 MANAGE_INTERVAL_SEC = float(os.getenv("MT5_DESK_MANAGE_SECONDS", "60"))  # mgmt cadence
 DESK_MIN_CONFLUENCE = float(os.getenv("MT5_DESK_MIN_CONFLUENCE", "75"))
 DESK_MIN_HEALTH = float(os.getenv("MT5_DESK_MIN_HEALTH", "55"))
-MAX_HOLD_HOURS = float(os.getenv("MT5_DESK_MAX_HOLD_HOURS", "48"))
+MAX_HOLD_HOURS = float(os.getenv("MT5_DESK_MAX_HOLD_HOURS", "96"))
 DESK_MAGIC = int(os.getenv("MT5_DESK_MAGIC", str(MAGIC + 7)))  # distinguish desk orders
 
 # Champion-combo levels (Colab exhaustive sweep 2026-09-12, 136k combos):
@@ -96,6 +96,34 @@ DESK_MAGIC = int(os.getenv("MT5_DESK_MAGIC", str(MAGIC + 7)))  # distinguish des
 DESK_ENTRY_TF = os.getenv("MT5_DESK_ENTRY_TF", "M5")
 DESK_SL_ATR_MULT = float(os.getenv("MT5_DESK_SL_ATR", "3.0"))
 DESK_TP_R_MULT = float(os.getenv("MT5_DESK_TP_R", "1.5"))
+
+# Symbol-specific minimum SL floors (price-distance units).
+# M5 ATR * 4.5 is too tight for volatile symbols — BTC's M5 noise ($50-$200)
+# produces SL of $225-$900, but BTC regularly moves $3,300+ (3.3% pullbacks).
+# JPY pairs see 15-25 pip session-open chops that clip 9-13 pip M5 stops.
+# These floors ensure the SL survives normal volatility before the trade develops.
+MIN_SL_FLOOR: dict[str, float] = {
+    "BTCUSD": 1000.0,   # ~$1000 min (vs $225-$900 from M5 ATR)
+    "ETHUSD": 30.0,     # ~$30 min (ETH ATR ~$30-50 on M5)
+    "USDJPY": 0.20,     # 20 pips min (vs 9-36 pips from M5 ATR)
+    "EURJPY": 0.20,     # 20 pips
+    "GBPJPY": 0.25,     # 25 pips (wider JPY cross)
+    "CHFJPY": 0.20,     # 20 pips
+}
+
+# Position management feature flags (default: enabled)
+PARTIAL_CLOSE_ENABLED = os.getenv("MT5_DESK_PARTIAL_CLOSE", "1").strip().lower() in ("1", "true", "yes", "on")
+BREAKEVEN_ENABLED = os.getenv("MT5_DESK_BREAKEVEN", "1").strip().lower() in ("1", "true", "yes", "on")
+PARTIAL_CLOSE_FRACTION = float(os.getenv("MT5_DESK_PARTIAL_FRACTION", "0.5"))  # close 50% at 1R
+PARTIAL_CLOSE_R_TRIGGER = float(os.getenv("MT5_DESK_PARTIAL_R", "1.0"))  # trigger at +1R
+BREAKEVEN_BUFFER_POINTS = int(os.getenv("MT5_DESK_BE_BUFFER_POINTS", "2"))  # SL offset from entry
+
+# Early loss cut (dead trade detection): exit trades that are deeply negative
+# early. Data shows 1-4h holds have 25% WR — these are dead trades walking.
+# Cut at -0.5R after 2h to recycle capital into better setups.
+EARLY_LOSS_CUT_ENABLED = os.getenv("MT5_DESK_EARLY_LOSS_CUT", "1").strip().lower() in ("1", "true", "yes", "on")
+EARLY_LOSS_CUT_HOURS = float(os.getenv("MT5_DESK_EARLY_LOSS_HOURS", "2"))  # min age before cut
+EARLY_LOSS_CUT_R = float(os.getenv("MT5_DESK_EARLY_LOSS_R", "-0.5"))  # cut if r_multiple < this
 
 # tradeable universe — majors, metals, indices, energy, crypto (SIM broker)
 # JPY crosses added 2026-09-12: champion combo validated OOS on CHFJPY/EURJPY/
@@ -209,7 +237,9 @@ def _cooldown_reason(symbol: str) -> str:
 def _frame(client, symbol: str, tf: str = "H1", count: int = 350) -> pd.DataFrame | None:
     """Fetch OHLCV frame once per symbol (analysts take DataFrames)."""
     try:
-        return client.rates(symbol, tf, count)
+        frame = client.rates(symbol, tf, count)
+        from mt5_mcp.entry_quality import closed_frame, enabled
+        return closed_frame(frame) if enabled() else frame
     except Exception as exc:
         logger.debug("rates %s %s failed: %s", symbol, tf, exc)
         return None
@@ -239,21 +269,34 @@ def analyst_patterns(client, symbol: str) -> dict[str, Any]:
         patterns = report.get("patterns") or []
         if not patterns:
             return {"score": 0.0, "direction": None}
-        # confirmed patterns score higher than emerging
+        # Rank only executable setups in quality mode, including learned trust.
         best, best_score, best_dir = None, 0.0, None
+        best_raw_score, best_factor = 0.0, 1.0
+        from mt5_mcp.entry_quality import enabled as quality_enabled, pattern_entry_check
+        strict = quality_enabled()
+        quote = client.tick(symbol) if strict else {}
         for p in patterns:
             if p.get("direction") not in ("bullish", "bearish"):
+                continue
+            side = "BUY" if p["direction"] == "bullish" else "SELL"
+            if strict and not pattern_entry_check(
+                    p, side, quote.get("ask" if side == "BUY" else "bid"))["allowed"]:
                 continue
             score = float(p.get("ai_score", p.get("quality_score", 0)) or 0)
             if str(p.get("status")) == "confirmed":
                 score = min(100.0, score * 1.15)
+            raw_score, learned_factor = score, 1.0
+            if strict:
+                score, learned_factor = adjust_pattern_score(p.get("pattern"), score, symbol=symbol)
             if score > best_score:
                 best, best_score, best_dir = p, score, p["direction"]
+                best_raw_score, best_factor = raw_score, learned_factor
         if not best:
             return {"score": 0.0, "direction": None}
         # Learning loop: journal win rate per setup adjusts trust.
-        raw_score = best_score
-        best_score, learned_factor = adjust_pattern_score(best.get("pattern"), best_score)
+        raw_score, learned_factor = best_raw_score, best_factor
+        if not strict:
+            best_score, learned_factor = adjust_pattern_score(best.get("pattern"), best_score, symbol=symbol)
         return {
             "score": best_score,
             "raw_score": raw_score,
@@ -278,7 +321,11 @@ def analyst_zones(client, symbol: str) -> dict[str, Any]:
             return {"score": 0.0, "direction": None}
         zones = detect_zones(frame, lookback=300) or []
         best, best_score, best_dir, best_dist = None, 0.0, None, None
+        from mt5_mcp.entry_quality import enabled as quality_enabled
+        strict = quality_enabled()
         for z in zones:
+            if strict and (not getattr(z, "fresh", False) or getattr(z, "broken", False)):
+                continue
             zl = getattr(z, "lower", None)
             zu = getattr(z, "upper", None)
             ztype = str(getattr(z, "type", "") or "")
@@ -306,6 +353,7 @@ def analyst_zones(client, symbol: str) -> dict[str, Any]:
             "zone_upper": float(getattr(best, "upper", 0)),
             "distance": best_dist,
             "fresh": bool(getattr(best, "fresh", False)),
+            "broken": bool(getattr(best, "broken", False)),
         }
     except Exception as exc:
         return {"score": 0.0, "direction": None, "error": str(exc)}
@@ -323,7 +371,11 @@ def _mtf_trend(client, symbol: str, tf: str) -> dict[str, Any]:
     key = f"{symbol}:{tf}"
     now = time.time()
     hit = _MTF_CACHE.get(key)
-    if hit and now - hit[0] < _MTF_TTL.get(tf, 300):
+    from mt5_mcp.entry_quality import enabled as quality_enabled
+    ttl = _MTF_TTL.get(tf,300)
+    if quality_enabled() and tf in ("H1", "H4"):
+        ttl = min(30, ttl)
+    if hit and now - hit[0] < ttl:
         return hit[1]
     bars = 300 if tf in ("W1", "D1", "M15", "M30") else 600 if tf == "H4" else 400
     try:
@@ -394,7 +446,7 @@ def analyst_trend(client, symbol: str) -> dict[str, Any]:
 def analyst_momentum(client, symbol: str) -> dict[str, Any]:
     """Momentum analyst: RSI direction + MACD histogram + volume."""
     try:
-        df = client.rates(symbol, "H1", 60)
+        df = _frame(client, symbol, "H1", 60)
         if df is None or len(df) < 40:
             return {"score": 0.0, "direction": None}
         closes = df["close"].astype(float)
@@ -456,6 +508,10 @@ def confluence(analyses: dict[str, dict[str, Any]]) -> dict[str, Any]:
         return {"conviction": round(blended, 1), "direction": None, "agreement": 0.0}
     agreement = max(direction_votes.values()) / votes
     direction = "BUY" if direction_votes["BUY"] >= direction_votes["SELL"] else "SELL"
+    from mt5_mcp.entry_quality import enabled as quality_enabled
+    if quality_enabled():
+        opposing = direction_votes["SELL" if direction == "BUY" else "BUY"]
+        blended = (total - opposing) / weight_sum if weight_sum else 0.0
     # conviction is blended score scaled by directional agreement
     conviction = blended * (0.5 + 0.5 * agreement)
     return {
@@ -501,6 +557,8 @@ def build_desk_sheet(client, symbols: list[str]) -> list[dict[str, Any]]:
         try:
             t = client.tick(sym)
             entry["price"] = float(t.get("bid") or 0.0)
+            entry["entry_bid"] = float(t.get("bid") or 0.0)
+            entry["entry_ask"] = float(t.get("ask") or 0.0)
         except Exception:
             pass
         sheet.append(entry)
@@ -508,45 +566,90 @@ def build_desk_sheet(client, symbols: list[str]) -> list[dict[str, Any]]:
     return sheet
 
 
+def selection_reasons(entry: dict[str, Any], traded_today: set[str]) -> list[str]:
+    """Explain the same checks used by portfolio selection, without broker calls."""
+    from mt5_mcp.entry_quality import enabled as quality_enabled, pattern_entry_check
+    reasons = []
+    side = entry.get("direction")
+    if side not in ("BUY", "SELL"):
+        reasons.append("no entry direction")
+    for field, floor in (("confluence", DESK_MIN_CONFLUENCE), ("health", DESK_MIN_HEALTH)):
+        value = float(entry.get(field) or 0)
+        if not math.isfinite(value) or value < floor:
+            reasons.append(f"{field} below selection floor")
+    if entry["symbol"] in traded_today:
+        reasons.append("symbol already traded today")
+    if quality_enabled():
+        analysts = entry.get("analysts", {})
+        pattern, zones, trend = (analysts.get(key, {}) for key in ("patterns", "zones", "trend"))
+        price = entry.get("entry_ask" if side == "BUY" else "entry_bid")
+        reasons.extend(pattern_entry_check(pattern, side, price)["reasons"])
+        if zones.get("direction") != side:
+            reasons.append("selected zone direction disagrees with entry")
+        if not zones.get("fresh") or zones.get("broken", False):
+            reasons.append("selected zone is not fresh and unbroken")
+        directions = {value.get("tf"): value.get("direction") for value in trend.get("mtf", [])}
+        if any(directions.get(tf) != side for tf in ("H1", "H4")):
+            reasons.append("H1/H4 direction disagrees with entry")
+        if "entry_plan" in entry and entry["entry_plan"] is None:
+            reasons.append("no measured stop/target plan supports required RR")
+    return list(dict.fromkeys(reasons))
+
+
 def portfolio_select(sheet: list[dict[str, Any]], state: dict[str, Any]) -> list[dict[str, Any]]:
-    """Pick the best symbol per correlation group; drop weak confluence."""
+    """Pick the best eligible symbol per correlation group; record the reasons."""
     today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
     traded_today: set[str] = set(state.get("daily_trades", {}).get(today, []))
-
     picks: dict[str, dict[str, Any]] = {}
     for entry in sheet:
         sym = entry["symbol"]
-        if float(entry.get("confluence") or 0) < DESK_MIN_CONFLUENCE:
+        reasons = selection_reasons(entry, traded_today)
+        entry["selection"] = {"eligible": not reasons, "picked": False, "reasons": reasons}
+        if reasons:
             continue
-        if entry.get("direction") not in ("BUY", "SELL"):
-            continue
-        if float(entry.get("health") or 0) < DESK_MIN_HEALTH:
-            continue
-        if sym in traded_today:
-            continue  # one shot per symbol per day
         grp = correlation_group(sym)
         cur = picks.get(grp)
         if cur is None or float(entry["confluence"]) > float(cur["confluence"]):
             picks[grp] = entry
+    for entry in sheet:
+        selection = entry["selection"]
+        selection["picked"] = picks.get(correlation_group(entry["symbol"])) is entry
+        if selection["eligible"] and not selection["picked"]:
+            selection["reasons"].append("lower-ranked candidate in same correlation group")
     return list(picks.values())
+
+
+def selection_snapshot(sheet: list[dict[str, Any]]) -> dict[str, Any]:
+    """Persist bounded, explicit evidence for later offline selection reviews."""
+    from mt5_mcp.entry_quality import enabled as quality_enabled
+    fields = {"patterns": ("pattern", "direction", "status", "score", "raw_score", "learned_factor", "target", "invalidation"),
+              "zones": ("direction", "score", "zone_lower", "zone_upper", "fresh", "broken"),
+              "trend": ("direction", "score", "mtf"), "momentum": ("direction", "score")}
+    return {"schema": 1, "quality_enabled": quality_enabled(),
+            "min_confluence": DESK_MIN_CONFLUENCE, "min_health": DESK_MIN_HEALTH,
+            "candidates": [{"symbol": entry["symbol"], "direction": entry.get("direction"),
+                "confluence": entry.get("confluence"), "health": entry.get("health"),
+                "entry_bid": entry.get("entry_bid"), "entry_ask": entry.get("entry_ask"),
+                "entry_plan": entry.get("entry_plan"), "selection": entry.get("selection"),
+                "analysts": {name: {key: entry.get("analysts", {}).get(name, {}).get(key) for key in keys}
+                             for name, keys in fields.items()}} for entry in sheet]}
 
 
 # ── execution ──────────────────────────────────────────────────────
 
 def _plan_levels(entry: dict[str, Any]) -> dict[str, float] | None:
-    """Champion-combo levels (Colab sweep 2026-09-12): SL 3.0xATR, TP 1.5R.
-
-    Pattern invalidation/target are still respected when they give a WIDER
-    stop than 3.0xATR (structure matters), but the floor/ceiling is ATR
-    math: never tighter than 3.0xATR stop, target never beyond 1.5R.
-    """
+    """Keep configured stop floors; quality targets stay within usable structure."""
     analysts = entry.get("analysts", {})
     pat = analysts.get("patterns", {})
     zones = analysts.get("zones", {})
-    price = float(entry.get("price") or 0.0)
+    direction = entry.get("direction")
+    from mt5_mcp.entry_quality import enabled as quality_enabled, pattern_entry_check
+    strict = quality_enabled()
+    price = float(entry.get("entry_ask" if direction == "BUY" else "entry_bid") or entry.get("price") or 0.0)
     if not price:
         return None
-    direction = entry.get("direction")
+    if strict and not pattern_entry_check(pat, direction, price)["allowed"]:
+        return None
     sym = entry.get("symbol", "")
 
     # ATR from the entry frame (M5) — the sweep's engine measured ATR(14)
@@ -554,7 +657,7 @@ def _plan_levels(entry: dict[str, Any]) -> dict[str, float] | None:
     if atr_val <= 0:
         try:
             client = get_client()
-            df = client.rates(sym, DESK_ENTRY_TF, 30)
+            df = _frame(client, sym, DESK_ENTRY_TF, 30)
             h, l, c = df["high"], df["low"], df["close"]
             prev = c.shift(1)
             tr = pd.concat([h - l, (h - prev).abs(), (l - prev).abs()], axis=1).max(axis=1)
@@ -562,10 +665,33 @@ def _plan_levels(entry: dict[str, Any]) -> dict[str, float] | None:
         except Exception:
             atr_val = 0.0
     if atr_val <= 0:
+        if strict:
+            return None
         atr_val = price * 0.001  # last-resort: 0.1% of price
+    if strict and not math.isfinite(atr_val):
+        return None
 
     stop = DESK_SL_ATR_MULT * atr_val
-    tp_dist = DESK_TP_R_MULT * stop
+
+    # Symbol-specific minimum SL floor — prevents M5 ATR from producing
+    # absurdly tight stops on volatile symbols (BTC, JPY pairs).
+    floor = MIN_SL_FLOOR.get(sym, 0.0)
+    if floor > 0 and stop < floor:
+        stop = floor
+
+    # Spread buffer: add half the current spread to the SL distance so the
+    # actual SL price accounts for the cost of exiting through the spread.
+    # (Full spread is already in sizing math; this protects the SL level itself.)
+    try:
+        _c = get_client()
+        info = _c.symbol_info(sym)
+        if info:
+            sp_pts = float(info.get("spread") or 0.0)
+            pt = float(info.get("point") or 0.0)
+            if sp_pts > 0 and pt > 0:
+                stop += sp_pts * pt * 0.5  # half-spread buffer on SL price
+    except Exception:
+        pass
 
     # structural invalidation can widen the stop (never narrow below 3xATR)
     invalidation = pat.get("invalidation")
@@ -575,6 +701,9 @@ def _plan_levels(entry: dict[str, Any]) -> dict[str, float] | None:
         if struct_stop > stop:
             stop = struct_stop
 
+    # TP calculated after all stop adjustments to maintain correct R:R
+    tp_dist = DESK_TP_R_MULT * stop
+
     if direction == "BUY":
         sl = price - stop
         tp = price + tp_dist
@@ -583,6 +712,11 @@ def _plan_levels(entry: dict[str, Any]) -> dict[str, float] | None:
         tp = price - tp_dist
     else:
         return None
+    if strict:
+        target = float(pat["target"])
+        tp = min(tp, target) if direction == "BUY" else max(tp, target)
+        if not pattern_entry_check(pat, direction, price, sl=sl, tp=tp)["allowed"]:
+            return None
     return {"entry": price, "sl": sl, "tp": tp, "atr": atr_val}
 
 
@@ -611,6 +745,9 @@ def execute_pick(client, entry: dict[str, Any], dry_run: bool) -> dict[str, Any]
         symbol=sym, side=str(direction), lots=0.01,
         sl_price=sl, confidence=float(entry.get("confluence") or 0),
         source="desk", score=float(entry.get("confluence") or 0),
+        setup=f"desk:{entry.get('pattern') or 'confluence'}",
+        tp_price=tp,
+        entry_price=levels["entry"],
     )
     if not gate_verdict.allowed:
         return {"symbol": sym, "status": "blocked", "reason": "; ".join(gate_verdict.violations)}
@@ -693,6 +830,7 @@ def execute_pick(client, entry: dict[str, Any], dry_run: bool) -> dict[str, Any]
             "symbol": sym, "side": direction, "entry": levels["entry"],
             "sl": sl, "tp": tp, "lots": lots, "opened": datetime.now(timezone.utc).isoformat(),
             "risk_r": abs(levels["entry"] - sl),
+            "setup": f"desk:{entry.get('pattern') or 'confluence'}",
         }
         _save_state(state)
     return out
@@ -701,11 +839,10 @@ def execute_pick(client, entry: dict[str, Any], dry_run: bool) -> dict[str, Any]
 def _size_position(client, symbol: str, sl_pips: float, entry: float, sl: float) -> float | None:
     """Risk-based lots using tick-value math (contract-aware).
 
-    Rules (audit 2026-09-11):
-    - Risk exactly DESK_RISK_FIXED ($25) using live tick-value math.
+    Rules:
+    - Outcome policy overrides the fixed-dollar budget when enabled.
     - Round DOWN to volume step (never round up past the risk cap).
-    - Min-lot risk guard: if even volume_min risks more than 1.5x the cap,
-      skip the trade (wide-SL symbols like USOIL are untradeable at $25).
+    - Skip the trade if broker minimum volume exceeds the budget.
     - Consistency guard: reduce lot size if best day approaches 40% of total profit
       (FundingPips consistency rule).
     """
@@ -748,7 +885,48 @@ def _size_position(client, symbol: str, sl_pips: float, entry: float, sl: float)
             if DESK_RISK_FIXED > 0
             else _equity() * (DESK_RISK_PERCENT / 100.0)
         )
+        from mt5_mcp import performance_risk
+        policy_enabled = performance_risk.enabled()
+        base_percent = DESK_RISK_PERCENT
+        if policy_enabled:
+            base_percent = performance_risk.effective_percent(client,DESK_RISK_PERCENT)
+            risk_money = float(client.account_info().get("equity") or 0) * base_percent / 100
         risk_money *= multiplier  # apply consistency multiplier
+
+        # Drawdown recovery: reduce risk when account drawdown exceeds threshold
+        try:
+            from mt5_mcp.drawdown_recovery import drawdown_recovery_risk_percent
+            equity = _equity()
+            dd_result = drawdown_recovery_risk_percent(
+                equity=equity,
+                max_risk_percent=base_percent,
+                enabled=True,
+            )
+            if dd_result["mode"] == "reduced":
+                # Scale risk_money proportionally: reduced_risk / max_risk
+                dd_scale = min(1.0, dd_result["risk_percent"] / max(base_percent, 0.01))
+                risk_money *= dd_scale
+                logger.info(
+                    "drawdown recovery: scaling risk by %.0f%% for %s (dd %.1f%%)",
+                    dd_scale * 100, symbol, dd_result["drawdown_percent"],
+                )
+        except Exception as exc:
+            logger.debug("drawdown recovery check failed in desk: %s", exc)
+
+        # Equity curve sizing: adjust risk based on recent win/loss streak
+        try:
+            from mt5_mcp.pipeline import equity_curve_sizing_multiplier
+            ec = {"multiplier":1.0} if policy_enabled else equity_curve_sizing_multiplier()
+            risk_money *= ec["multiplier"]
+            if ec["multiplier"] != 1.0:
+                logger.info(
+                    "equity curve sizing: multiplier %.2f for %s (streak=%d %s)",
+                    ec["multiplier"], symbol, abs(ec["streak"]), ec["streak_type"],
+                )
+        except Exception as exc:
+            logger.debug("equity curve sizing failed in desk: %s", exc)
+
+        risk_money = performance_risk.limit_budget(client,risk_money)
         if risk_money <= 0:
             return None
         sl_distance = abs(entry - sl)
@@ -768,21 +946,13 @@ def _size_position(client, symbol: str, sl_pips: float, entry: float, sl: float)
         vmin = float(info.get("volume_min", 0.01) or 0.01)
         vmax = float(info.get("volume_max", 100.0) or 100.0)
 
-        # floor to step — never exceed the risk cap
-        lots = math.floor((risk_money / per_lot_risk) / step) * step
-        if lots <= 0:
-            # even one step over-risks: check the min-lot guard
-            min_risk = vmin * per_lot_risk
-            if min_risk <= risk_money * 1.5:
-                lots = vmin  # within 1.5x cap: accept min lot
-            else:
-                logger.info(
-                    "sizing skip %s: min lot %.2f risks $%.2f > 1.5x cap $%.2f",
-                    symbol, vmin, min_risk, risk_money,
-                )
-                return None
-        lots = min(lots, vmax)
-        return round(lots, 2)
+        if not all(math.isfinite(v) and v > 0 for v in (risk_money,per_lot_risk,step,vmin,vmax)):
+            return None
+        lots = round(math.floor(min(risk_money / per_lot_risk,vmax) / step + 1e-10) * step,8)
+        if lots < vmin or lots * per_lot_risk > risk_money + 1e-8:
+            logger.info("sizing skip %s: minimum lot exceeds current risk budget", symbol)
+            return None
+        return lots
     except Exception as exc:
         logger.warning("sizing failed for %s: %s", symbol, exc)
         return None
@@ -835,35 +1005,28 @@ def _resolve_closed_position(client, ticket: str, meta: dict[str, Any]) -> dict[
     """Find the closing deal for a tracked position that vanished.
 
     Returns {"summary": {...}, "html": str} or None when the deal can't be
-    recovered (e.g. history API hiccup). Falls back to tracked entry for
-    PnL estimation when the deal lacks one.
+    recovered (e.g. history API hiccup). Uses completed broker positions,
+    including partial exits, entry/exit commissions, swap and fees.
     """
     symbol = str(meta.get("symbol", ""))
     side = str(meta.get("side", ""))
     entry = float(meta.get("entry") or 0)
     try:
-        deals = client.deals(days=3) or []
-    except Exception:
-        deals = []
-    best = None
-    for d in deals:
-        if not isinstance(d, dict):
-            continue
-        if str(d.get("position_id") or d.get("ticket")) != str(ticket):
-            continue
-        if float(d.get("entry", -1)) != 1:  # DEAL_ENTRY_OUT
-            continue
-        best = d
-        break
-    if best is not None:
-        pnl = float(best.get("profit", 0) or 0) + float(best.get("swap", 0) or 0) + float(best.get("fee", 0) or 0)
-        close_price = float(best.get("price") or 0)
-        reason = "SL hit" if pnl < 0 else "TP hit" if pnl > 0 else "manual/flat close"
-        symbol = str(best.get("symbol") or symbol)
-    else:
-        pnl = 0.0
-        close_price = 0.0
-        reason = "closed (details unavailable)"
+        from mt5_mcp.journal_reconcile import closed_positions
+        opened = datetime.fromisoformat(meta["opened"])
+        age_days = max(0, (datetime.now(timezone.utc) - opened).days)
+        records = closed_positions(client=client, days=max(3, age_days + 2))
+        record = records.get(int(ticket)) or next(
+            (row for row in records.values() if row.get("entry_order") == int(ticket)), None)
+    except Exception as exc:
+        logger.warning("Cannot resolve closed position %s: %s", ticket, exc)
+        return None
+    if record is None:
+        return None
+    pnl = record["pnl"]
+    close_price = record["exit_price"]
+    reason = "broker-confirmed close (all deals and costs included)"
+    symbol = str(record["symbol"] or symbol)
     summary = {
         "ticket": int(ticket),
         "symbol": symbol,
@@ -873,6 +1036,8 @@ def _resolve_closed_position(client, ticket: str, meta: dict[str, Any]) -> dict[
         "entry": entry,
         "close": close_price,
         "reason": reason,
+        "outcome": record["outcome"],
+        "close_time": min(datetime.fromtimestamp(record["close_time"], timezone.utc), datetime.now(timezone.utc)).isoformat(),
     }
     html = fmt_position_update(
         symbol=symbol,
@@ -905,6 +1070,8 @@ def manage_positions(client, dry_run: bool) -> list[dict[str, Any]]:
             # and the journal gets a record — a silent stop-out is the
             # one thing a notification system must never do.
             closed = _resolve_closed_position(client, ticket, meta)
+            if not closed:
+                continue
             tracked.pop(ticket)
             if closed:
                 actions.append(closed["summary"])
@@ -921,7 +1088,11 @@ def manage_positions(client, dry_run: bool) -> list[dict[str, Any]]:
                         ticket=int(ticket),
                         side=closed["summary"].get("side", ""),
                         pnl=float(closed["summary"].get("pnl") or 0),
-                        setup="desk_managed",
+                        setup=meta.get("setup", "desk_managed"),
+                        open_time=meta.get("opened"),
+                        close_time=closed["summary"]["close_time"],
+                        exit_price=closed["summary"].get("close"),
+                        outcome=closed["summary"]["outcome"],
                         reason=closed["summary"].get("reason", ""),
                         lessons="closed while desk was tracking",
                     )
@@ -951,10 +1122,10 @@ def manage_positions(client, dry_run: bool) -> list[dict[str, Any]]:
         except Exception:
             pass
 
-        # 1) partial exit + break-even at +1R: bank 50%, SL to entry+buffer.
+        # 1) partial exit at +PARTIAL_CLOSE_R_TRIGGER R: bank a fraction, let the runner run.
         #    A winner that round-trips to entry is the most expensive mistake
-        #    a desk can make — bank half, let the runner pay for the risk.
-        if r_multiple >= 1.0 and not meta.get("be_armed"):
+        #    a desk can make — bank some, let the rest pay for the risk.
+        if PARTIAL_CLOSE_ENABLED and r_multiple >= PARTIAL_CLOSE_R_TRIGGER and not meta.get("partial_taken"):
             volume = float(pos.get("volume") or 0)
             info = None
             try:
@@ -964,8 +1135,8 @@ def manage_positions(client, dry_run: bool) -> list[dict[str, Any]]:
             vmin = float((info or {}).get("volume_min", 0.01) or 0.01)
             step = float((info or {}).get("volume_step", 0.01) or 0.01)
             remaining_min = max(vmin, step)
-            take = math.floor((volume / 2) / step) * step
-            if not dry_run and volume - take >= remaining_min and take >= vmin and not meta.get("partial_taken"):
+            take = math.floor((volume * PARTIAL_CLOSE_FRACTION) / step) * step
+            if not dry_run and volume - take >= remaining_min and take >= vmin:
                 try:
                     res = close_position(int(ticket), volume=round(take, 2))
                     if getattr(res, "accepted", False):
@@ -975,33 +1146,67 @@ def manage_positions(client, dry_run: bool) -> list[dict[str, Any]]:
                             "action": "partial-exit",
                             "closed_lots": round(take, 2),
                             "remaining_lots": round(volume - take, 2),
+                            "r_multiple": round(r_multiple, 2),
                         })
                         _log_event("partial_exit", {
                             "ticket": ticket, "symbol": symbol,
                             "closed_lots": round(take, 2),
+                            "remaining_lots": round(volume - take, 2),
                             "r_multiple": round(r_multiple, 2),
                         })
+                        html = fmt_position_update(
+                            symbol=symbol, ticket=int(ticket),
+                            action=f"PARTIAL EXIT @ +{r_multiple:.1f}R",
+                            entry=entry,
+                            reason=f"closed {round(take, 2)} lots, {round(volume - take, 2)} running",
+                        )
                         notify(
                             f"partial_{ticket}",
                             f"{symbol} partial exit: banked {round(take, 2)} lots at +{r_multiple:.1f}R",
+                            html=html,
                         )
                     else:
                         # partial failed (e.g. stops level) — don't retry every
                         # cycle; mark taken so BE/trail still proceed
                         meta["partial_taken"] = True
+                        logger.warning("partial exit rejected %s ticket %s", symbol, ticket)
                 except Exception as exc:
                     logger.warning("partial exit failed %s: %s", symbol, exc)
             elif dry_run and not meta.get("partial_taken"):
                 actions.append({"ticket": ticket, "symbol": symbol,
                                 "action": "partial-exit (dry-run)",
                                 "closed_lots": round(take, 2) if take >= vmin else 0})
-            be_price = entry + (2 * _point(client, symbol)) if is_buy else entry - (2 * _point(client, symbol))
+
+        # 1b) break-even at +PARTIAL_CLOSE_R_TRIGGER R: move SL to entry+buffer.
+        #     Independent of partial close — can be enabled alone.
+        if BREAKEVEN_ENABLED and r_multiple >= PARTIAL_CLOSE_R_TRIGGER and not meta.get("be_armed"):
+            buf = BREAKEVEN_BUFFER_POINTS * _point(client, symbol)
+            be_price = entry + buf if is_buy else entry - buf
             ok = (not dry_run) and _safe_modify(client, int(ticket), be_price, tp)
             if ok or dry_run:
                 meta["be_armed"] = True
-                actions.append({"ticket": ticket, "symbol": symbol, "action": "break-even", "sl": be_price})
+                actions.append({"ticket": ticket, "symbol": symbol,
+                                "action": "break-even", "sl": be_price,
+                                "entry": entry, "r_multiple": round(r_multiple, 2)})
+                _log_event("breakeven", {
+                    "ticket": ticket, "symbol": symbol,
+                    "sl": be_price, "entry": entry,
+                    "r_multiple": round(r_multiple, 2),
+                })
+                html = fmt_position_update(
+                    symbol=symbol, ticket=int(ticket),
+                    action=f"BREAKEVEN @ +{r_multiple:.1f}R",
+                    entry=entry, new_sl=be_price,
+                    reason="SL moved to entry (risk-free)",
+                )
+                notify(
+                    f"breakeven_{ticket}",
+                    f"{symbol} breakeven: SL → {be_price:g} at +{r_multiple:.1f}R",
+                    html=html,
+                )
+
         # 2) trail after +1.5R at 1R distance
-        elif r_multiple >= 1.5 and meta.get("be_armed"):
+        if r_multiple >= 1.5 and meta.get("be_armed"):
             try:
                 df = client.rates(symbol, "H1", 20)
                 atr = float((df["high"] - df["low"]).rolling(14).mean().iloc[-1])
@@ -1019,6 +1224,41 @@ def manage_positions(client, dry_run: bool) -> list[dict[str, Any]]:
                     ok = (not dry_run) and _safe_modify(client, int(ticket), round(new_sl, 10), tp)
                     if ok or dry_run:
                         actions.append({"ticket": ticket, "symbol": symbol, "action": "trail", "sl": round(new_sl, 10)})
+        # 2b) early loss cut — dead trade detection
+        # Data: 1-4h holds have 25% WR. If a trade is losing >0.5R after 2h,
+        # it's probably dead. Cut early to recycle capital.
+        if EARLY_LOSS_CUT_ENABLED and age_h >= EARLY_LOSS_CUT_HOURS and r_multiple <= EARLY_LOSS_CUT_R:
+            if not meta.get("early_cut"):
+                if not dry_run:
+                    res = close_position(int(ticket))
+                    accepted = bool(getattr(res, "accepted", False))
+                    actions.append({"ticket": ticket, "symbol": symbol,
+                                    "action": "early-loss-cut",
+                                    "r_multiple": round(r_multiple, 2),
+                                    "age_h": round(age_h, 1),
+                                    "result": accepted})
+                    if accepted:
+                        meta["early_cut"] = True
+                        _log_event("early_loss_cut", {
+                            "ticket": ticket, "symbol": symbol,
+                            "r_multiple": round(r_multiple, 2),
+                            "age_h": round(age_h, 1),
+                        })
+                        html = fmt_position_update(
+                            symbol=symbol, ticket=int(ticket),
+                            action=f"EARLY CUT @ {r_multiple:.2f}R",
+                            entry=entry,
+                            reason=f"dead trade: {age_h:.1f}h old, cutting loss",
+                        )
+                        notify(
+                            f"early_cut_{ticket}",
+                            f"{symbol} early loss cut: {r_multiple:.2f}R after {age_h:.1f}h",
+                            html=html,
+                        )
+                else:
+                    actions.append({"ticket": ticket, "symbol": symbol,
+                                    "action": "early-loss-cut (dry-run)",
+                                    "r_multiple": round(r_multiple, 2)})
         # 3) time-stop
         if age_h > MAX_HOLD_HOURS and r_multiple < 1.0:
             if not dry_run:
@@ -1071,8 +1311,30 @@ def desk_guards() -> str | None:
 
 def scan_cycle(client, dry_run: bool) -> dict[str, Any]:
     """Full universe scan -> portfolio selection -> execution."""
+    from mt5_mcp.paper_learning import schedule_advance
+    schedule_advance(client)
     started = time.time()
     sheet = build_desk_sheet(client, UNIVERSE)
+    from mt5_mcp import entry_quality
+    if entry_quality.enabled():
+        for candidate in sheet:
+            side = candidate.get("direction")
+            levels = _plan_levels(candidate) if side in ("BUY", "SELL") else None
+            candidate["entry_plan"] = levels
+            if not levels:
+                continue
+            request = {"symbol": candidate["symbol"], "type": 0 if side == "BUY" else 1, "action": 1,
+                       "price": levels["entry"], "sl": levels["sl"], "tp": levels["tp"],
+                       "comment": f"desk:{candidate.get('pattern') or 'confluence'}",
+                       "confidence": float(candidate.get("confluence") or 0)}
+            quality = entry_quality.check(request, client)
+            reasons = quality.get("violations", []) + (["desk: below selection threshold"] if candidate["confluence"] < DESK_MIN_CONFLUENCE else [])
+            if float(candidate.get("health") or 0) < DESK_MIN_HEALTH:
+                reasons.append("desk: below health threshold")
+            try:
+                entry_quality.capture(request, quality, reasons)
+            except Exception as exc:
+                logger.warning("Cannot record paper candidate: %s", exc)
     picks = portfolio_select(sheet, _load_state())
     executions = []
     if picks:
@@ -1138,6 +1400,7 @@ def scan_cycle(client, dry_run: bool) -> dict[str, Any]:
         "executions": executions,
         "elapsed_s": round(time.time() - started, 1),
         "learning": learning_snapshot(),
+        "selection": selection_snapshot(sheet),
     }
     _log_event("scan", summary)
     # publish desk stances to the consensus board (top-sheet directional reads)
@@ -1180,18 +1443,28 @@ def scan_cycle(client, dry_run: bool) -> dict[str, Any]:
 
 def manage_cycle(client, dry_run: bool) -> list[dict[str, Any]]:
     actions = manage_positions(client, dry_run)
+    from mt5_mcp.paper_learning import schedule_advance
+    schedule_advance(client)
     if actions:
         _log_event("manage", actions)
         for a in actions:
+            action_kind = a.get("action", "?")
+            # partial-exit and break-even already send their own rich
+            # notifications inside manage_positions — skip the generic
+            # manage_cycle card to avoid duplicate Telegram messages.
+            if action_kind in ("partial-exit", "break-even"):
+                continue
             html = fmt_position_update(
                 symbol=a.get("symbol", "?"),
                 ticket=int(a.get("ticket", 0)),
-                action=a.get("action", "?"),
-                new_sl=float(a.get("new_sl")) if a.get("new_sl") else None,
+                action=action_kind,
+                entry=float(a["entry"]) if a.get("entry") else None,
+                new_sl=float(a["sl"]) if a.get("sl") else (
+                    float(a["new_sl"]) if a.get("new_sl") else None),
                 reason=a.get("reason", ""),
             )
             notify("desk_manage_" + str(a.get("ticket", "")),
-                   f"{a.get('symbol')} {a.get('action')}", html=html)
+                   f"{a.get('symbol')} {action_kind}", html=html)
     return actions
 
 

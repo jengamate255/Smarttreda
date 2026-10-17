@@ -1,159 +1,16 @@
 ﻿"use strict";
 
 /* ---------- Error Reporting ---------- */
-const errorReport = {
-  queue: [],
-  maxQueue: 50,
-  endpoint: "/api/client-error",
-  flushTimer: null,
+// errorReport is defined in app.core.js (loaded first)
 
-  capture(message, source, lineno, colno, error) {
-    const entry = {
-      timestamp: new Date().toISOString(),
-      message: String(message),
-      source: source || "",
-      lineno: lineno || 0,
-      colno: colno || 0,
-      stack: error?.stack || "",
-      url: location.href,
-      userAgent: navigator.userAgent,
-      sessionId: sessionStorage.getItem("sessionId") || this.genSessionId(),
-    };
-    this.queue.push(entry);
-    if (this.queue.length > this.maxQueue) this.queue.shift();
-    this.scheduleFlush();
-    return false; // don't prevent default
-  },
+// tvStyle is defined in app.core.js (loaded first)
 
-  genSessionId() {
-    const id = crypto.randomUUID();
-    sessionStorage.setItem("sessionId", id);
-    return id;
-  },
-
-  scheduleFlush() {
-    if (this.flushTimer) return;
-    this.flushTimer = setTimeout(() => this.flush(), 5000);
-  },
-
-  async flush() {
-    this.flushTimer = null;
-    if (!this.queue.length) return;
-    const payload = { errors: this.queue.splice(0, this.queue.length) };
-    try {
-      await fetch(this.endpoint, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(AUTH_TOKEN ? { "X-Auth-Token": AUTH_TOKEN } : {}),
-        },
-        body: JSON.stringify(payload),
-        keepalive: true,
-      });
-    } catch (e) {
-      // silent fail - don't loop
-    }
-  },
-
-  log(level, ...args) {
-    const entry = { timestamp: new Date().toISOString(), level, args: args.map(a => this.serialize(a)) };
-    console[level](...args);
-    this.queue.push({ ...entry, type: "log" });
-    if (this.queue.length > this.maxQueue) this.queue.shift();
-  },
-
-  serialize(val) {
-    if (val instanceof Error) return { name: val.name, message: val.message, stack: val.stack };
-    if (typeof val === "object") {
-      try { return JSON.parse(JSON.stringify(val)); } catch { return String(val); }
-    }
-    return val;
-  },
-};
-
-// Inject CSS to prevent TradingView logo layout shifts BEFORE charts render
-const tvStyle = document.createElement('style');
-tvStyle.textContent = `
-  .lc-pane a[href*="tradingview"],
-  .lc-pane a[href*="tradingview"] *,
-  .lc-pane .tv-attr-logo,
-  .lc-pane [data-tv-attr-logo],
-  .lc-pane a[href*="tradingview.com"] {
-    position: absolute !important;
-    bottom: 4px !important;
-    right: 4px !important;
-    opacity: 0.5 !important;
-    z-index: 100 !important;
-    pointer-events: none !important;
-    contain: layout !important;
-  }
-`;
-document.head.appendChild(tvStyle);
+// C is defined in app.core.js (loaded first)
 
 window.addEventListener("error", (e) => errorReport.capture(e.message, e.filename, e.lineno, e.colno, e.error));
 window.addEventListener("unhandledrejection", (e) => errorReport.capture(e.reason?.message || String(e.reason), "", 0, 0, e.reason));
 
-// Patch console for structured logging
-["log", "warn", "error"].forEach((level) => {
-  const orig = console[level];
-  console[level] = (...args) => {
-    errorReport.log(level, ...args);
-    orig.apply(console, args);
-  };
-});
-
-/* ---------- Theme ---------- */
-const C = {
-  bg: "#131722",
-  panel2: "#181c25",
-  border: "#2a2e39",
-  text: "#d1d4dc",
-  dim: "#787b86",
-  up: "#26a69a",
-  down: "#ef5350",
-  ema50: "#ffd479",
-  ema200: "#2962ff",
-  rsi: "#9b59b6",
-  macd: "#2962ff",
-  signal: "#f39c12",
-  accent: "#2962ff",
-  purple: "#9b59b6",
-  yellow: "#ffd479",
-  orange: "#f39c12",
-};
-
-/* ---------- State ---------- */
-const state = {
-  symbol: "EURUSD",
-  timeframe: "H1",
-  count: 300,
-  indicators: { ema: true, rsi: true, macd: true, sd: true, overlay: false },
-  bot: { on: true, data: null },
-  data: null,
-  positions: [],
-  plan: null,
-  overlay: null,
-  watchlist: [],
-  equity: null,
-  equityOpts: { balance: true, floating: false, ma5: false, dd: false },
-  journal: [],
-  journalFilters: { symbol: "", setup: "", outcome: "" },
-  lastBar: null,
-  quoteTimer: null,
-  btGenerated: null,
-  btOverlay: { name: null, symbol: null, trades: [] },
-};
-
-const TFs = ["M1", "M5", "M15", "M30", "H1", "H4", "D1", "W1"];
-const DEFAULT_WATCH = ["EURUSD", "XAUUSD", "GBPUSD", "USDJPY", "USDCAD"];
-const POLL_MS = 5000;
-const CHART_MS = 30000;
-const SLOW_MS = 60000;
-const NEWS_MS = 300000;
-const QUOTE_MS = 2500;
-const PREFS_KEY = "mt5dash.prefs";
-
-const $ = (id) => document.getElementById(id);
+// All const declarations (state, TFs, $, api, etc.) are in app.core.js (loaded first)
 
 /* ---------- Local prefs ---------- */
 function loadPrefs() {
@@ -184,18 +41,26 @@ function savePrefs() {
 }
 
 /* ---------- API ---------- */
-async function api(path) {
+async function api(path, opts) {
+  // opts: { method, body } - GET by default; body is JSON-encoded.
+  const o = opts || {};
+  const method = (o.method || "GET").toUpperCase();
   const headers = AUTH_TOKEN ? { "X-Auth-Token": AUTH_TOKEN } : {};
-  const res = await fetch(path, { headers });
+  let body;
+  if (o.body !== undefined) {
+    headers["Content-Type"] = "application/json";
+    body = typeof o.body === "string" ? o.body : JSON.stringify(o.body);
+  }
+  const res = await fetch(path, { method, headers, body });
   if (!res.ok) {
     let detail = `HTTP ${res.status}`;
     try {
       const j = await res.json();
-      if (j && j.detail) detail = j.detail;
+      if (j && (j.detail || j.error)) detail = j.detail || j.error;
     } catch (e) { /* non-JSON error body */ }
     throw new Error(detail);
   }
-  return res.json();
+  try { return await res.json(); } catch (e) { return null; }
 }
 
 async function apiPost(path, body) {
@@ -224,9 +89,8 @@ function esc(s) {
 }
 
 /* ---------- Toasts & notifications ---------- */
-const toastQueue = [];
-const TOAST_MAX = 5;
-let toastPermissionAsked = false;
+// toastQueue, TOAST_MAX are in app.core.js (loaded first)
+// toastPermissionAsked is defined in app.core.js (loaded first)
 
 function toast(msg, kind = "info", opts = {}) {
   const { persist = false, timeout = 5000, action } = opts;
@@ -286,17 +150,7 @@ document.addEventListener("click", () => {
 });
 
 /* ---------- Keyboard shortcuts ---------- */
-const SHORTCUTS = [
-  { key: "1", desc: "Focus symbol input", action: () => $("symbol-input").focus() },
-  { key: "2", desc: "Toggle chart panel", action: () => $("chart-wrap").classList.toggle("hidden") },
-  { key: "3", desc: "Focus watchlist", action: () => $("wl-add").focus() },
-  { key: "4", desc: "Open journal", action: () => { document.querySelector(".journal-panel")?.scrollIntoView({ behavior: "smooth" }); } },
-  { key: "5", desc: "Open backtesting", action: () => { document.querySelector(".backtest-panel")?.scrollIntoView({ behavior: "smooth" }); } },
-  { key: "r", desc: "Refresh all data", action: () => { loadSummary(); loadEquity(); loadJournal(); loadRisk(); loadSessions(); loadNews(); loadBacktests(); toast("Refreshing...", "info"); } },
-  { key: "h", desc: "Show help", action: showHelp },
-  { key: "Escape", desc: "Close modals", action: closeModals },
-  { key: "?", desc: "Show help", action: showHelp, shift: true },
-];
+// SHORTCUTS is in app.core.js (loaded first)
 
 function registerShortcuts() {
   document.addEventListener("keydown", (e) => {
@@ -413,7 +267,7 @@ function showPanelError(elId, err) {
 }
 
 /* ---------- Table sorting & pagination ---------- */
-const tableState = new Map();
+// tableState is in app.core.js (loaded first)
 
 function makeSortable(tableEl, options = {}) {
   const { pageSize = 50, numericCols = [], dateCols = [] } = options;
@@ -514,9 +368,9 @@ function makeSortable(tableEl, options = {}) {
 }
 
 /* ---------- WebSocket ---------- */
-let ws = null;
-let wsAliveAt = 0;
-const AUTH_TOKEN = document.querySelector('meta[name="auth-token"]')?.content || "";
+// ws is defined in app.core.js (loaded first)
+// wsAliveAt is defined in app.core.js (loaded first)
+// AUTH_TOKEN is in app.core.js (loaded first)
 
 function connectWs() {
   const proto = location.protocol === "https:" ? "wss" : "ws";
@@ -644,8 +498,8 @@ function initTheme() {
   }
 }
 
-let wsLatency = 0;
-let wsLastPong = 0;
+// wsLatency is defined in app.core.js (loaded first)
+// wsLastPong is defined in app.core.js (loaded first)
 function startWsLatency() {
   if (!ws || ws.readyState !== WebSocket.OPEN) return;
   const start = performance.now();
@@ -796,6 +650,7 @@ function renderPositions(positions) {
       body.innerHTML = '<tr class="empty-row"><td colspan="9">📁 No open positions — load a chart and execute a plan, or wait for the spike watcher</td></tr>';
       body.dataset.sig = "empty";
     }
+    renderPositionsList();
     return;
   }
 
@@ -853,40 +708,63 @@ function renderPositions(positions) {
     <td class="${totalPnl >= 0 ? "pos" : "neg"}" style="font-weight:600">${fmtMoney(totalPnl)}</td></tr>`;
   body.appendChild(tfoot);
 
-  if (!window._positionsSortable) {
-    window._positionsSortable = makeSortable($("positions-table"), {
-      pageSize: 25,
-      numericCols: [2, 3, 4, 5, 6, 7, 8],
-    });
+  const ptEl = document.getElementById("positions-table");
+  if (ptEl) {
+    if (!window._positionsSortable) {
+      window._positionsSortable = makeSortable(ptEl, {
+        pageSize: 25,
+        numericCols: [2, 3, 4, 5, 6, 7, 8],
+      });
+    }
+    if (window._positionsSortable) {
+      const pb = document.getElementById("positions-body");
+      window._positionsSortable.setRows(pb ? pb.querySelectorAll("tr[data-ticket]") : []);
+    }
   }
-  window._positionsSortable.setRows($("positions-body").querySelectorAll("tr[data-ticket]"));
+
+  // Mirror into the visible positions-list panel (this layout has no positions-table/body).
+  renderPositionsList();
 }
 
-$("positions-body").addEventListener("click", async (e) => {
-  const btn = e.target.closest("button[data-act]");
-  if (!btn) return;
-  const ticket = parseInt(btn.dataset.ticket, 10);
-  try {
-    if (btn.dataset.act === "close") {
-      if (!confirm(`Close position ${ticket}?`)) return;
-      const r = await apiPost(`/api/positions/${ticket}/close`);
-      toast(r.accepted ? `Closed #${r.ticket || ticket}` : `Close failed: ${r.error}`, r.accepted ? "up" : "down");
-    } else {
-      const row = btn.closest("tr");
-      const slRaw = row.querySelector(".sl-input").value;
-      const tpRaw = row.querySelector(".tp-input").value;
-      const body = {};
-      if (slRaw !== "") body.sl = parseFloat(slRaw);
-      if (tpRaw !== "") body.tp = parseFloat(tpRaw);
-      if (!body.sl && !body.tp) { toast("Enter SL and/or TP", "down"); return; }
-      const r = await apiPost(`/api/positions/${ticket}/sltp`, body);
-      toast(r.accepted ? `#${ticket} SL/TP updated` : `Update failed: ${r.error}`, r.accepted ? "up" : "down");
-    }
-  } catch (err) {
-    toast(`Action failed: ${err.message}`, "down");
+function renderPositionsList() {
+  const plist = document.getElementById("positions-list");
+  if (!plist) return;
+  const badge = document.getElementById("pos-count");
+  if (badge) badge.textContent = state.positions.length;
+  if (!state.positions.length) {
+    plist.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-3)">No open positions</div>';
+  } else {
+    plist.innerHTML = state.positions.map((p) => `
+      <div class="position-item" data-ticket="${p.ticket}">
+        <span class="position-symbol">${esc(p.symbol)}</span>
+        <div class="position-details">
+          <span>${esc(p.type)} ${p.volume}</span>
+          <span>@ ${fmtPrice(p.price_open)} &rarr; ${fmtPrice(p.price_current)}</span>
+          <span>SL ${p.sl ? fmtPrice(p.sl) : "--"} TP ${p.tp ? fmtPrice(p.tp) : "--"}</span>
+        </div>
+        <span class="position-pnl ${p.total >= 0 ? "profit" : "loss"}">${p.total >= 0 ? "+" : ""}${fmtMoney(p.total)}</span>
+        <button class="position-close" data-close="${p.ticket}" title="Close position">✕</button>
+      </div>`).join("");
   }
-  loadPositionsOnly();
-});
+  if (!window._positionsCloseWired) {
+    window._positionsCloseWired = true;
+    plist.addEventListener("click", async (e) => {
+      const btn = e.target.closest("[data-close]");
+      if (!btn) return;
+      const ticket = btn.getAttribute("data-close");
+      if (!confirm(`Close position ${ticket}?`)) return;
+      try {
+        await apiPost(`/api/positions/${ticket}/close`);
+        toast(`Position ${ticket} closed`, "up");
+        loadPositionsOnly();
+      } catch (err) {
+        toast(`Close failed: ${err.message}`, "down");
+      }
+    });
+  }
+}
+
+// positionsBody click handler is in app.panels.js
 
 async function loadPositionsOnly() {
   try {
@@ -938,7 +816,9 @@ function renderTrades(trades) {
       dateCols: [0],
     });
   }
-  window._tradesSortable.setRows($("trades-body").querySelectorAll("tr:not(.empty-row)"));
+  if (window._tradesSortable) {
+    window._tradesSortable.setRows($("trades-body").querySelectorAll("tr:not(.empty-row)"));
+  }
 }
 
 /* ---------- Trade plan ---------- */
@@ -1006,28 +886,7 @@ function zoneLine(plan) {
     `${fmtPrice(plan.zone_lower)} â€“ ${fmtPrice(plan.zone_upper)}</div>`;
 }
 
-$("plan-body").addEventListener("click", async (e) => {
-  if (e.target.id !== "plan-execute") return;
-  const plan = state.plan;
-  if (!plan || plan.action === "NONE") return;
-  if (!confirm(`Execute ${plan.action} ${plan.symbol} ${plan.lots} lots?\nEntry ${fmtPrice(plan.entry)} Â· SL ${fmtPrice(plan.sl)} Â· TP ${fmtPrice(plan.tp)}`)) return;
-  const btn = $("plan-execute");
-  btn.disabled = true;
-  btn.textContent = "Executing...";
-  try {
-    const r = await apiPost("/api/execute-plan", {
-      symbol: plan.symbol,
-      timeframe: plan.timeframe || state.timeframe,
-    });
-    toast(r.accepted ? `Order sent â€” ticket #${r.ticket}` : `Rejected: ${r.error || r.retcode}`, r.accepted ? "up" : "down");
-  } catch (err) {
-    toast(`Execute failed: ${err.message}`, "down");
-  } finally {
-    btn.disabled = false;
-    btn.textContent = "Execute";
-  }
-  loadPositionsOnly();
-});
+// planBody click handler is in app.panels.js
 
 /* ---------- Risk ---------- */
 async function loadRisk() {
@@ -1240,7 +1099,6 @@ async function loadSessions() {
 
 /* ---------- Alerts ---------- */
 async function loadAlerts() {
-  showSkeleton($("alerts-body"), "rows", 4);
   try {
     const a = await api("/api/alerts");
     if (a.error) throw new Error(a.error);
@@ -1248,7 +1106,43 @@ async function loadAlerts() {
     renderAlerts();
   } catch (e) {
     errorReport.capture(e.message || String(e), "loadAlerts", 0, 0, e);
-    $("alerts-body").innerHTML = `<div class="plan-empty">Alerts unavailable: ${esc(e.message)}</div>`;
+    const el = $("alerts-list");
+    if (el) el.innerHTML = `<div class="alert-item"><div class="alert-content"><div class="alert-title">Alerts unavailable: ${esc(e.message)}</div></div></div>`;
+    const full = $("alerts-full-list");
+    if (full) full.innerHTML = "";
+  }
+}
+
+function _alertRow(a) {
+  const digits = a.symbol.includes("JPY") ? 3 : 5;
+  const dist = (a.current_price != null) ? Math.abs(a.price - a.current_price).toFixed(digits) : "--";
+  const nowPx = (a.current_price != null) ? a.current_price.toFixed(digits) : "--";
+  return `<div class="alert-item">
+    <div class="alert-icon ${a.active ? "signal" : "warning"}">${a.active ? "📡" : "⏸"}</div>
+    <div class="alert-content">
+      <div class="alert-title">${esc(a.symbol)} ${esc(a.condition)} ${a.price.toFixed(digits)}${a.name ? " — " + esc(a.name) : ""}</div>
+      <div class="alert-time">${a.active ? `now ${nowPx} · ${dist} away` : "disabled"}</div>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:4px">
+      <button class="btn tiny" onclick="toggleAlert('${esc(a.id)}')">${a.active ? "Off" : "On"}</button>
+      <button class="btn tiny danger" onclick="deleteAlert('${esc(a.id)}')">×</button>
+    </div>
+  </div>`;
+}
+
+function renderAlerts() {
+  const alerts = state.alerts || [];
+  const list = $("alerts-list");
+  if (list) {
+    list.innerHTML = alerts.length
+      ? alerts.map(_alertRow).join("")
+      : '<div class="alert-item"><div class="alert-content"><div class="alert-title">No alerts configured</div><div class="alert-time">create one on the Alerts tab</div></div></div>';
+  }
+  const full = $("alerts-full-list");
+  if (full) {
+    full.innerHTML = alerts.length
+      ? `<div class="alert-list">${alerts.map(_alertRow).join("")}</div>`
+      : '<div style="padding:20px;text-align:center;color:var(--text-3)">No alerts configured.</div>';
   }
 }
 
@@ -1279,25 +1173,26 @@ function renderAlerts() {
 }
 
 async function addAlert() {
-  const symbol = $("#alert-symbol").value.trim().toUpperCase();
+  const symbol = ($("#alert-symbol") || {}).value;
+  if (!symbol) { toast("Alert form not available", "down"); return; }
   const price = parseFloat($("#alert-price").value);
   const condition = $("#alert-condition").value;
   const name = $("#alert-name").value.trim();
-  
-  if (!symbol || isNaN(price)) {
-    toast("Symbol and price required", "error");
+
+  if (!symbol.trim() || isNaN(price)) {
+    toast("Symbol and price required", "down");
     return;
   }
-  
+
   try {
-    const result = await api("/api/alerts", { method: "POST", body: JSON.stringify({ symbol, price, condition, name }) });
-    if (result.error) throw new Error(result.error);
-    toast("Alert added", "success");
+    const result = await api("/api/alerts", { method: "POST", body: { symbol: symbol.trim().toUpperCase(), price, condition, name } });
+    if (result && result.error) throw new Error(result.error);
+    toast("Alert added", "up");
     $("#alert-price").value = "";
     $("#alert-name").value = "";
     loadAlerts();
   } catch (e) {
-    toast("Failed to add alert: " + e.message, "error");
+    toast("Failed to add alert: " + e.message, "down");
   }
 }
 
@@ -1322,15 +1217,86 @@ async function toggleAlert(id) {
 }
 
 /* ---------- News ---------- */
+function _newsImpactClass(imp) {
+  return imp === "high" ? "high" : imp === "medium" ? "medium" : "low";
+}
+
+function _fmtNewsWhen(timeStr) {
+  // API times are naive UTC strings "YYYY-MM-DD HH:MM"
+  const d = new Date(String(timeStr || "").replace(" ", "T") + "Z");
+  if (isNaN(d)) return { day: "", hhmm: String(timeStr || "") };
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+  const diffDays = Math.round((day - today) / 86400000);
+  const dayLabel = diffDays === 0 ? "Today" : diffDays === 1 ? "Tomorrow"
+    : d.toLocaleDateString(undefined, { weekday: "short", day: "numeric", month: "short" });
+  const hhmm = d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" });
+  return { day: dayLabel, hhmm };
+}
+
+function renderNewsPanels(n) {
+  const provider = $("news-provider");
+  if (provider) provider.textContent = n.provider || "";
+  const events = n.events || [];
+  const feed = $("news-feed");
+  if (feed) {
+    if (!events.length) {
+      feed.innerHTML = '<div class="news-item"><div class="news-title" style="color:var(--text-3)">No upcoming events in the next 48h (weekly calendar)</div></div>';
+    } else {
+      feed.innerHTML = events.slice(0, 14).map((ev) => {
+        const when = _fmtNewsWhen(ev.time);
+        return `<div class="news-item">` +
+          `<div class="news-time">${esc(when.day)} ${esc(when.hhmm)} · ${esc(ev.currency)}</div>` +
+          `<div class="news-title">${esc(ev.title)}</div>` +
+          `<div class="news-source">ForexFactory <span class="news-impact ${_newsImpactClass(ev.impact)}">${esc(String(ev.impact).toUpperCase())}</span></div>` +
+          `</div>`;
+      }).join("");
+    }
+  }
+  const macro = $("macro-calendar");
+  if (macro) {
+    const majors = events.filter((ev) => ev.impact === "high" || ev.impact === "medium").slice(0, 8);
+    if (!majors.length) {
+      macro.innerHTML = '<div class="macro-item"><span class="macro-event" style="color:var(--text-3)">No high/medium impact events in the next 48h</span></div>';
+    } else {
+      macro.innerHTML = majors.map((ev) => {
+        const when = _fmtNewsWhen(ev.time);
+        return `<div class="macro-item">` +
+          `<span class="macro-time">${esc(when.day)} ${esc(when.hhmm)}</span>` +
+          `<span class="macro-event">${esc(ev.currency)} ${esc(ev.title)}</span>` +
+          `<span class="macro-impact ${_newsImpactClass(ev.impact)}"></span>` +
+          `</div>`;
+      }).join("");
+    }
+  }
+  const full = $("news-full-feed");
+  if (full) {
+    if (!events.length) {
+      full.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-3)">No upcoming events in the next 48h (weekly calendar)</div>';
+    } else {
+      full.innerHTML = events.map((ev) => {
+        const when = _fmtNewsWhen(ev.time);
+        return `<div class="news-item">` +
+          `<div class="news-time">${esc(when.day)} ${esc(when.hhmm)} · ${esc(ev.currency)}</div>` +
+          `<div class="news-title">${esc(ev.title)}</div>` +
+          `<div class="news-source">ForexFactory <span class="news-impact ${_newsImpactClass(ev.impact)}">${esc(String(ev.impact).toUpperCase())}</span>` +
+          `${ev.forecast ? ` · forecast: ${esc(ev.forecast)}` : ""}${ev.previous ? ` · previous: ${esc(ev.previous)}` : ""}</div>` +
+          `</div>`;
+      }).join("");
+    }
+  }
+}
+
 async function loadNews() {
-  showSkeleton($("news-body"), "rows", 6);
   try {
-    const n = await api("/api/news?horizon_hours=24");
+    const n = await api("/api/news?horizon_hours=48");
     state.news = n;
-    $("news-provider").textContent = n.provider || "";
+    renderNewsPanels(n);
     const banner = $("news-banner");
+    if (!banner) return;
     if (n.trading_blocked && n.imminent_events && n.imminent_events.length) {
-      banner.classList.remove("hidden");
+      banner.style.display = "";
       $("news-banner-text").textContent = n.imminent_events
         .map((e) => `${e.currency} ${e.title}`).join(" Â· ");
       if (!lastImminent) {
@@ -1339,31 +1305,13 @@ async function loadNews() {
       }
       lastImminent = true;
     } else {
-      banner.classList.add("hidden");
+      banner.style.display = "none";
       lastImminent = false;
     }
-
-    const body = $("news-body");
-    body.innerHTML = "";
-    if (!n.events || !n.events.length) {
-      body.innerHTML = '<tr class="empty-row"><td colspan="6">No events in the next 24h (feed covers current week)</td></tr>';
-      return;
-    }
-    for (const ev of n.events) {
-      const imp = ev.impact;
-      const color = imp === "high" ? C.down : imp === "medium" ? C.yellow : C.dim;
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td>${esc(ev.time.slice(5))}</td>
-        <td>${esc(ev.currency)}</td>
-        <td><span class="impact" style="color:${color};border-color:${color}">${imp.toUpperCase()}</span></td>
-        <td style="text-align:left">${esc(ev.title)}</td>
-        <td>${esc(ev.forecast || "--")}</td>
-        <td>${esc(ev.previous || "--")}</td>`;
-      body.appendChild(tr);
-    }
   } catch (e) {
-    $("news-body").innerHTML = `<tr class="empty-row"><td colspan="6">News unavailable: ${esc(e.message)}</td></tr>`;
+    errorReport.capture(e.message || String(e), "loadNews", 0, 0, e);
+    const feed = $("news-feed");
+    if (feed) feed.innerHTML = `<div class="news-item"><div class="news-title" style="color:var(--text-3)">News unavailable: ${esc(e.message)}</div></div>`;
   }
 }
 
@@ -1381,7 +1329,8 @@ async function loadEquity() {
 }
 
 function renderEquity(eq) {
-  const canvas = $("equity-chart");
+  const canvas = document.getElementById("equity-chart");
+  if (!canvas || typeof canvas.getContext !== "function") return;
   const ctx2 = canvas.getContext("2d");
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.parentElement.getBoundingClientRect();
@@ -1561,7 +1510,7 @@ async function loadJournalDistribution() {
 }
 
 /* ---------- Journal Equity Curve Render ---------- */
-let equityTab = "equity";
+// equityTab is defined in app.panels.js (loaded first)
 function showEquityTab(tab) {
   equityTab = tab;
   const eqCanvas = $("equity-chart");
@@ -1791,7 +1740,9 @@ function renderJournal() {
       dateCols: [0],
     });
   }
-  window._journalSortable.setRows($("journal-body").querySelectorAll("tr:not(.empty-row)"));
+  if (window._journalSortable) {
+    window._journalSortable.setRows($("journal-body").querySelectorAll("tr:not(.empty-row)"));
+  }
 }
 
 function openJournalEditor(ticket) {
@@ -1807,26 +1758,12 @@ function openJournalEditor(ticket) {
 }
 
 function closeJournalEditor() {
-  $("journal-editor").classList.add("hidden");
+  const je = $("journal-editor");
+  if (!je) return;
+  je.classList.add("hidden");
 }
 
-$("je-cancel").addEventListener("click", closeJournalEditor);
-$("je-save").addEventListener("click", async () => {
-  const ed = $("journal-editor");
-  const ticket = parseInt(ed.dataset.ticket, 10);
-  try {
-    await apiPost(`/api/journal/${ticket}/notes`, {
-      reason: $("je-reason").value.trim(),
-      mistakes: $("je-mistakes").value.trim(),
-      lessons: $("je-lessons").value.trim(),
-    });
-    toast(`Notes saved for #${ticket}`, "up");
-  } catch (err) {
-    toast(`Save failed: ${err.message}`, "down");
-  }
-  closeJournalEditor();
-  loadJournal();
-});
+// journal editor handlers are in app.panels.js
 
 function exportJournalCsv() {
   const rows = filteredJournal();
@@ -1846,11 +1783,16 @@ function exportJournalCsv() {
 }
 
 function initJournalTools() {
-  $("jf-symbol").addEventListener("change", (e) => { state.journalFilters.symbol = e.target.value; renderJournal(); });
-  $("jf-setup").addEventListener("change", (e) => { state.journalFilters.setup = e.target.value; renderJournal(); });
-  $("jf-outcome").addEventListener("change", (e) => { state.journalFilters.outcome = e.target.value; renderJournal(); });
-  $("jf-csv").addEventListener("click", exportJournalCsv);
-  $("jf-sync").addEventListener("click", async () => {
+  const jfSymbol = $("jf-symbol");
+  if (jfSymbol) jfSymbol.addEventListener("change", (e) => { state.journalFilters.symbol = e.target.value; renderJournal(); });
+  const jfSetup = $("jf-setup");
+  if (jfSetup) jfSetup.addEventListener("change", (e) => { state.journalFilters.setup = e.target.value; renderJournal(); });
+  const jfOutcome = $("jf-outcome");
+  if (jfOutcome) jfOutcome.addEventListener("change", (e) => { state.journalFilters.outcome = e.target.value; renderJournal(); });
+  const jfCsv = $("jf-csv");
+  if (jfCsv) jfCsv.addEventListener("click", exportJournalCsv);
+  const jfSync = $("jf-sync");
+  if (jfSync) jfSync.addEventListener("click", async () => {
     try {
       const r = await apiPost("/api/journal?limit=1&sync=true", undefined);
       toast(`Sync done (${r.entries?.length || 0} rows loaded)`, "up");
@@ -1869,7 +1811,7 @@ function renderWatchlist() {
   for (const s of state.watchlist) {
     const chip = document.createElement("span");
     chip.className = "wl-chip" + (s === state.symbol ? " active" : "");
-    chip.textContent = s;
+    chip.innerHTML = `<span class="wl-sym">${esc(s)}</span><span class="wl-px" data-px="${esc(s)}">--</span>`;
     chip.draggable = !touch; // HTML5 DnD is desktop-only (item #10)
     chip.dataset.symbol = s;
     chip.title = touch
@@ -1926,750 +1868,41 @@ function addToWatchlist(sym) {
   if (state.watchlist.length > 12) state.watchlist.shift();
   savePrefs();
   renderWatchlist();
+  pollWatchQuotes();
+}
+
+/* Live top-of-book prices for the watchlist chips (/api/quote). */
+async function pollWatchQuotes() {
+  for (const s of state.watchlist) {
+    try {
+      const q = await api(`/api/quote?symbol=${encodeURIComponent(s)}`);
+      const px = document.querySelector(`[data-px="${CSS.escape(s)}"]`);
+      if (!px) continue;
+      if (!q || !q.bid) { px.textContent = "--"; continue; }
+      const bid = q.bid;
+      const prev = _wlLastPx[s];
+      px.textContent = fmtPrice(bid);
+      if (prev != null && bid !== prev) {
+        px.classList.remove("flash-up", "flash-down");
+        void px.offsetWidth; // restart animation
+        px.classList.add(bid > prev ? "flash-up" : "flash-down");
+      }
+      _wlLastPx[s] = bid;
+    } catch (e) {
+      const px = document.querySelector(`[data-px="${CSS.escape(s)}"]`);
+      if (px) px.textContent = "--";
+    }
+  }
 }
 
 /* ============================================================
-   Chart (TradingView lightweight-charts v4)
+   Chart functions live in app.chart.js (loaded first).
+   Do NOT duplicate them here — the fixed versions with proper
+   null guards, isFin(), botChartIndex(), and sequence guards
+   must take precedence.
    ============================================================ */
-const chartWrap = document.querySelector(".chart-wrap");
-const priceEl = $("price-chart");
-const rsiEl = $("rsi-chart");
-const macdEl = $("macd-chart");
-const tooltip = $("tooltip");
 
-let priceChart = null, rsiChart = null, macdChart = null;
-let candleSeries = null, ema50Series = null, ema200Series = null;
-let btSlSeries = null, btTpSeries = null;
-let rsiSeries = null, macdLineSeries = null, macdSignalSeries = null, macdHistSeries = null;
-let zonePriceLines = [];
-let zoneSeries = [];
-let syncGuard = false;
 
-const CHART_OPTS = {
-  layout: { background: { type: "solid", color: C.bg }, textColor: C.dim, fontSize: 11 },
-  grid: { vertLines: { color: "rgba(42,46,57,0.5)" }, horzLines: { color: "rgba(42,46,57,0.5)" } },
-  crosshair: { mode: 1, vertLine: { color: C.dim, style: 3, labelBackgroundColor: C.border }, horzLine: { color: C.dim, style: 3, labelBackgroundColor: C.border } },
-  rightPriceScale: { borderColor: C.border },
-  timeScale: { borderColor: C.border, rightOffset: 6, barSpacing: 7 },
-  handleScroll: { mouseWheel: true, pressedMouseMove: true },
-  handleScale: { axisPressedMouseMove: true, mouseWheel: true, pinch: true },
-};
-
-function paneSizes() {
-  const h = chartWrap.getBoundingClientRect().height;
-  const showRsi = state.indicators.rsi;
-  const showMacd = state.indicators.macd;
-  let mainH = h;
-  if (showRsi && showMacd) mainH = h * 0.62;
-  else if (showRsi || showMacd) mainH = h * 0.74;
-  return {
-    price: Math.max(180, mainH - 10),
-    rsi: showRsi ? Math.max(60, (h - mainH) * 0.45 - 8) : 0,
-    macd: showMacd ? Math.max(70, (h - mainH) * 0.55 - 8) : 0,
-  };
-}
-
-function layoutPanes() {
-  const s = paneSizes();
-  const apply = (chart, el, h, hidden) => {
-    if (!chart) return;
-    if (hidden) {
-      el.style.height = "0px";
-      el.style.visibility = "hidden";
-      el.style.overflow = "hidden";
-    } else {
-      el.style.height = h + "px";
-      el.style.visibility = "visible";
-      el.style.overflow = "visible";
-      chart.applyOptions({ width: el.clientWidth, height: h });
-    }
-  };
-  apply(priceChart, priceEl, s.price, false);
-  apply(rsiChart, rsiEl, s.rsi, !s.rsi);
-  apply(macdChart, macdEl, s.macd, !s.macd);
-}
-
-function setupCharts() {
-  priceChart = LightweightCharts.createChart(priceEl, { ...CHART_OPTS });
-  candleSeries = priceChart.addCandlestickSeries({
-    upColor: C.up, downColor: C.down,
-    borderUpColor: C.up, borderDownColor: C.down,
-    wickUpColor: C.up, wickDownColor: C.down,
-  });
-  ema50Series = priceChart.addLineSeries({ color: C.ema50, lineWidth: 1, priceLineVisible: false, lastValueVisible: false });
-  ema200Series = priceChart.addLineSeries({ color: C.ema200, lineWidth: 1, priceLineVisible: false, lastValueVisible: false });
-  btSlSeries = priceChart.addLineSeries({ color: "rgba(239,83,80,0.7)", lineWidth: 1, lineStyle: 2, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
-  btTpSeries = priceChart.addLineSeries({ color: "rgba(38,166,154,0.7)", lineWidth: 1, lineStyle: 2, priceLineVisible: false, lastValueVisible: false, crosshairMarkerVisible: false });
-
-  rsiChart = LightweightCharts.createChart(rsiEl, { ...CHART_OPTS });
-  rsiSeries = rsiChart.addLineSeries({ color: C.rsi, lineWidth: 1, priceLineVisible: false, lastValueVisible: false });
-  rsiSeries.createPriceLine({ price: 70, color: "rgba(120,123,134,0.5)", lineStyle: 2, lineWidth: 1, title: "" });
-  rsiSeries.createPriceLine({ price: 30, color: "rgba(120,123,134,0.5)", lineStyle: 2, lineWidth: 1, title: "" });
-
-  macdChart = LightweightCharts.createChart(macdEl, { ...CHART_OPTS });
-  macdHistSeries = macdChart.addHistogramSeries({ priceLineVisible: false, lastValueVisible: false });
-  macdHistSeries.createPriceLine({ price: 0, color: "rgba(120,123,134,0.5)", lineStyle: 0, lineWidth: 1, title: "" });
-  macdLineSeries = macdChart.addLineSeries({ color: C.macd, lineWidth: 1, priceLineVisible: false, lastValueVisible: false });
-  macdSignalSeries = macdChart.addLineSeries({ color: C.signal, lineWidth: 1, priceLineVisible: false, lastValueVisible: false });
-
-  // pane crosshair sync (visible range + crosshair)
-  let syncGuard = false;
-  for (const [src, others] of [[priceChart, [rsiChart, macdChart]], [rsiChart, [priceChart, macdChart]], [macdChart, [priceChart, rsiChart]]]) {
-    src.timeScale().subscribeVisibleLogicalRangeChange((range) => {
-      if (!range || syncGuard) return;
-      syncGuard = true;
-      for (const o of others) o && o.timeScale().setVisibleLogicalRange(range);
-      syncGuard = false;
-    });
-    src.subscribeCrosshairMove((param) => {
-      if (syncGuard) return;
-      syncGuard = true;
-      for (const o of others) o && o.setCrosshairPosition(param.point, param.time);
-      syncGuard = false;
-    });
-  }
-
-  // double-click to reset zoom
-  const panes = [
-    { chart: priceChart, el: priceEl },
-    { chart: rsiChart, el: rsiEl },
-    { chart: macdChart, el: macdEl },
-  ];
-  panes.forEach(({ chart, el }) => {
-    if (chart && el) {
-      el.addEventListener("dblclick", () => {
-        chart.timeScale().resetTimeScale();
-        chart.priceScale().resetPriceScale();
-      });
-    }
-  });
-
-  // enhanced tooltip with indicators
-  priceChart.subscribeCrosshairMove((param) => updateTooltip(param));
-
-  layoutPanes();
-  new ResizeObserver(() => { layoutPanes(); }).observe(chartWrap);
-  window.addEventListener("resize", () => { layoutPanes(); renderEquity(state.equity); });
-}
-
-function setSeriesData() {
-  const d = state.data;
-  if (!d || !candleSeries) return;
-  const n = d.count;
-  const candles = [];
-  const ema50 = [], ema200 = [], rsi = [], macdL = [], macdS = [], macdH = [];
-  let emaStarted = false;
-  for (let i = 0; i < n; i++) {
-    const t = d.times[i];
-    candles.push({ time: t, open: d.open[i], high: d.high[i], low: d.low[i], close: d.close[i] });
-    const e50 = d.ema50[i], e200 = d.ema200[i];
-    if (!isNaN(e50) && !isNaN(e200)) { emaStarted = true; }
-    if (emaStarted) {
-      if (!isNaN(e50)) ema50.push({ time: t, value: e50 });
-      if (!isNaN(e200)) ema200.push({ time: t, value: e200 });
-    }
-    if (state.indicators.rsi && !isNaN(d.rsi[i])) rsi.push({ time: t, value: d.rsi[i] });
-    if (state.indicators.macd) {
-      if (!isNaN(d.macd[i])) macdL.push({ time: t, value: d.macd[i] });
-      if (!isNaN(d.macd_signal[i])) macdS.push({ time: t, value: d.macd_signal[i] });
-      if (!isNaN(d.macd_hist[i])) {
-        macdH.push({ time: t, value: d.macd_hist[i], color: d.macd_hist[i] >= 0 ? "rgba(38,166,154,0.65)" : "rgba(239,83,80,0.65)" });
-      }
-    }
-  }
-  candleSeries.setData(candles);
-  if (state.indicators.ema) { ema50Series.setData(ema50); ema200Series.setData(ema200); }
-  else { ema50Series.setData([]); ema200Series.setData([]); }
-  if (state.indicators.rsi) rsiSeries.setData(rsi);
-  else rsiSeries.setData([]);
-  if (state.indicators.macd) { macdLineSeries.setData(macdL); macdSignalSeries.setData(macdS); macdHistSeries.setData(macdH); }
-  else { macdLineSeries.setData([]); macdSignalSeries.setData([]); macdHistSeries.setData([]); }
-
-  state.lastBar = { time: d.times[n - 1], open: d.open[n - 1], high: d.high[n - 1], low: d.low[n - 1], close: d.close[n - 1] };
-  layoutPanes();
-  drawMarkers();
-  drawPriceLines();
-}
-
-function setMarkersCommon(markers) {
-  if (candleSeries) candleSeries.setMarkers(markers);
-}
-
-function drawMarkers() {
-  const d = state.data, bot = state.bot.data;
-  const markers = [];
-  if (bot) {
-    for (const sw of bot.swings.highs) {
-      markers.push({ time: d.times[sw.index], position: "belowBar", color: sw.label === "H" ? C.dim : C.up, shape: "arrowUp", text: sw.label });
-    }
-    for (const sw of bot.swings.lows) {
-      markers.push({ time: d.times[sw.index], position: "aboveBar", color: sw.label === "L" ? C.dim : C.down, shape: "arrowDown", text: sw.label });
-    }
-    const STRUCT_SHORT = { BOS: "BOS", CHOCH: "CH", liquidity_sweep: "SWP", fake_breakout: "FB" };
-    const seen = new Set();
-    for (const p of bot.patterns) {
-      if (p.direction === "neutral" || p.confidence < 0.6) continue;
-      const isStruct = STRUCT_SHORT[p.pattern];
-      const recent = d.count - p.index <= 25;
-      if (!isStruct && !recent) continue;
-      if (seen.has(p.index)) continue;
-      seen.add(p.index);
-      const bullish = p.direction === "bullish";
-      markers.push({
-        time: d.times[p.index],
-        position: bullish ? "belowBar" : "aboveBar",
-        color: bullish ? C.up : C.down,
-        shape: "circle",
-        text: isStruct || p.pattern === "engulfing" || p.pattern === "pin_bar" || p.pattern === "hammer" || p.pattern === "shooting_star"
-          ? (STRUCT_SHORT[p.pattern] || p.pattern.split("_")[0])
-          : "",
-      });
-    }
-  }
-  if (state.signals && state.signals.length) {
-    const mid = Math.floor(d.times.length / 2);
-    for (const s of state.signals) {
-      if (s.type !== "parameter") continue;
-      const color = s.strength > 0.5 ? C.up : C.down;
-      markers.push({ time: d.times[mid], position: "belowBar", color, shape: "triangleDown", text: `${s.confidence_floor}% floor`, size: 8 });
-      markers.push({ time: d.times[mid], position: "aboveBar", color, shape: "triangleUp", text: `${s.size_multiplier}x size`, size: 8 });
-    }
-  }
-  appendBtMarkers(markers, d);
-  setMarkersCommon(markers);
-}
-
-/* ---------- Backtest trades overlay ---------- */
-
-function btOverlayOn() {
-  const cb = $("chk-bt");
-  return !!(cb && cb.checked && state.btOverlay && state.btOverlay.trades.length);
-}
-
-function _barIdx(ts, times) {
-  if (ts == null || !times.length) return -1;
-  if (ts < times[0] || ts > times[times.length - 1]) return -1;
-  let lo = 0, hi = times.length - 1;
-  while (lo < hi) {
-    const mid = (lo + hi + 1) >> 1;
-    if (times[mid] <= ts) lo = mid;
-    else hi = mid - 1;
-  }
-  return lo;
-}
-
-function appendBtMarkers(markers, d) {
-  if (!btOverlayOn()) return;
-  const times = d.times;
-  const trades = state.btOverlay.trades.slice(-200);
-  const byBar = new Map();
-  for (const t of trades) {
-    if (t.entry_ts == null || t.exit_ts == null) continue;
-    const e = _barIdx(t.entry_ts, times);
-    const x = _barIdx(t.exit_ts, times);
-    if (e < 0 && x < 0) continue;
-    if (e >= 0 && !byBar.has("e" + e)) {
-      byBar.set("e" + e, true);
-      markers.push({
-        time: times[e],
-        position: t.action === "BUY" ? "belowBar" : "aboveBar",
-        color: t.action === "BUY" ? C.up : C.down,
-        shape: t.action === "BUY" ? "arrowUp" : "arrowDown",
-        text: "E",
-        size: 1,
-      });
-    }
-    if (x >= 0 && !byBar.has("x" + x)) {
-      byBar.set("x" + x, true);
-      const win = t.pnl >= 0;
-      markers.push({
-        time: times[x],
-        position: win ? "aboveBar" : "belowBar",
-        color: win ? C.up : C.down,
-        shape: "circle",
-        text: (win ? "+" : "") + Math.round(Math.abs(t.pnl)),
-        size: 1,
-      });
-    }
-  }
-}
-
-function drawBtSegments() {
-  if (!btOverlayOn()) {
-    if (btSlSeries) { btSlSeries.setData([]); btTpSeries.setData([]); }
-    return;
-  }
-  const times = state.data.times;
-  const trades = state.btOverlay.trades.slice(-120);
-  const build = (key) => {
-    const pts = [];
-    let prevX = -1;
-    for (const t of trades) {
-      if (t.entry_ts == null || t.exit_ts == null) continue;
-      const v = t[key];
-      if (v == null) continue;
-      let e = _barIdx(t.entry_ts, times);
-      let x = _barIdx(t.exit_ts, times);
-      if (e < 0 || x < 0) continue;
-      if (e > x) { const tmp = e; e = x; x = tmp; }
-      if (pts.length && e > prevX) pts.push({ time: times[e] });
-      if (e === x) pts.push({ time: times[e], value: v });
-      else pts.push({ time: times[e], value: v }, { time: times[x], value: v });
-      prevX = x;
-    }
-    return pts;
-  };
-  btSlSeries.setData(build("sl"));
-  btTpSeries.setData(build("tp"));
-}
-
-async function loadBtOverlay(symbol) {
-  const ov = state.btOverlay;
-  if (!ov || !ov.name) { ov.trades = []; return; }
-  if (ov.symbol !== (symbol || state.symbol)) { ov.trades = []; return; }
-  try {
-    const res = await api(`/api/backtest/trades?name=${encodeURIComponent(ov.name)}`);
-    ov.trades = (res && res.trades) || [];
-    if (res && res.symbol) ov.symbol = res.symbol;
-  } catch (e) {
-    ov.trades = [];
-    console.warn("Could not load backtest overlay:", e);
-  }
-}
-
-async function showBtOnChart(d) {
-  const name = d.saved || d.name || "";
-  if (!name) { toast("Run has no saved result - run a backtest first", "down"); return; }
-  state.btOverlay = { name, symbol: d.params.symbol, trades: [] };
-  const cb = $("chk-bt");
-  if (cb) cb.checked = true;
-  if (state.symbol !== state.btOverlay.symbol) {
-    state.symbol = state.btOverlay.symbol;
-    $("symbol-input").value = state.symbol;
-    await loadChart();
-  } else {
-    await loadBtOverlay();
-    drawMarkers();
-    drawBtSegments();
-  }
-  toast(`Showing ${state.btOverlay.trades.length} trade(s) on chart`);
-}
-
-function clearPriceLines() {
-  for (const [series, line] of zonePriceLines) {
-    try { series.removePriceLine(line); } catch (e) { /* already removed */ }
-  }
-  zonePriceLines = [];
-  for (const s of zoneSeries) {
-    try { priceChart.removeSeries(s); } catch (e) { /* already removed */ }
-  }
-  zoneSeries = [];
-}
-
-function hexToRgba(hex, alpha) {
-  const n = parseInt(hex.slice(1), 16);
-  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
-  return `rgba(${r},${g},${b},${alpha})`;
-}
-
-function drawZoneRect(z, d) {
-  const n = d.count;
-  if (n === 0) return;
-  const tFrom = z.formation_index >= 0 && z.formation_index < n ? d.times[z.formation_index] : d.times[0];
-  let tTo = tFrom;
-  if (z.last_touch_index >= (z.formation_index >= 0 ? z.formation_index : 0) && z.last_touch_index < n) tTo = d.times[z.last_touch_index];
-  else tTo = d.times[n - 1];
-  if (tTo < tFrom) tTo = d.times[n - 1];
-
-  const base = z.type === "supply" ? C.down : C.up;
-  const strengthFrac = Math.max(0.1, Math.min(1, z.strength / 100));
-  const alpha = z.broken ? 0.06 : 0.10 + 0.22 * strengthFrac;
-  const fill = hexToRgba(base, alpha);
-
-  const s = priceChart.addBaselineSeries({
-    baseValue: { type: "price", price: z.lower },
-    topLineColor: z.broken ? "rgba(120,123,134,0.25)" : hexToRgba(base, 0.35 + 0.5 * strengthFrac),
-    bottomLineColor: "rgba(0,0,0,0)",
-    topFillColor1: fill,
-    topFillColor2: fill,
-    bottomFillColor1: "rgba(0,0,0,0)",
-    bottomFillColor2: "rgba(0,0,0,0)",
-    lineWidth: 1,
-    priceLineVisible: false,
-    lastValueVisible: false,
-    crosshairMarkerVisible: false,
-    autoscaleInfoProvider: () => null,
-  });
-  s.setData([
-    { time: tFrom, value: z.upper },
-    { time: tTo, value: z.upper },
-  ]);
-  zoneSeries.push(s);
-}
-
-function addPriceLine(series, price, color, dash, title) {
-  try {
-    const line = series.createPriceLine({ price, color, lineWidth: 1, lineStyle: dash, axisLabelVisible: true, title: title || "" });
-    zonePriceLines.push([series, line]);
-  } catch (e) { /* out of range - ignore */ }
-}
-
-function drawPriceLines() {
-  clearPriceLines();
-  const d = state.data, bot = state.bot.data;
-  if (!d) return;
-
-  // bot zones: filled rectangles spanning formation -> last touch, alpha by strength
-  if (state.indicators.sd && bot && bot.zones.length) {
-    const zones = [...bot.zones].sort((a, b) => b.strength - a.strength);
-    const unbroken = zones.filter((z) => !z.broken).slice(0, 10);
-    const broken = zones.filter((z) => z.broken).slice(0, 4);
-    for (const z of [...unbroken, ...broken]) drawZoneRect(z, d);
-    const strong = unbroken.slice(0, 3);
-    for (const z of strong) {
-      const color = z.type === "supply" ? "rgba(239,83,80,0.9)" : "rgba(38,166,154,0.9)";
-      const mid = (z.upper + z.lower) / 2;
-      addPriceLine(candleSeries, mid, color, 1, `${z.type === "supply" ? "S" : "D"} ${Math.round(z.strength)} ${z.touches}t`);
-    }
-  }
-
-  // plan zone + entry/SL/TP
-  const plan = state.plan;
-  if (plan && plan.action !== "NONE") {
-    if (plan.zone_upper && plan.zone_lower) {
-      const zc = plan.zone_type === "supply" ? "rgba(239,83,80,0.9)" : "rgba(38,166,154,0.9)";
-      addPriceLine(candleSeries, plan.zone_upper, zc, 2, "PLAN Z");
-      addPriceLine(candleSeries, plan.zone_lower, zc, 2, "PLAN Z");
-    }
-    const buy = plan.action === "BUY";
-    if (plan.entry) addPriceLine(candleSeries, plan.entry, buy ? C.up : C.down, 2, "ENTRY");
-    if (plan.sl) addPriceLine(candleSeries, plan.sl, C.down, 4, "SL");
-    if (plan.tp) addPriceLine(candleSeries, plan.tp, C.up, 4, "TP");
-  }
-
-  // open positions on this symbol
-  for (const p of state.positions) {
-    if (p.symbol !== state.symbol) continue;
-    const entryColor = p.total >= 0 ? C.up : C.down;
-    addPriceLine(candleSeries, p.price_open, entryColor, 2, `${p.type} ${p.volume}`);
-    if (p.sl) addPriceLine(candleSeries, p.sl, C.down, 4, "SL");
-    if (p.tp) addPriceLine(candleSeries, p.tp, C.up, 4, "TP");
-  }
-
-  // live strategy overlay: Donchian range, H1 EMA200 trend, breakout/spike setup
-  const o = state.overlay;
-  if (state.indicators.overlay && o && !o.error) {
-    const rangeColor = o.range
-      ? (o.breakout ? (o.breakout.side === "BUY" ? "rgba(38,166,154,0.8)" : "rgba(239,83,80,0.8)") : "rgba(120,123,134,0.85)")
-      : "rgba(120,123,134,0.85)";
-    if (o.range) {
-      addPriceLine(candleSeries, o.range.high, rangeColor, 4, `RNG HI c${o.range.compactness != null ? Math.round(o.range.compactness) : ""}`);
-      addPriceLine(candleSeries, o.range.low, rangeColor, 4, "RNG LO");
-    }
-    if (o.trend && o.trend.ema200) {
-      const tc = o.trend.direction === "bull" ? "rgba(38,166,154,0.9)" : o.trend.direction === "bear" ? "rgba(239,83,80,0.9)" : "rgba(120,123,134,0.9)";
-      addPriceLine(candleSeries, o.trend.ema200, tc, 2, `H1 EMA200 ${o.trend.direction}`);
-    }
-    if (o.breakout && state.timeframe === "M15") {
-      const bc = o.breakout.side === "BUY" ? C.up : C.down;
-      addPriceLine(candleSeries, o.breakout.entry, bc, 4, `BO ${o.breakout.side} ${Math.round(o.breakout.confidence)}%`);
-      addPriceLine(candleSeries, o.breakout.sl, C.down, 4, "BO SL");
-      addPriceLine(candleSeries, o.breakout.tp, C.up, 4, "BO TP");
-    }
-    if (o.spike) {
-      const sc = o.spike.direction === "up" ? C.up : C.down;
-      if (o.spike.entry_price) addPriceLine(candleSeries, o.spike.entry_price, sc, 4, `SPIKE ${String(o.spike.direction).toUpperCase()} ${Math.round(o.spike.confidence)}%`);
-      if (o.spike.sl_price) addPriceLine(candleSeries, o.spike.sl_price, C.down, 4, "SPIKE SL");
-      if (o.spike.tp_price) addPriceLine(candleSeries, o.spike.tp_price, C.up, 4, "SPIKE TP");
-    }
-  }
-}
-
-function updateTooltip(param) {
-  const d = state.data;
-  if (!d || !param.time || param.point === undefined) {
-    tooltip.classList.remove("visible");
-    return;
-  }
-  const i = d.times.indexOf(param.time);
-  if (i < 0) { tooltip.classList.remove("visible"); return; }
-  const o = d.open[i], h = d.high[i], l = d.low[i], c = d.close[i];
-  const rows = [
-    `<div class="tt-title">${new Date(d.times[i] * 1000).toLocaleString()}  ${state.symbol} ${state.timeframe}</div>`,
-    `<div class="tt-row">O ${fmtPrice(o)}  H ${fmtPrice(h)}</div>`,
-    `<div class="tt-row">L ${fmtPrice(l)}  C <span style="color:${c >= o ? C.up : C.down}">${fmtPrice(c)}</span></div>`,
-  ];
-  if (state.indicators.ema) {
-    rows.push(`<div class="tt-row" style="color:${C.ema50}">EMA50 ${fmtPrice(d.ema50[i])}  <span style="color:${C.ema200}">EMA200 ${fmtPrice(d.ema200[i])}</span></div>`);
-  }
-  if (state.indicators.rsi) rows.push(`<div class="tt-row" style="color:${C.rsi}">RSI ${d.rsi[i].toFixed(1)}</div>`);
-  if (state.indicators.macd) {
-    rows.push(`<div class="tt-row" style="color:${C.macd}">MACD ${d.macd[i].toFixed(5)}  <span style="color:${C.signal}">Sig ${d.macd_signal[i].toFixed(5)}</span></div>`);
-  }
-  const bot = state.bot.data;
-  if (bot) {
-    const barPatterns = bot.patterns.filter((p) => p.index === i && p.confidence >= 0.6);
-    if (barPatterns.length) {
-      rows.push(`<div class="tt-row" style="color:${C.purple}">` +
-        barPatterns.map((p) => `${p.pattern} ${p.direction} ${(p.confidence * 100).toFixed(0)}%`).join(" | ") + `</div>`);
-    }
-    const close = d.close[i];
-    const covering = bot.zones.filter((z) => close >= z.lower && close <= z.upper);
-    if (covering.length) {
-      rows.push(`<div class="tt-row" style="color:${C.yellow}">Zone: ` +
-        covering.map((z) => `${z.type} ${z.strength.toFixed(0)}/100 ${z.touches}t${z.broken ? " broken" : ""}`).join(" | ") + `</div>`);
-    }
-  }
-  const plan = state.plan;
-  if (plan && plan.action !== "NONE" && plan.entry != null) {
-    rows.push(`<div class="tt-row" style="color:${plan.action === "BUY" ? C.up : C.down}">PLAN ${plan.action}` +
-      ` E ${fmtPrice(plan.entry)} SL ${fmtPrice(plan.sl)} TP ${fmtPrice(plan.tp)}` +
-      ` RR ${plan.risk_reward ?? "--"} conf ${plan.confidence ?? "--"}%</div>`);
-  }
-  if (btOverlayOn()) {
-    const hits = state.btOverlay.trades.filter((t) =>
-      (_barIdx(t.entry_ts, d.times) === i || _barIdx(t.exit_ts, d.times) === i));
-    for (const t of hits.slice(-3)) {
-      rows.push(`<div class="tt-row" style="color:${t.pnl >= 0 ? C.up : C.down}">BT ${t.action}` +
-        ` E ${fmtPrice(t.entry)} X ${fmtPrice(t.exit_price)}` +
-        ` ${t.pnl >= 0 ? "+" : ""}${Math.round(t.pnl)}` +
-        `${t.reason ? " (" + esc(t.reason) + ")" : ""}</div>`);
-    }
-  }
-  tooltip.innerHTML = rows.join("");
-  tooltip.classList.add("visible");
-  const left = param.point.x + 14;
-  tooltip.style.left = (left + tooltip.offsetWidth > chartWrap.clientWidth ? param.point.x - tooltip.offsetWidth - 14 : left) + "px";
-  // Track the crosshair vertically, clamped to the chart area (item #9).
-  const tipH = tooltip.offsetHeight;
-  const y = Math.min(Math.max(param.point.y - tipH / 2, 4), chartWrap.clientHeight - tipH - 4);
-  tooltip.style.top = y + "px";
-}
-
-/* ---------- Live strategy overlay ---------- */
-async function loadOverlay() {
-  if (!state.indicators.overlay) {
-    state.overlay = null;
-    drawPriceLines();
-    return;
-  }
-  try {
-    const o = await api(`/api/live-overlay?symbol=${encodeURIComponent(state.symbol)}&range_bars=24`);
-    state.overlay = o || null;
-    drawPriceLines();
-  } catch (e) {
-    state.overlay = null;
-  }
-}
-
-async function loadChart() {
-  const symbol = state.symbol.trim() || "EURUSD";
-  try {
-    const q = `symbol=${encodeURIComponent(symbol)}&timeframe=${state.timeframe}&count=${state.count}`;
-    const [d, bot] = await Promise.all([
-      api(`/api/rates?${q}`),
-      api(`/api/bot-analysis?${q}`).catch(() => null),
-    ]);
-    state.data = d;
-    state.bot.data = bot;
-    state.symbol = d.symbol;
-    $("symbol-input").value = d.symbol;
-    const t = d.tick;
-    $("chart-tick").textContent = `Bid ${fmtPrice(t.bid)}  Ask ${fmtPrice(t.ask)}  Spread ${t.spread}`;
-    updateBotBadge();
-    savePrefs();
-    renderWatchlist();
-
-    // Auto-connect WebSocket on page load (after a short delay to let MT5 init)
-    setTimeout(() => {
-      if (!ws) connectWs();
-    }, 3000);
-
-    // Fetch trading signals, bt overlay, and chart overlay in parallel
-    const [sigResp, , ] = await Promise.all([
-      api(`/api/signals?symbol=${encodeURIComponent(state.symbol)}&timeframe=${state.timeframe}&count=${state.count}`).catch(() => ({ signals: [] })),
-      loadBtOverlay(symbol),
-      loadOverlay(),
-    ]);
-    state.signals = sigResp.signals || [];
-    setSeriesData();
-    drawBtSegments();
-    loadPlan();
-    startQuoteTimer();
-  } catch (e) {
-    $("chart-tick").textContent = "No data for " + symbol;
-  }
-}
-
-async function updatePriceDisplay() {
-  if (!state.data || !state.symbol) return;
-  
-  try {
-    const priceResp = await api("/api/price?symbol=" + encodeURIComponent(state.symbol));
-    if (priceResp && priceResp.bid > 0) {
-      const t = priceResp;
-      $("chart-tick").textContent = "Bid " + fmtPrice(t.bid) + " Ask " + fmtPrice(t.ask) + " Spread " + t.spread;
-      
-      // Update the last candle on the chart if data exists
-      if (candleSeries && state.data.times && state.data.times.length > 0) {
-        const lastIdx = state.data.times.length - 1;
-        state.lastTick = {
-          bid: t.bid,
-          ask: t.ask,
-          spread: t.spread,
-          time: Date.now()
-        };
-      }
-    }
-  } catch (e) {
-    console.debug("Price update failed:", e);
-  }
-}
-
-// Schedule periodic price updates
-function startQuoteTimer() {
-  if (state.quoteTimer) clearInterval(state.quoteTimer);
-  state.quoteTimer = setInterval(async () => {
-    if (document.hidden) return;
-    try {
-      const t = await api("/api/quote?symbol=" + encodeURIComponent(state.symbol));
-      $("chart-tick").textContent = "Bid " + fmtPrice(t.bid) + " Ask " + fmtPrice(t.ask) + " Spread " + t.spread;
-      if (state.lastBar && candleSeries && state.data) {
-        const close = state.symbol.indexOf("XAU") >= 0 || state.symbol.indexOf("XAG") >= 0 ? t.ask : t.bid;
-        candleSeries.update({
-          ...state.lastBar,
-          high: Math.max(state.lastBar.high, close),
-          low: Math.min(state.lastBar.low, close),
-          close,
-        });
-      }
-    } catch (e) {
-      $("chart-tick").textContent = "No data for " + state.symbol;
-    }
-  }, 3000);
-}
-
-function updateBotBadge() {
-  const el = $("bot-badge");
-  const t = state.bot.data?.trend;
-  if (!t) { el.className = "bot-badge hidden"; return; }
-  el.textContent = `BOT ${t.direction.toUpperCase()} ${(t.confidence * 100).toFixed(0)}% Â· HH${t.hh} HL${t.hl} LH${t.lh} LL${t.ll}`;
-  el.className = `bot-badge ${t.direction}`;
-}
-
-/* ---------- Symbols ---------- */
-async function loadSymbols() {
-  try {
-    const { symbols } = await api("/api/symbols");
-    const dl = $("symbol-list");
-    dl.innerHTML = symbols.slice(0, 1000).map((s) => `<option value="${esc(s)}">`).join("");
-  } catch (e) { /* offline - ignore */ }
-}
-
-/* ---------- Controls ---------- */
-function setTf(tf) {
-  state.timeframe = tf;
-  document.querySelectorAll(".tf-btn").forEach((b) => b.classList.toggle("active", b.dataset.tf === tf));
-  savePrefs();
-  loadChart();
-}
-
-function buildTfButtons() {
-  const group = $("tf-group");
-  for (const tf of TFs) {
-    const btn = document.createElement("button");
-    btn.className = "tf-btn" + (tf === state.timeframe ? " active" : "");
-    btn.dataset.tf = tf;
-    btn.textContent = tf;
-    btn.onclick = () => setTf(tf);
-    group.appendChild(btn);
-  }
-}
-
-function initControls() {
-  const input = $("symbol-input");
-  if (!input) return;
-  const applySymbol = () => {
-    state.symbol = input.value.trim().toUpperCase() || "EURUSD";
-    loadChart();
-  };
-  input.addEventListener("keydown", (e) => { if (e.key === "Enter") applySymbol(); });
-  input.addEventListener("change", applySymbol);
-
-  const cfg = { ema: "chk-ema", rsi: "chk-rsi", macd: "chk-macd", bot: "chk-bot", sd: "chk-sd", overlay: "chk-strat" };
-  for (const key in cfg) {
-    const el = $(cfg[key]);
-    el.checked = key === "bot" ? state.bot.on : !!state.indicators[key];
-    el.addEventListener("change", (e) => {
-      if (key === "bot") state.bot.on = e.target.checked;
-      else state.indicators[key] = e.target.checked;
-      savePrefs();
-      if (key === "ema" || key === "rsi" || key === "macd") { setSeriesData(); layoutPanes(); }
-      else if (key === "overlay") loadOverlay();
-      else { drawMarkers(); drawPriceLines(); }
-    });
-  }
-
-  $("count-select").addEventListener("change", (e) => {
-    state.count = parseInt(e.target.value, 10);
-    savePrefs();
-    loadChart();
-  });
-
-  $("chk-bt").addEventListener("change", (e) => {
-    if (!e.target.checked) {
-      state.btOverlay = { name: null, symbol: null, trades: [] };
-      drawMarkers();
-      drawBtSegments();
-      return;
-    }
-    if (bt.detail && bt.detail.params) showBtOnChart(bt.detail);
-    else {
-      toast("Open a backtest result first (Backtests tab), then Show on chart", "down");
-      e.target.checked = false;
-    }
-  });
-
-  $("eq-balance").addEventListener("change", (e) => toggleEquityOpt("balance", e.target));
-  $("eq-floating").addEventListener("change", (e) => toggleEquityOpt("floating", e.target));
-  $("eq-ma5").addEventListener("change", (e) => toggleEquityOpt("ma5", e.target));
-  $("eq-dd").addEventListener("change", (e) => toggleEquityOpt("dd", e.target));
-
-  const wlInput = $("wl-add");
-  wlInput.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      addToWatchlist(wlInput.value);
-      wlInput.value = "";
-    }
-  });
-
-  document.addEventListener("keydown", (e) => {
-    if (e.target.tagName === "INPUT" || e.target.tagName === "SELECT") return;
-    if (e.ctrlKey || e.metaKey || e.altKey) return;
-    const idx = ["1", "2", "3", "4", "5", "6", "7", "8"].indexOf(e.key);
-    if (idx >= 0) setTf(TFs[idx]);
-  });
-
-  if ($("aid-run")) $("aid-run").addEventListener("click", loadAiDetection);
-
-  // Backtest runner controls
-  if ($("#bt-run")) $("#bt-run").addEventListener("click", runBacktest);
-  if ($("#bt-refresh")) $("#bt-refresh").addEventListener("click", loadBacktests);
-  if ($("#bt-symbol")) $("#bt-symbol").addEventListener("keydown", (e) => { if (e.key === "Enter") runBacktest(); });
-  if ($("#bt-since")) $("#bt-since").addEventListener("change", () => {
-    const out = $("#bt-out");
-    if ($("#bt-since").value) out.value = "forward";
-  });
-  if ($("#bt-out")) $("#bt-out").addEventListener("change", () => {
-    if ($("#bt-out").value === "forward") {
-      if ($("#bt-since")) { $("#bt-since").required = true; $("#bt-since").disabled = false; }
-    } else {
-      if ($("#bt-since")) { $("#bt-since").required = false; $("#bt-since").disabled = true; $("#bt-since").value = ""; }
-    }
-  });
-}
-
-/* ---------- Boot ---------- */
 /* ---------- Backtesting ---------- */
 const bt = {
   groups: null,
@@ -3501,12 +2734,17 @@ function init() {
   loadAiDetection();
   pollEvents();
   loadPeer();
+  renderWatchlist();
+  pollWatchQuotes();
+  loadAlerts();
 
   const tick = (fn) => () => { if (!document.hidden) fn(); };
 
   // Fast tier (5s): lightweight real-time data
   setInterval(tick(pollEvents), POLL_MS);
   setInterval(tick(loadPeer), POLL_MS);
+  setInterval(tick(pollWatchQuotes), POLL_MS);
+  setInterval(tick(loadAlerts), 30000);
 
   // Medium tier (15s): health + chart refresh
   setInterval(tick(loadHealth), 15000);
@@ -3530,7 +2768,7 @@ function init() {
     vslowIdx++;
   }, SLOW_MS * 2);
 
-  // News tier (5min)
+  // News tier (2min)
   setInterval(tick(loadNews), NEWS_MS);
 
   // WS fallback: only poll summary if WS is dead

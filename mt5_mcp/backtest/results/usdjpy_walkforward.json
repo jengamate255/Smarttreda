@@ -1,0 +1,257 @@
+{
+  "symbol": "USDJPY",
+  "n_folds": 16,
+  "oos_trades": 0,
+  "oos_wins": 0,
+  "oos_losses": 0,
+  "oos_win_rate": 0.0,
+  "oos_profit_factor": 0.0,
+  "oos_net_pnl": 0,
+  "oos_expectancy": 0.0,
+  "oos_total_return_pct": 0.0,
+  "oos_max_drawdown_pct": 0.0,
+  "oos_avg_rr": 0.0,
+  "elapsed_s": 1414.3,
+  "folds": [
+    {
+      "fold": 0,
+      "best_params": {
+        "min_zone_score": 40.0,
+        "min_rr": 2.0
+      },
+      "train_trades": 0,
+      "train_wr": 0.0,
+      "train_pf": 0.0,
+      "train_net": 0,
+      "test_trades": 0,
+      "test_wr": 0.0,
+      "test_pf": 0.0,
+      "test_net": 0
+    },
+    {
+      "fold": 1,
+      "best_params": {
+        "min_zone_score": 40.0,
+        "min_rr": 2.0
+      },
+      "train_trades": 0,
+      "train_wr": 0.0,
+      "train_pf": 0.0,
+      "train_net": 0,
+      "test_trades": 0,
+      "test_wr": 0.0,
+      "test_pf": 0.0,
+      "test_net": 0
+    },
+    {
+      "fold": 2,
+      "best_params": {
+        "min_zone_score": 40.0,
+        "min_rr": 2.0
+      },
+      "train_trades": 0,
+      "train_wr": 0.0,
+      "train_pf": 0.0,
+      "train_net": 0,
+      "test_trades": 0,
+      "test_wr": 0.0,
+      "test_pf": 0.0,
+      "test_net": 0
+    },
+    {
+      "fold": 3,
+      "best_params": {
+        "min_zone_score": 40.0,
+        "min_rr": 2.0
+      },
+      "train_trades": 0,
+      "train_wr": 0.0,
+      "train_pf": 0.0,
+      "train_net": 0,
+      "test_trades": 0,
+      "test_wr": 0.0,
+      "test_pf": 0.0,
+      "test_net": 0
+    },
+    {
+      "fold": 4,
+      "best_params": {
+        "min_zone_score": 40.0,
+        "min_rr": 2.0
+      },
+      "train_trades": 0,
+      "train_wr": 0.0,
+      "train_pf": 0.0,
+      "train_net": 0,
+      "test_trades": 0,
+      "test_wr": 0.0,
+      "test_pf": 0.0,
+      "test_net": 0
+    },
+    {
+      "fold": 5,
+      "best_params": {
+        "min_zone_score": 40.0,
+        "min_rr": 2.0
+      },
+      "train_trades": 0,
+      "train_wr": 0.0,
+      "train_pf": 0.0,
+      "train_net": 0,
+      "test_trades": 0,
+      "test_wr": 0.0,
+      "test_pf": 0.0,
+      "test_net": 0
+    },
+    {
+      "fold": 6,
+      "best_params": {
+        "min_zone_score": 40.0,
+        "min_rr": 2.0
+      },
+      "train_trades": 0,
+      "train_wr": 0.0,
+      "train_pf": 0.0,
+      "train_net": 0,
+      "test_trades": 0,
+      "test_wr": 0.0,
+      "test_pf": 0.0,
+      "test_net": 0
+    },
+    {
+      "fold": 7,
+      "best_params": {
+        "min_zone_score": 40.0,
+        "min_rr": 2.0
+      },
+      "train_trades": 0,
+      "train_wr": 0.0,
+      "train_pf": 0.0,
+      "train_net": 0,
+      "test_trades": 0,
+      "test_wr": 0.0,
+      "test_pf": 0.0,
+      "test_net": 0
+    },
+    {
+      "fold": 8,
+      "best_params": {
+        "min_zone_score": 40.0,
+        "min_rr": 2.0
+      },
+      "train_trades": 0,
+      "train_wr": 0.0,
+      "train_pf": 0.0,
+      "train_net": 0,
+      "test_trades": 0,
+      "test_wr": 0.0,
+      "test_pf": 0.0,
+      "test_net": 0
+    },
+    {
+      "fold": 9,
+      "best_params": {
+        "min_zone_score": 40.0,
+        "min_rr": 2.0
+      },
+      "train_trades": 0,
+      "train_wr": 0.0,
+      "train_pf": 0.0,
+      "train_net": 0,
+      "test_trades": 0,
+      "test_wr": 0.0,
+      "test_pf": 0.0,
+      "test_net": 0
+    },
+    {
+      "fold": 10,
+      "best_params": {
+        "min_zone_score": 40.0,
+        "min_rr": 2.0
+      },
+      "train_trades": 0,
+      "train_wr": 0.0,
+      "train_pf": 0.0,
+      "train_net": 0,
+      "test_trades": 0,
+      "test_wr": 0.0,
+      "test_pf": 0.0,
+      "test_net": 0
+    },
+    {
+      "fold": 11,
+      "best_params": {
+        "min_zone_score": 40.0,
+        "min_rr": 2.0
+      },
+      "train_trades": 0,
+      "train_wr": 0.0,
+      "train_pf": 0.0,
+      "train_net": 0,
+      "test_trades": 0,
+      "test_wr": 0.0,
+      "test_pf": 0.0,
+      "test_net": 0
+    },
+    {
+      "fold": 12,
+      "best_params": {
+        "min_zone_score": 40.0,
+        "min_rr": 2.0
+      },
+      "train_trades": 0,
+      "train_wr": 0.0,
+      "train_pf": 0.0,
+      "train_net": 0,
+      "test_trades": 0,
+      "test_wr": 0.0,
+      "test_pf": 0.0,
+      "test_net": 0
+    },
+    {
+      "fold": 13,
+      "best_params": {
+        "min_zone_score": 40.0,
+        "min_rr": 2.0
+      },
+      "train_trades": 0,
+      "train_wr": 0.0,
+      "train_pf": 0.0,
+      "train_net": 0,
+      "test_trades": 0,
+      "test_wr": 0.0,
+      "test_pf": 0.0,
+      "test_net": 0
+    },
+    {
+      "fold": 14,
+      "best_params": {
+        "min_zone_score": 40.0,
+        "min_rr": 2.0
+      },
+      "train_trades": 0,
+      "train_wr": 0.0,
+      "train_pf": 0.0,
+      "train_net": 0,
+      "test_trades": 0,
+      "test_wr": 0.0,
+      "test_pf": 0.0,
+      "test_net": 0
+    },
+    {
+      "fold": 15,
+      "best_params": {
+        "min_zone_score": 40.0,
+        "min_rr": 2.0
+      },
+      "train_trades": 0,
+      "train_wr": 0.0,
+      "train_pf": 0.0,
+      "train_net": 0,
+      "test_trades": 0,
+      "test_wr": 0.0,
+      "test_pf": 0.0,
+      "test_net": 0
+    }
+  ]
+}

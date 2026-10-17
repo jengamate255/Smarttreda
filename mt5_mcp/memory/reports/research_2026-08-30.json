@@ -1,0 +1,108 @@
+{
+  "generated_at": "2026-08-30T19:07:34.237641+00:00",
+  "window_days": 7,
+  "window_start": "2026-08-28T04:55:33+00:00",
+  "window_end": "2026-08-28T12:00:58+00:00",
+  "trades": 4,
+  "win_rate": 0.0,
+  "expectancy": -6.25,
+  "profit_factor": 0.0,
+  "average_rr": 0.0,
+  "average_win": 0.0,
+  "average_loss": -8.34,
+  "net_pnl": -25.02,
+  "max_drawdown": {
+    "max_drawdown": 25.02,
+    "max_drawdown_percent": 0.25,
+    "peak_time": null,
+    "trough_time": "2026-08-28T12:00:58+00:00"
+  },
+  "best_symbols": [
+    {
+      "name": "CRASH 500 INDEX",
+      "trades": 1,
+      "win_rate": 0.0,
+      "net_pnl": -2.87,
+      "avg_pnl": -2.87
+    },
+    {
+      "name": "CRASH 900 INDEX",
+      "trades": 2,
+      "win_rate": 0.0,
+      "net_pnl": -6.95,
+      "avg_pnl": -3.48
+    },
+    {
+      "name": "EURUSD",
+      "trades": 1,
+      "win_rate": 0.0,
+      "net_pnl": -15.2,
+      "avg_pnl": -15.2
+    }
+  ],
+  "worst_symbols": [
+    {
+      "name": "EURUSD",
+      "trades": 1,
+      "win_rate": 0.0,
+      "net_pnl": -15.2,
+      "avg_pnl": -15.2
+    },
+    {
+      "name": "CRASH 900 INDEX",
+      "trades": 2,
+      "win_rate": 0.0,
+      "net_pnl": -6.95,
+      "avg_pnl": -3.48
+    },
+    {
+      "name": "CRASH 500 INDEX",
+      "trades": 1,
+      "win_rate": 0.0,
+      "net_pnl": -2.87,
+      "avg_pnl": -2.87
+    }
+  ],
+  "setups": [
+    {
+      "name": "manual",
+      "trades": 4,
+      "win_rate": 0.0,
+      "net_pnl": -25.02,
+      "avg_pnl": -6.25
+    }
+  ],
+  "sessions": [
+    {
+      "name": "04:00 UTC",
+      "trades": 1,
+      "win_rate": 0.0,
+      "net_pnl": 0.0,
+      "avg_pnl": 0.0
+    },
+    {
+      "name": "10:00 UTC",
+      "trades": 1,
+      "win_rate": 0.0,
+      "net_pnl": -2.87,
+      "avg_pnl": -2.87
+    },
+    {
+      "name": "07:00 UTC",
+      "trades": 1,
+      "win_rate": 0.0,
+      "net_pnl": -6.95,
+      "avg_pnl": -6.95
+    },
+    {
+      "name": "17:00 UTC",
+      "trades": 1,
+      "win_rate": 0.0,
+      "net_pnl": -15.2,
+      "avg_pnl": -15.2
+    }
+  ],
+  "mistakes": [],
+  "suggestions": [],
+  "markdown": "# Research Report - 2026-08-30\n\nWindow: 7 day(s) from 2026-08-28 to 2026-08-28\n\n- Trades: 4\n- Win rate: 0.0%\n- Expectancy: -6.25 per trade\n- Profit factor: 0.00\n- Average R multiple: 0.00\n- Net P&L: -25.02\n- Max drawdown: 0.25%\n\n## Best symbols\n- CRASH 500 INDEX: 1 trades, 0% win, -2.87\n- CRASH 900 INDEX: 2 trades, 0% win, -6.95\n- EURUSD: 1 trades, 0% win, -15.20\n\n## Worst symbols\n- EURUSD: 1 trades, 0% win, -15.20\n- CRASH 900 INDEX: 2 trades, 0% win, -6.95\n- CRASH 500 INDEX: 1 trades, 0% win, -2.87\n\n## Setups\n- manual: 4 trades, -25.02\n\n## Mistakes\n- none recorded\n\n## Suggestions\n- not enough data for statistically significant suggestions\n"
+}

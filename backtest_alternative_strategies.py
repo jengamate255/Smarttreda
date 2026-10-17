@@ -25,7 +25,7 @@ from mt5_mcp.common import pip_size
 from mt5_mcp.indicators import rsi as calc_rsi
 
 
-FAILING_PAIRS = ["AUDUSD", "EURJPY", "GBPJPY", "GBPUSD", "USDCAD", "USDJPY"]
+FAILING_PAIRS = ["BTCUSD", "ETHUSD", "XAUUSD"]
 TIMEFRAME = "H1"
 BARS = 4000
 WARMUP = 250
@@ -376,14 +376,9 @@ def main():
     print(f"Fetched in {time.time() - t0:.1f}s\n")
 
     trend_results = {
-        "EURUSD": (3, 66.7, 3.25, 0.87, 0.39, 28.91),
-        "USDCHF": (11, 54.5, 1.34, 0.63, 1.04, 5.77),
-        "GBPUSD": (7, 42.9, 0.58, -0.63, 0.71, -9.03),
-        "USDCAD": (8, 37.5, 0.46, -1.22, 1.55, -15.25),
-        "USDJPY": (11, 36.4, 0.44, -1.77, 1.77, -16.07),
-        "GBPJPY": (8, 25.0, 0.24, -2.34, 2.34, -29.24),
-        "EURJPY": (15, 26.7, 0.21, -4.21, 4.21, -28.08),
-        "AUDUSD": (12, 16.7, 0.09, -4.46, 4.80, -37.19),
+        "BTCUSD": (18, 22.2, 0.527, -3.1, 4.52, -17.22),
+        "ETHUSD": (7, 28.6, 1.692, 0.72, 0.69, 10.23),
+        "XAUUSD": (5, 40.0, 1.708, 1.07, 1.0, 21.46),
     }
 
     print("=" * 120)

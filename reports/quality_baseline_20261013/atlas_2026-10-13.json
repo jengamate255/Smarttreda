@@ -1,0 +1,3027 @@
+{
+ "generated": "2026-10-13 08:34:29",
+ "cost_gated": "realistic (bar spread w/ zero-fill, 1pt slip, $7/lot)",
+ "cost_reported_also": "canonical (15pt fixed spread, vol-adjusted, 1 pip slip)",
+ "gates": "PROMOTE: n>=50 PF>=1.25 thirds>=1.0 boot>=0.80 holdout n>=15 pf>=1.0 | PAPER: n>=40 PF>=1.10 boot>=0.60 thirds 2/3 | else FAIL",
+ "holdout_fraction": 0.7,
+ "history_from": "2021-01-01",
+ "symbols": {
+  "USOIL": {
+   "strategies": {
+    "mean_reversion": {
+     "trades": 18,
+     "pf": 1.063,
+     "win_rate": 38.9,
+     "net_pnl": 38.8,
+     "max_dd_pct": 3.62,
+     "avg_r": 0.17,
+     "thirds": [
+      0.881,
+      0.3,
+      3.63
+     ],
+     "bootstrap_pf_gt1": 0.596,
+     "window": [
+      "2024-12-17T19:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      7,
+      11,
+      0
+     ],
+     "holdout": {
+      "trades": 7,
+      "pf": 2.42,
+      "win_rate": 57.1,
+      "net_pnl": 219.8,
+      "max_dd_pct": 0.52,
+      "avg_r": 0.71,
+      "thirds": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "bootstrap_pf_gt1": 0.865,
+      "window": [
+       "2026-03-31T04:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       4,
+       3,
+       0
+      ],
+      "split_time": "2026-03-31T04:00:00"
+     },
+     "canonical": {
+      "trades": 18,
+      "pf": 0.225,
+      "net_pnl": -757.82
+     },
+     "verdict": "FAIL",
+     "routing_family": true
+    },
+    "momentum_breakout": {
+     "trades": 307,
+     "pf": 0.675,
+     "win_rate": 21.8,
+     "net_pnl": -3539.28,
+     "max_dd_pct": 35.88,
+     "avg_r": -0.2,
+     "thirds": [
+      0.814,
+      0.594,
+      0.601
+     ],
+     "bootstrap_pf_gt1": 0.001,
+     "window": [
+      "2024-12-17T19:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      67,
+      240,
+      0
+     ],
+     "holdout": {
+      "trades": 100,
+      "pf": 0.61,
+      "win_rate": 21.0,
+      "net_pnl": -1576.91,
+      "max_dd_pct": 17.49,
+      "avg_r": -0.23,
+      "thirds": [
+       0.607,
+       0.726,
+       0.502
+      ],
+      "bootstrap_pf_gt1": 0.011,
+      "window": [
+       "2026-03-31T04:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       21,
+       79,
+       0
+      ],
+      "split_time": "2026-03-31T04:00:00"
+     },
+     "canonical": {
+      "trades": 322,
+      "pf": 0.325,
+      "net_pnl": -6956.82
+     },
+     "verdict": "FAIL",
+     "routing_family": true
+    },
+    "ema_crossover": {
+     "trades": 128,
+     "pf": 0.95,
+     "win_rate": 33.6,
+     "net_pnl": -224.5,
+     "max_dd_pct": 9.47,
+     "avg_r": -0.01,
+     "thirds": [
+      1.592,
+      0.826,
+      0.614
+     ],
+     "bootstrap_pf_gt1": 0.371,
+     "window": [
+      "2024-12-17T19:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      41,
+      84,
+      3
+     ],
+     "holdout": {
+      "trades": 31,
+      "pf": 0.662,
+      "win_rate": 25.8,
+      "net_pnl": -398.76,
+      "max_dd_pct": 4.73,
+      "avg_r": -0.23,
+      "thirds": [
+       1.108,
+       0.233,
+       0.787
+      ],
+      "bootstrap_pf_gt1": 0.141,
+      "window": [
+       "2026-03-31T04:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       8,
+       23,
+       0
+      ],
+      "split_time": "2026-03-31T04:00:00"
+     },
+     "canonical": {
+      "trades": 129,
+      "pf": 0.654,
+      "net_pnl": -1683.22
+     },
+     "verdict": "FAIL",
+     "routing_family": true
+    },
+    "bb_mr_fade": {
+     "trades": 247,
+     "pf": 0.875,
+     "win_rate": 41.3,
+     "net_pnl": -922.0,
+     "max_dd_pct": 14.5,
+     "avg_r": -0.03,
+     "thirds": [
+      1.012,
+      0.903,
+      0.716
+     ],
+     "bootstrap_pf_gt1": 0.142,
+     "window": [
+      "2024-12-17T19:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      102,
+      144,
+      1
+     ],
+     "holdout": {
+      "trades": 71,
+      "pf": 0.764,
+      "win_rate": 38.0,
+      "net_pnl": -516.39,
+      "max_dd_pct": 7.67,
+      "avg_r": -0.11,
+      "thirds": [
+       1.076,
+       0.511,
+       0.79
+      ],
+      "bootstrap_pf_gt1": 0.11,
+      "window": [
+       "2026-03-31T04:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       27,
+       44,
+       0
+      ],
+      "split_time": "2026-03-31T04:00:00"
+     },
+     "canonical": {
+      "trades": 255,
+      "pf": 0.527,
+      "net_pnl": -3660.32
+     },
+     "verdict": "FAIL",
+     "routing_family": true
+    },
+    "btc_trend_following": {
+     "trades": 16,
+     "pf": 0.889,
+     "win_rate": 37.5,
+     "net_pnl": -59.43,
+     "max_dd_pct": 2.15,
+     "avg_r": -0.02,
+     "thirds": [
+      0.723,
+      2.28,
+      0.448
+     ],
+     "bootstrap_pf_gt1": 0.415,
+     "window": [
+      "2025-02-10T12:00:00",
+      "2026-10-13T04:00:00"
+     ],
+     "tp_sl_timeout": [
+      6,
+      10,
+      0
+     ],
+     "holdout": {
+      "trades": 4,
+      "pf": 0.76,
+      "win_rate": 25.0,
+      "net_pnl": -32.74,
+      "max_dd_pct": 0.92,
+      "avg_r": -0.35,
+      "thirds": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "bootstrap_pf_gt1": null,
+      "window": [
+       "2026-04-16T00:00:00",
+       "2026-10-13T04:00:00"
+      ],
+      "tp_sl_timeout": [
+       1,
+       3,
+       0
+      ],
+      "split_time": "2026-04-16T00:00:00"
+     },
+     "canonical": {
+      "trades": 16,
+      "pf": 0.816,
+      "net_pnl": -102.97
+     },
+     "verdict": "FAIL",
+     "routing_family": true
+    },
+    "donchian": {
+     "trades": 448,
+     "pf": 1.007,
+     "win_rate": 35.0,
+     "net_pnl": 103.02,
+     "max_dd_pct": 16.49,
+     "avg_r": 0.05,
+     "thirds": [
+      1.182,
+      0.815,
+      1.042
+     ],
+     "bootstrap_pf_gt1": 0.537,
+     "window": [
+      "2024-12-17T19:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      156,
+      290,
+      2
+     ],
+     "holdout": {
+      "trades": 122,
+      "pf": 1.133,
+      "win_rate": 37.7,
+      "net_pnl": 551.97,
+      "max_dd_pct": 6.84,
+      "avg_r": 0.13,
+      "thirds": [
+       1.615,
+       1.292,
+       0.668
+      ],
+      "bootstrap_pf_gt1": 0.744,
+      "window": [
+       "2026-03-31T04:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       45,
+       75,
+       2
+      ],
+      "split_time": "2026-03-31T04:00:00"
+     },
+     "canonical": {
+      "trades": 468,
+      "pf": 0.634,
+      "net_pnl": -4907.23
+     },
+     "verdict": "FAIL",
+     "routing_family": false
+    },
+    "pullback": {
+     "trades": 358,
+     "pf": 1.073,
+     "win_rate": 36.6,
+     "net_pnl": 965.98,
+     "max_dd_pct": 13.06,
+     "avg_r": 0.1,
+     "thirds": [
+      1.423,
+      0.819,
+      1.037
+     ],
+     "bootstrap_pf_gt1": 0.753,
+     "window": [
+      "2024-12-17T19:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      131,
+      227,
+      0
+     ],
+     "holdout": {
+      "trades": 109,
+      "pf": 0.963,
+      "win_rate": 33.9,
+      "net_pnl": -141.92,
+      "max_dd_pct": 6.89,
+      "avg_r": 0.02,
+      "thirds": [
+       0.927,
+       1.041,
+       0.92
+      ],
+      "bootstrap_pf_gt1": 0.424,
+      "window": [
+       "2026-03-31T04:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       37,
+       72,
+       0
+      ],
+      "split_time": "2026-03-31T04:00:00"
+     },
+     "canonical": {
+      "trades": 372,
+      "pf": 0.742,
+      "net_pnl": -3169.16
+     },
+     "verdict": "FAIL",
+     "routing_family": false
+    },
+    "squeeze": {
+     "trades": 264,
+     "pf": 0.873,
+     "win_rate": 31.8,
+     "net_pnl": -1110.53,
+     "max_dd_pct": 18.1,
+     "avg_r": -0.05,
+     "thirds": [
+      0.874,
+      0.731,
+      1.037
+     ],
+     "bootstrap_pf_gt1": 0.151,
+     "window": [
+      "2024-12-17T19:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      84,
+      180,
+      0
+     ],
+     "holdout": {
+      "trades": 80,
+      "pf": 1.086,
+      "win_rate": 36.2,
+      "net_pnl": 230.63,
+      "max_dd_pct": 4.59,
+      "avg_r": 0.09,
+      "thirds": [
+       1.366,
+       0.942,
+       0.994
+      ],
+      "bootstrap_pf_gt1": 0.638,
+      "window": [
+       "2026-03-31T04:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       29,
+       51,
+       0
+      ],
+      "split_time": "2026-03-31T04:00:00"
+     },
+     "canonical": {
+      "trades": 270,
+      "pf": 0.642,
+      "net_pnl": -3198.34
+     },
+     "verdict": "FAIL",
+     "routing_family": false
+    },
+    "daybreak": {
+     "trades": 586,
+     "pf": 0.886,
+     "win_rate": 36.7,
+     "net_pnl": -1944.45,
+     "max_dd_pct": 26.87,
+     "avg_r": -0.02,
+     "thirds": [
+      0.873,
+      0.787,
+      1.023
+     ],
+     "bootstrap_pf_gt1": 0.086,
+     "window": [
+      "2024-12-17T19:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      213,
+      370,
+      3
+     ],
+     "holdout": {
+      "trades": 179,
+      "pf": 1.114,
+      "win_rate": 40.2,
+      "net_pnl": 648.09,
+      "max_dd_pct": 6.59,
+      "avg_r": 0.08,
+      "thirds": [
+       1.007,
+       1.584,
+       0.851
+      ],
+      "bootstrap_pf_gt1": 0.746,
+      "window": [
+       "2026-03-31T04:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       72,
+       106,
+       1
+      ],
+      "split_time": "2026-03-31T04:00:00"
+     },
+     "canonical": {
+      "trades": 626,
+      "pf": 0.551,
+      "net_pnl": -6468.48
+     },
+     "verdict": "FAIL",
+     "routing_family": false
+    }
+   },
+   "notes": [],
+   "bars": {
+    "H1": 10905,
+    "H4": 2857
+   }
+  },
+  "AUDUSD": {
+   "strategies": {
+    "mean_reversion": {
+     "trades": 38,
+     "pf": 0.918,
+     "win_rate": 34.2,
+     "net_pnl": -101.88,
+     "max_dd_pct": 3.38,
+     "avg_r": -0.01,
+     "thirds": [
+      0.551,
+      0.842,
+      1.596
+     ],
+     "bootstrap_pf_gt1": 0.411,
+     "window": [
+      "2021-01-20T10:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      11,
+      23,
+      4
+     ],
+     "holdout": {
+      "trades": 13,
+      "pf": 1.368,
+      "win_rate": 38.5,
+      "net_pnl": 132.0,
+      "max_dd_pct": 1.16,
+      "avg_r": 0.24,
+      "thirds": [
+       1.26,
+       0.704,
+       3.088
+      ],
+      "bootstrap_pf_gt1": 0.671,
+      "window": [
+       "2025-01-23T12:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       5,
+       6,
+       2
+      ],
+      "split_time": "2025-01-23T12:00:00"
+     },
+     "canonical": {
+      "trades": 39,
+      "pf": 0.218,
+      "net_pnl": -1488.57
+     },
+     "verdict": "FAIL",
+     "routing_family": true
+    },
+    "momentum_breakout": {
+     "trades": 473,
+     "pf": 0.886,
+     "win_rate": 30.7,
+     "net_pnl": -1709.32,
+     "max_dd_pct": 17.92,
+     "avg_r": -0.04,
+     "thirds": [
+      0.945,
+      0.886,
+      0.819
+     ],
+     "bootstrap_pf_gt1": 0.121,
+     "window": [
+      "2021-01-20T10:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      91,
+      320,
+      62
+     ],
+     "holdout": {
+      "trades": 128,
+      "pf": 0.787,
+      "win_rate": 32.0,
+      "net_pnl": -875.93,
+      "max_dd_pct": 9.99,
+      "avg_r": -0.11,
+      "thirds": [
+       0.482,
+       1.198,
+       0.809
+      ],
+      "bootstrap_pf_gt1": 0.109,
+      "window": [
+       "2025-01-23T12:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       18,
+       85,
+       25
+      ],
+      "split_time": "2025-01-23T12:00:00"
+     },
+     "canonical": {
+      "trades": 525,
+      "pf": 0.305,
+      "net_pnl": -8421.28
+     },
+     "verdict": "FAIL",
+     "routing_family": true
+    },
+    "ema_crossover": {
+     "trades": 449,
+     "pf": 0.952,
+     "win_rate": 34.1,
+     "net_pnl": -700.61,
+     "max_dd_pct": 11.47,
+     "avg_r": 0.01,
+     "thirds": [
+      0.893,
+      1.091,
+      0.882
+     ],
+     "bootstrap_pf_gt1": 0.318,
+     "window": [
+      "2021-01-20T10:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      145,
+      291,
+      13
+     ],
+     "holdout": {
+      "trades": 140,
+      "pf": 0.852,
+      "win_rate": 32.1,
+      "net_pnl": -692.86,
+      "max_dd_pct": 10.06,
+      "avg_r": -0.05,
+      "thirds": [
+       0.686,
+       1.101,
+       0.804
+      ],
+      "bootstrap_pf_gt1": 0.182,
+      "window": [
+       "2025-01-23T12:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       42,
+       93,
+       5
+      ],
+      "split_time": "2025-01-23T12:00:00"
+     },
+     "canonical": {
+      "trades": 475,
+      "pf": 0.312,
+      "net_pnl": -8362.44
+     },
+     "verdict": "FAIL",
+     "routing_family": true
+    },
+    "bb_mr_fade": {
+     "trades": 730,
+     "pf": 0.961,
+     "win_rate": 44.2,
+     "net_pnl": -778.26,
+     "max_dd_pct": 15.58,
+     "avg_r": 0.03,
+     "thirds": [
+      0.839,
+      1.0,
+      1.059
+     ],
+     "bootstrap_pf_gt1": 0.302,
+     "window": [
+      "2021-01-20T10:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      323,
+      407,
+      0
+     ],
+     "holdout": {
+      "trades": 195,
+      "pf": 1.025,
+      "win_rate": 46.2,
+      "net_pnl": 139.74,
+      "max_dd_pct": 6.97,
+      "avg_r": 0.08,
+      "thirds": [
+       1.162,
+       0.792,
+       1.159
+      ],
+      "bootstrap_pf_gt1": 0.574,
+      "window": [
+       "2025-01-23T12:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       90,
+       105,
+       0
+      ],
+      "split_time": "2025-01-23T12:00:00"
+     },
+     "canonical": {
+      "trades": 847,
+      "pf": 0.109,
+      "net_pnl": -9896.74
+     },
+     "verdict": "FAIL",
+     "routing_family": true
+    },
+    "btc_trend_following": {
+     "trades": 42,
+     "pf": 1.292,
+     "win_rate": 45.2,
+     "net_pnl": 346.72,
+     "max_dd_pct": 4.83,
+     "avg_r": 0.18,
+     "thirds": [
+      1.178,
+      0.856,
+      2.1
+     ],
+     "bootstrap_pf_gt1": 0.792,
+     "window": [
+      "2021-03-11T08:00:00",
+      "2026-10-13T04:00:00"
+     ],
+     "tp_sl_timeout": [
+      19,
+      23,
+      0
+     ],
+     "holdout": {
+      "trades": 9,
+      "pf": 3.136,
+      "win_rate": 66.7,
+      "net_pnl": 336.24,
+      "max_dd_pct": 1.5,
+      "avg_r": 0.73,
+      "thirds": [
+       999.0,
+       999.0,
+       0.0
+      ],
+      "bootstrap_pf_gt1": 0.953,
+      "window": [
+       "2025-01-27T04:00:00",
+       "2026-10-13T04:00:00"
+      ],
+      "tp_sl_timeout": [
+       6,
+       3,
+       0
+      ],
+      "split_time": "2025-01-27T04:00:00"
+     },
+     "canonical": {
+      "trades": 42,
+      "pf": 0.773,
+      "net_pnl": -326.43
+     },
+     "verdict": "PAPER",
+     "routing_family": true
+    },
+    "donchian": {
+     "trades": 1475,
+     "pf": 0.848,
+     "win_rate": 31.4,
+     "net_pnl": -5724.16,
+     "max_dd_pct": 58.94,
+     "avg_r": -0.06,
+     "thirds": [
+      0.923,
+      0.756,
+      0.85
+     ],
+     "bootstrap_pf_gt1": 0.001,
+     "window": [
+      "2021-01-20T10:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      462,
+      1009,
+      4
+     ],
+     "holdout": {
+      "trades": 430,
+      "pf": 0.856,
+      "win_rate": 32.1,
+      "net_pnl": -2005.33,
+      "max_dd_pct": 23.02,
+      "avg_r": -0.04,
+      "thirds": [
+       0.858,
+       0.916,
+       0.792
+      ],
+      "bootstrap_pf_gt1": 0.059,
+      "window": [
+       "2025-01-23T12:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       137,
+       291,
+       2
+      ],
+      "split_time": "2025-01-23T12:00:00"
+     },
+     "canonical": {
+      "trades": 2029,
+      "pf": 0.134,
+      "net_pnl": -12098.97
+     },
+     "verdict": "FAIL",
+     "routing_family": false
+    },
+    "pullback": {
+     "trades": 1253,
+     "pf": 0.841,
+     "win_rate": 31.3,
+     "net_pnl": -5458.68,
+     "max_dd_pct": 57.55,
+     "avg_r": -0.07,
+     "thirds": [
+      0.917,
+      0.848,
+      0.709
+     ],
+     "bootstrap_pf_gt1": 0.001,
+     "window": [
+      "2021-01-20T10:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      386,
+      861,
+      6
+     ],
+     "holdout": {
+      "trades": 373,
+      "pf": 0.683,
+      "win_rate": 27.9,
+      "net_pnl": -3426.29,
+      "max_dd_pct": 36.8,
+      "avg_r": -0.16,
+      "thirds": [
+       0.498,
+       0.698,
+       0.962
+      ],
+      "bootstrap_pf_gt1": 0.0,
+      "window": [
+       "2025-01-23T12:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       103,
+       269,
+       1
+      ],
+      "split_time": "2025-01-23T12:00:00"
+     },
+     "canonical": {
+      "trades": 1693,
+      "pf": 0.16,
+      "net_pnl": -11348.42
+     },
+     "verdict": "FAIL",
+     "routing_family": false
+    },
+    "squeeze": {
+     "trades": 792,
+     "pf": 0.893,
+     "win_rate": 33.0,
+     "net_pnl": -2576.05,
+     "max_dd_pct": 29.1,
+     "avg_r": -0.01,
+     "thirds": [
+      0.932,
+      0.838,
+      0.907
+     ],
+     "bootstrap_pf_gt1": 0.078,
+     "window": [
+      "2021-01-20T10:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      259,
+      531,
+      2
+     ],
+     "holdout": {
+      "trades": 228,
+      "pf": 0.874,
+      "win_rate": 32.9,
+      "net_pnl": -961.68,
+      "max_dd_pct": 13.0,
+      "avg_r": -0.02,
+      "thirds": [
+       0.741,
+       0.993,
+       0.908
+      ],
+      "bootstrap_pf_gt1": 0.183,
+      "window": [
+       "2025-01-23T12:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       74,
+       153,
+       1
+      ],
+      "split_time": "2025-01-23T12:00:00"
+     },
+     "canonical": {
+      "trades": 950,
+      "pf": 0.146,
+      "net_pnl": -10156.35
+     },
+     "verdict": "FAIL",
+     "routing_family": false
+    },
+    "daybreak": {
+     "trades": 1981,
+     "pf": 0.826,
+     "win_rate": 34.5,
+     "net_pnl": -7413.05,
+     "max_dd_pct": 74.2,
+     "avg_r": -0.08,
+     "thirds": [
+      0.891,
+      0.79,
+      0.743
+     ],
+     "bootstrap_pf_gt1": 0.0,
+     "window": [
+      "2021-01-20T10:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      682,
+      1297,
+      2
+     ],
+     "holdout": {
+      "trades": 528,
+      "pf": 0.732,
+      "win_rate": 32.2,
+      "net_pnl": -4133.64,
+      "max_dd_pct": 41.77,
+      "avg_r": -0.14,
+      "thirds": [
+       0.746,
+       0.908,
+       0.54
+      ],
+      "bootstrap_pf_gt1": 0.001,
+      "window": [
+       "2025-01-23T12:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       170,
+       357,
+       1
+      ],
+      "split_time": "2025-01-23T12:00:00"
+     },
+     "canonical": {
+      "trades": 3781,
+      "pf": 0.089,
+      "net_pnl": -15438.8
+     },
+     "verdict": "FAIL",
+     "routing_family": false
+    }
+   },
+   "notes": [],
+   "bars": {
+    "H1": 35963,
+    "H4": 9205
+   }
+  },
+  "BTCUSD": {
+   "strategies": {
+    "mean_reversion": {
+     "trades": 69,
+     "pf": 0.016,
+     "win_rate": 1.4,
+     "net_pnl": -2634.48,
+     "max_dd_pct": 26.34,
+     "avg_r": -0.96,
+     "thirds": [
+      0.047,
+      0.0,
+      0.0
+     ],
+     "bootstrap_pf_gt1": 0.0,
+     "window": [
+      "2021-01-13T09:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      1,
+      68,
+      0
+     ],
+     "holdout": {
+      "trades": 27,
+      "pf": 0.0,
+      "win_rate": 0.0,
+      "net_pnl": -1061.23,
+      "max_dd_pct": 10.61,
+      "avg_r": -1.0,
+      "thirds": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "bootstrap_pf_gt1": 0.0,
+      "window": [
+       "2024-09-26T08:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       0,
+       27,
+       0
+      ],
+      "split_time": "2024-09-26T08:00:00"
+     },
+     "canonical": {
+      "trades": 69,
+      "pf": 0.015,
+      "net_pnl": -2749.41
+     },
+     "verdict": "FAIL",
+     "routing_family": true
+    },
+    "momentum_breakout": {
+     "trades": 1229,
+     "pf": 0.059,
+     "win_rate": 7.7,
+     "net_pnl": -10064.48,
+     "max_dd_pct": 100.65,
+     "avg_r": -0.72,
+     "thirds": [
+      0.045,
+      0.231,
+      0.1
+     ],
+     "bootstrap_pf_gt1": 0.0,
+     "window": [
+      "2021-01-13T09:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      95,
+      1134,
+      0
+     ],
+     "holdout": {
+      "trades": 421,
+      "pf": 0.117,
+      "win_rate": 6.7,
+      "net_pnl": -9209.47,
+      "max_dd_pct": 92.1,
+      "avg_r": -0.76,
+      "thirds": [
+       0.176,
+       0.049,
+       0.087
+      ],
+      "bootstrap_pf_gt1": 0.0,
+      "window": [
+       "2024-09-26T08:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       28,
+       393,
+       0
+      ],
+      "split_time": "2024-09-26T08:00:00"
+     },
+     "canonical": {
+      "trades": 1228,
+      "pf": 0.073,
+      "net_pnl": -10100.91
+     },
+     "verdict": "FAIL",
+     "routing_family": true
+    },
+    "ema_crossover": {
+     "trades": 589,
+     "pf": 0.937,
+     "win_rate": 34.6,
+     "net_pnl": -1115.4,
+     "max_dd_pct": 30.54,
+     "avg_r": -0.01,
+     "thirds": [
+      0.931,
+      0.698,
+      1.235
+     ],
+     "bootstrap_pf_gt1": 0.228,
+     "window": [
+      "2021-01-13T09:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      180,
+      379,
+      30
+     ],
+     "holdout": {
+      "trades": 179,
+      "pf": 1.25,
+      "win_rate": 39.1,
+      "net_pnl": 1451.93,
+      "max_dd_pct": 6.61,
+      "avg_r": 0.16,
+      "thirds": [
+       1.318,
+       1.098,
+       1.355
+      ],
+      "bootstrap_pf_gt1": 0.926,
+      "window": [
+       "2024-09-26T08:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       66,
+       106,
+       7
+      ],
+      "split_time": "2024-09-26T08:00:00"
+     },
+     "canonical": {
+      "trades": 589,
+      "pf": 0.924,
+      "net_pnl": -1338.53
+     },
+     "verdict": "FAIL",
+     "routing_family": true
+    },
+    "bb_mr_fade": {
+     "trades": 1079,
+     "pf": 0.784,
+     "win_rate": 38.7,
+     "net_pnl": -5096.81,
+     "max_dd_pct": 53.69,
+     "avg_r": -0.1,
+     "thirds": [
+      0.744,
+      0.845,
+      0.776
+     ],
+     "bootstrap_pf_gt1": 0.0,
+     "window": [
+      "2021-01-13T09:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      418,
+      660,
+      1
+     ],
+     "holdout": {
+      "trades": 346,
+      "pf": 0.802,
+      "win_rate": 38.7,
+      "net_pnl": -1886.17,
+      "max_dd_pct": 21.0,
+      "avg_r": -0.1,
+      "thirds": [
+       0.645,
+       0.916,
+       0.887
+      ],
+      "bootstrap_pf_gt1": 0.03,
+      "window": [
+       "2024-09-26T08:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       134,
+       212,
+       0
+      ],
+      "split_time": "2024-09-26T08:00:00"
+     },
+     "canonical": {
+      "trades": 1080,
+      "pf": 0.759,
+      "net_pnl": -5512.01
+     },
+     "verdict": "FAIL",
+     "routing_family": true
+    },
+    "btc_trend_following": {
+     "trades": 51,
+     "pf": 1.04,
+     "win_rate": 41.2,
+     "net_pnl": 61.03,
+     "max_dd_pct": 5.94,
+     "avg_r": 0.03,
+     "thirds": [
+      2.863,
+      0.554,
+      0.583
+     ],
+     "bootstrap_pf_gt1": 0.548,
+     "window": [
+      "2021-02-20T00:00:00",
+      "2026-10-13T04:00:00"
+     ],
+     "tp_sl_timeout": [
+      18,
+      29,
+      4
+     ],
+     "holdout": {
+      "trades": 17,
+      "pf": 0.583,
+      "win_rate": 29.4,
+      "net_pnl": -251.58,
+      "max_dd_pct": 3.67,
+      "avg_r": -0.24,
+      "thirds": [
+       1.422,
+       0.625,
+       0.0
+      ],
+      "bootstrap_pf_gt1": 0.131,
+      "window": [
+       "2024-10-08T04:00:00",
+       "2026-10-13T04:00:00"
+      ],
+      "tp_sl_timeout": [
+       5,
+       12,
+       0
+      ],
+      "split_time": "2024-10-08T04:00:00"
+     },
+     "canonical": {
+      "trades": 51,
+      "pf": 1.035,
+      "net_pnl": 53.5
+     },
+     "verdict": "FAIL",
+     "routing_family": true
+    },
+    "donchian": {
+     "trades": 1754,
+     "pf": 0.955,
+     "win_rate": 33.6,
+     "net_pnl": -2255.89,
+     "max_dd_pct": 35.12,
+     "avg_r": 0.0,
+     "thirds": [
+      0.942,
+      0.944,
+      0.984
+     ],
+     "bootstrap_pf_gt1": 0.185,
+     "window": [
+      "2021-01-13T09:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      583,
+      1164,
+      7
+     ],
+     "holdout": {
+      "trades": 562,
+      "pf": 0.988,
+      "win_rate": 34.2,
+      "net_pnl": -217.81,
+      "max_dd_pct": 20.04,
+      "avg_r": 0.02,
+      "thirds": [
+       0.929,
+       0.869,
+       1.191
+      ],
+      "bootstrap_pf_gt1": 0.43,
+      "window": [
+       "2024-09-26T08:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       191,
+       370,
+       1
+      ],
+      "split_time": "2024-09-26T08:00:00"
+     },
+     "canonical": {
+      "trades": 1749,
+      "pf": 0.941,
+      "net_pnl": -2855.67
+     },
+     "verdict": "FAIL",
+     "routing_family": false
+    },
+    "pullback": {
+     "trades": 1429,
+     "pf": 0.984,
+     "win_rate": 34.5,
+     "net_pnl": -706.52,
+     "max_dd_pct": 22.32,
+     "avg_r": 0.03,
+     "thirds": [
+      0.912,
+      1.002,
+      1.04
+     ],
+     "bootstrap_pf_gt1": 0.379,
+     "window": [
+      "2021-01-13T09:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      482,
+      932,
+      15
+     ],
+     "holdout": {
+      "trades": 414,
+      "pf": 1.051,
+      "win_rate": 35.5,
+      "net_pnl": 754.2,
+      "max_dd_pct": 9.75,
+      "avg_r": 0.06,
+      "thirds": [
+       1.221,
+       1.001,
+       0.954
+      ],
+      "bootstrap_pf_gt1": 0.691,
+      "window": [
+       "2024-09-26T08:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       143,
+       266,
+       5
+      ],
+      "split_time": "2024-09-26T08:00:00"
+     },
+     "canonical": {
+      "trades": 1433,
+      "pf": 0.956,
+      "net_pnl": -1781.32
+     },
+     "verdict": "FAIL",
+     "routing_family": false
+    },
+    "squeeze": {
+     "trades": 950,
+     "pf": 0.966,
+     "win_rate": 33.9,
+     "net_pnl": -1028.3,
+     "max_dd_pct": 24.47,
+     "avg_r": 0.02,
+     "thirds": [
+      0.935,
+      0.98,
+      0.987
+     ],
+     "bootstrap_pf_gt1": 0.333,
+     "window": [
+      "2021-01-13T09:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      322,
+      628,
+      0
+     ],
+     "holdout": {
+      "trades": 293,
+      "pf": 0.99,
+      "win_rate": 33.8,
+      "net_pnl": -97.66,
+      "max_dd_pct": 16.32,
+      "avg_r": 0.01,
+      "thirds": [
+       0.771,
+       1.083,
+       1.154
+      ],
+      "bootstrap_pf_gt1": 0.448,
+      "window": [
+       "2024-09-26T08:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       99,
+       194,
+       0
+      ],
+      "split_time": "2024-09-26T08:00:00"
+     },
+     "canonical": {
+      "trades": 952,
+      "pf": 0.939,
+      "net_pnl": -1761.56
+     },
+     "verdict": "FAIL",
+     "routing_family": false
+    },
+    "daybreak": {
+     "trades": 2169,
+     "pf": 0.953,
+     "win_rate": 37.7,
+     "net_pnl": -2753.4,
+     "max_dd_pct": 34.45,
+     "avg_r": 0.0,
+     "thirds": [
+      0.964,
+      0.919,
+      0.978
+     ],
+     "bootstrap_pf_gt1": 0.117,
+     "window": [
+      "2021-01-13T09:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      807,
+      1349,
+      13
+     ],
+     "holdout": {
+      "trades": 717,
+      "pf": 0.991,
+      "win_rate": 37.9,
+      "net_pnl": -208.78,
+      "max_dd_pct": 14.58,
+      "avg_r": 0.01,
+      "thirds": [
+       0.888,
+       1.13,
+       0.969
+      ],
+      "bootstrap_pf_gt1": 0.41,
+      "window": [
+       "2024-09-26T08:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       272,
+       445,
+       0
+      ],
+      "split_time": "2024-09-26T08:00:00"
+     },
+     "canonical": {
+      "trades": 2187,
+      "pf": 0.925,
+      "net_pnl": -4030.96
+     },
+     "verdict": "FAIL",
+     "routing_family": false
+    }
+   },
+   "notes": [],
+   "bars": {
+    "H1": 46611,
+    "H4": 11667
+   }
+  },
+  "ETHUSD": {
+   "strategies": {
+    "mean_reversion": {
+     "trades": 53,
+     "pf": 0.196,
+     "win_rate": 13.2,
+     "net_pnl": -1210.23,
+     "max_dd_pct": 12.1,
+     "avg_r": -0.6,
+     "thirds": [
+      0.158,
+      0.256,
+      0.178
+     ],
+     "bootstrap_pf_gt1": 0.0,
+     "window": [
+      "2021-01-13T09:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      7,
+      46,
+      0
+     ],
+     "holdout": {
+      "trades": 24,
+      "pf": 0.189,
+      "win_rate": 12.5,
+      "net_pnl": -553.32,
+      "max_dd_pct": 5.53,
+      "avg_r": -0.62,
+      "thirds": [
+       0.187,
+       0.191,
+       0.19
+      ],
+      "bootstrap_pf_gt1": 0.0,
+      "window": [
+       "2024-09-26T13:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       3,
+       21,
+       0
+      ],
+      "split_time": "2024-09-26T13:00:00"
+     },
+     "canonical": {
+      "trades": 53,
+      "pf": 0.065,
+      "net_pnl": -1901.9
+     },
+     "verdict": "FAIL",
+     "routing_family": true
+    },
+    "momentum_breakout": {
+     "trades": 883,
+     "pf": 0.676,
+     "win_rate": 27.4,
+     "net_pnl": -6666.05,
+     "max_dd_pct": 67.22,
+     "avg_r": -0.01,
+     "thirds": [
+      0.625,
+      0.641,
+      0.818
+     ],
+     "bootstrap_pf_gt1": 0.0,
+     "window": [
+      "2021-01-13T09:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      229,
+      639,
+      15
+     ],
+     "holdout": {
+      "trades": 286,
+      "pf": 0.805,
+      "win_rate": 30.1,
+      "net_pnl": -1475.48,
+      "max_dd_pct": 17.01,
+      "avg_r": 0.09,
+      "thirds": [
+       0.613,
+       1.04,
+       0.802
+      ],
+      "bootstrap_pf_gt1": 0.053,
+      "window": [
+       "2024-09-26T13:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       83,
+       200,
+       3
+      ],
+      "split_time": "2024-09-26T13:00:00"
+     },
+     "canonical": {
+      "trades": 973,
+      "pf": 0.266,
+      "net_pnl": -9860.63
+     },
+     "verdict": "FAIL",
+     "routing_family": true
+    },
+    "ema_crossover": {
+     "trades": 571,
+     "pf": 0.715,
+     "win_rate": 32.2,
+     "net_pnl": -4469.26,
+     "max_dd_pct": 46.18,
+     "avg_r": -0.04,
+     "thirds": [
+      0.846,
+      0.606,
+      0.645
+     ],
+     "bootstrap_pf_gt1": 0.002,
+     "window": [
+      "2021-01-13T09:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      170,
+      376,
+      25
+     ],
+     "holdout": {
+      "trades": 186,
+      "pf": 0.605,
+      "win_rate": 29.6,
+      "net_pnl": -2351.49,
+      "max_dd_pct": 24.42,
+      "avg_r": -0.13,
+      "thirds": [
+       0.638,
+       0.616,
+       0.552
+      ],
+      "bootstrap_pf_gt1": 0.0,
+      "window": [
+       "2024-09-26T13:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       51,
+       127,
+       8
+      ],
+      "split_time": "2024-09-26T13:00:00"
+     },
+     "canonical": {
+      "trades": 594,
+      "pf": 0.401,
+      "net_pnl": -8453.51
+     },
+     "verdict": "FAIL",
+     "routing_family": true
+    },
+    "bb_mr_fade": {
+     "trades": 1097,
+     "pf": 0.533,
+     "win_rate": 38.0,
+     "net_pnl": -8405.55,
+     "max_dd_pct": 84.06,
+     "avg_r": -0.11,
+     "thirds": [
+      0.593,
+      0.399,
+      0.595
+     ],
+     "bootstrap_pf_gt1": 0.0,
+     "window": [
+      "2021-01-13T09:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      416,
+      680,
+      1
+     ],
+     "holdout": {
+      "trades": 321,
+      "pf": 0.638,
+      "win_rate": 39.6,
+      "net_pnl": -3018.65,
+      "max_dd_pct": 31.45,
+      "avg_r": -0.08,
+      "thirds": [
+       0.718,
+       0.618,
+       0.574
+      ],
+      "bootstrap_pf_gt1": 0.0,
+      "window": [
+       "2024-09-26T13:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       127,
+       194,
+       0
+      ],
+      "split_time": "2024-09-26T13:00:00"
+     },
+     "canonical": {
+      "trades": 1176,
+      "pf": 0.242,
+      "net_pnl": -9958.1
+     },
+     "verdict": "FAIL",
+     "routing_family": true
+    },
+    "btc_trend_following": {
+     "trades": 44,
+     "pf": 1.069,
+     "win_rate": 43.2,
+     "net_pnl": 90.04,
+     "max_dd_pct": 2.45,
+     "avg_r": 0.11,
+     "thirds": [
+      1.565,
+      0.991,
+      0.783
+     ],
+     "bootstrap_pf_gt1": 0.59,
+     "window": [
+      "2021-02-20T00:00:00",
+      "2026-10-13T04:00:00"
+     ],
+     "tp_sl_timeout": [
+      17,
+      24,
+      3
+     ],
+     "holdout": {
+      "trades": 13,
+      "pf": 0.903,
+      "win_rate": 38.5,
+      "net_pnl": -42.23,
+      "max_dd_pct": 2.41,
+      "avg_r": 0.0,
+      "thirds": [
+       2.145,
+       1.48,
+       0.0
+      ],
+      "bootstrap_pf_gt1": 0.395,
+      "window": [
+       "2024-10-08T08:00:00",
+       "2026-10-13T04:00:00"
+      ],
+      "tp_sl_timeout": [
+       5,
+       8,
+       0
+      ],
+      "split_time": "2024-10-08T08:00:00"
+     },
+     "canonical": {
+      "trades": 44,
+      "pf": 0.91,
+      "net_pnl": -130.96
+     },
+     "verdict": "FAIL",
+     "routing_family": true
+    },
+    "donchian": {
+     "trades": 1758,
+     "pf": 0.716,
+     "win_rate": 33.5,
+     "net_pnl": -8657.16,
+     "max_dd_pct": 87.03,
+     "avg_r": 0.01,
+     "thirds": [
+      0.797,
+      0.547,
+      0.735
+     ],
+     "bootstrap_pf_gt1": 0.0,
+     "window": [
+      "2021-01-13T09:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      587,
+      1166,
+      5
+     ],
+     "holdout": {
+      "trades": 538,
+      "pf": 0.762,
+      "win_rate": 34.2,
+      "net_pnl": -3522.84,
+      "max_dd_pct": 36.01,
+      "avg_r": 0.03,
+      "thirds": [
+       0.773,
+       0.787,
+       0.717
+      ],
+      "bootstrap_pf_gt1": 0.002,
+      "window": [
+       "2024-09-26T13:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       184,
+       354,
+       0
+      ],
+      "split_time": "2024-09-26T13:00:00"
+     },
+     "canonical": {
+      "trades": 1959,
+      "pf": 0.435,
+      "net_pnl": -10170.73
+     },
+     "verdict": "FAIL",
+     "routing_family": false
+    },
+    "pullback": {
+     "trades": 1463,
+     "pf": 0.716,
+     "win_rate": 31.8,
+     "net_pnl": -8369.83,
+     "max_dd_pct": 85.38,
+     "avg_r": -0.04,
+     "thirds": [
+      0.849,
+      0.544,
+      0.591
+     ],
+     "bootstrap_pf_gt1": 0.0,
+     "window": [
+      "2021-01-13T09:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      463,
+      987,
+      13
+     ],
+     "holdout": {
+      "trades": 449,
+      "pf": 0.605,
+      "win_rate": 28.7,
+      "net_pnl": -4807.16,
+      "max_dd_pct": 48.74,
+      "avg_r": -0.13,
+      "thirds": [
+       0.604,
+       0.639,
+       0.559
+      ],
+      "bootstrap_pf_gt1": 0.0,
+      "window": [
+       "2024-09-26T13:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       129,
+       316,
+       4
+      ],
+      "split_time": "2024-09-26T13:00:00"
+     },
+     "canonical": {
+      "trades": 1823,
+      "pf": 0.443,
+      "net_pnl": -10152.24
+     },
+     "verdict": "FAIL",
+     "routing_family": false
+    },
+    "squeeze": {
+     "trades": 975,
+     "pf": 0.804,
+     "win_rate": 36.0,
+     "net_pnl": -4450.74,
+     "max_dd_pct": 52.17,
+     "avg_r": 0.08,
+     "thirds": [
+      0.951,
+      0.507,
+      0.868
+     ],
+     "bootstrap_pf_gt1": 0.003,
+     "window": [
+      "2021-01-13T09:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      349,
+      622,
+      4
+     ],
+     "holdout": {
+      "trades": 282,
+      "pf": 0.911,
+      "win_rate": 39.7,
+      "net_pnl": -646.46,
+      "max_dd_pct": 11.0,
+      "avg_r": 0.19,
+      "thirds": [
+       0.775,
+       0.872,
+       1.181
+      ],
+      "bootstrap_pf_gt1": 0.229,
+      "window": [
+       "2024-09-26T13:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       111,
+       170,
+       1
+      ],
+      "split_time": "2024-09-26T13:00:00"
+     },
+     "canonical": {
+      "trades": 1093,
+      "pf": 0.423,
+      "net_pnl": -9890.11
+     },
+     "verdict": "FAIL",
+     "routing_family": false
+    },
+    "daybreak": {
+     "trades": 2242,
+     "pf": 0.705,
+     "win_rate": 37.5,
+     "net_pnl": -9320.18,
+     "max_dd_pct": 93.25,
+     "avg_r": -0.0,
+     "thirds": [
+      0.808,
+      0.472,
+      0.713
+     ],
+     "bootstrap_pf_gt1": 0.0,
+     "window": [
+      "2021-01-13T09:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      836,
+      1400,
+      6
+     ],
+     "holdout": {
+      "trades": 711,
+      "pf": 0.747,
+      "win_rate": 38.5,
+      "net_pnl": -4304.45,
+      "max_dd_pct": 43.56,
+      "avg_r": 0.03,
+      "thirds": [
+       0.635,
+       0.934,
+       0.686
+      ],
+      "bootstrap_pf_gt1": 0.0,
+      "window": [
+       "2024-09-26T13:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       274,
+       437,
+       0
+      ],
+      "split_time": "2024-09-26T13:00:00"
+     },
+     "canonical": {
+      "trades": 2931,
+      "pf": 0.414,
+      "net_pnl": -10404.1
+     },
+     "verdict": "FAIL",
+     "routing_family": false
+    }
+   },
+   "notes": [],
+   "bars": {
+    "H1": 46590,
+    "H4": 11664
+   }
+  },
+  "SPX500": {
+   "strategies": {
+    "mean_reversion": {
+     "trades": 54,
+     "pf": 0.85,
+     "win_rate": 29.6,
+     "net_pnl": -279.44,
+     "max_dd_pct": 5.02,
+     "avg_r": -0.09,
+     "thirds": [
+      0.429,
+      1.249,
+      0.966
+     ],
+     "bootstrap_pf_gt1": 0.268,
+     "window": [
+      "2021-01-21T03:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      16,
+      36,
+      2
+     ],
+     "holdout": {
+      "trades": 17,
+      "pf": 1.053,
+      "win_rate": 35.3,
+      "net_pnl": 30.1,
+      "max_dd_pct": 3.02,
+      "avg_r": 0.06,
+      "thirds": [
+       1.943,
+       0.969,
+       0.481
+      ],
+      "bootstrap_pf_gt1": 0.616,
+      "window": [
+       "2025-01-23T13:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       6,
+       11,
+       0
+      ],
+      "split_time": "2025-01-23T13:00:00"
+     },
+     "canonical": {
+      "trades": 56,
+      "pf": 0.383,
+      "net_pnl": -1651.99
+     },
+     "verdict": "FAIL",
+     "routing_family": true
+    },
+    "momentum_breakout": {
+     "trades": 563,
+     "pf": 0.979,
+     "win_rate": 31.1,
+     "net_pnl": -374.82,
+     "max_dd_pct": 14.93,
+     "avg_r": 0.01,
+     "thirds": [
+      1.142,
+      0.896,
+      0.915
+     ],
+     "bootstrap_pf_gt1": 0.429,
+     "window": [
+      "2021-01-21T03:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      124,
+      376,
+      63
+     ],
+     "holdout": {
+      "trades": 179,
+      "pf": 0.929,
+      "win_rate": 29.1,
+      "net_pnl": -410.31,
+      "max_dd_pct": 9.04,
+      "avg_r": -0.03,
+      "thirds": [
+       1.095,
+       0.944,
+       0.753
+      ],
+      "bootstrap_pf_gt1": 0.326,
+      "window": [
+       "2025-01-23T13:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       41,
+       125,
+       13
+      ],
+      "split_time": "2025-01-23T13:00:00"
+     },
+     "canonical": {
+      "trades": 610,
+      "pf": 0.385,
+      "net_pnl": -8793.67
+     },
+     "verdict": "FAIL",
+     "routing_family": true
+    },
+    "ema_crossover": {
+     "trades": 429,
+     "pf": 1.213,
+     "win_rate": 39.2,
+     "net_pnl": 3162.75,
+     "max_dd_pct": 10.77,
+     "avg_r": 0.15,
+     "thirds": [
+      1.286,
+      1.104,
+      1.264
+     ],
+     "bootstrap_pf_gt1": 0.968,
+     "window": [
+      "2021-01-21T03:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      156,
+      259,
+      14
+     ],
+     "holdout": {
+      "trades": 122,
+      "pf": 1.343,
+      "win_rate": 42.6,
+      "net_pnl": 1227.49,
+      "max_dd_pct": 8.56,
+      "avg_r": 0.23,
+      "thirds": [
+       0.59,
+       1.885,
+       1.944
+      ],
+      "bootstrap_pf_gt1": 0.942,
+      "window": [
+       "2025-01-23T13:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       45,
+       69,
+       8
+      ],
+      "split_time": "2025-01-23T13:00:00"
+     },
+     "canonical": {
+      "trades": 456,
+      "pf": 0.309,
+      "net_pnl": -8596.5
+     },
+     "verdict": "PAPER",
+     "routing_family": true
+    },
+    "bb_mr_fade": {
+     "trades": 867,
+     "pf": 0.866,
+     "win_rate": 40.6,
+     "net_pnl": -2838.9,
+     "max_dd_pct": 35.92,
+     "avg_r": -0.05,
+     "thirds": [
+      0.768,
+      0.879,
+      0.991
+     ],
+     "bootstrap_pf_gt1": 0.018,
+     "window": [
+      "2021-01-21T03:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      352,
+      515,
+      0
+     ],
+     "holdout": {
+      "trades": 242,
+      "pf": 0.955,
+      "win_rate": 43.0,
+      "net_pnl": -311.83,
+      "max_dd_pct": 8.34,
+      "avg_r": 0.0,
+      "thirds": [
+       0.985,
+       0.863,
+       1.025
+      ],
+      "bootstrap_pf_gt1": 0.389,
+      "window": [
+       "2025-01-23T13:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       104,
+       138,
+       0
+      ],
+      "split_time": "2025-01-23T13:00:00"
+     },
+     "canonical": {
+      "trades": 969,
+      "pf": 0.089,
+      "net_pnl": -14474.92
+     },
+     "verdict": "FAIL",
+     "routing_family": true
+    },
+    "btc_trend_following": {
+     "trades": 58,
+     "pf": 1.7,
+     "win_rate": 51.7,
+     "net_pnl": 999.26,
+     "max_dd_pct": 2.64,
+     "avg_r": 0.35,
+     "thirds": [
+      2.445,
+      2.268,
+      0.913
+     ],
+     "bootstrap_pf_gt1": 0.968,
+     "window": [
+      "2021-03-15T08:00:00",
+      "2026-10-13T04:00:00"
+     ],
+     "tp_sl_timeout": [
+      29,
+      26,
+      3
+     ],
+     "holdout": {
+      "trades": 19,
+      "pf": 0.931,
+      "win_rate": 42.1,
+      "net_pnl": -39.29,
+      "max_dd_pct": 2.56,
+      "avg_r": 0.04,
+      "thirds": [
+       2.099,
+       1.008,
+       0.279
+      ],
+      "bootstrap_pf_gt1": 0.431,
+      "window": [
+       "2025-02-07T16:00:00",
+       "2026-10-13T04:00:00"
+      ],
+      "tp_sl_timeout": [
+       7,
+       11,
+       1
+      ],
+      "split_time": "2025-02-07T16:00:00"
+     },
+     "canonical": {
+      "trades": 60,
+      "pf": 0.958,
+      "net_pnl": -73.62
+     },
+     "verdict": "PAPER",
+     "routing_family": true
+    },
+    "donchian": {
+     "trades": 1484,
+     "pf": 0.933,
+     "win_rate": 32.8,
+     "net_pnl": -3118.69,
+     "max_dd_pct": 36.64,
+     "avg_r": -0.02,
+     "thirds": [
+      1.021,
+      0.955,
+      0.807
+     ],
+     "bootstrap_pf_gt1": 0.118,
+     "window": [
+      "2021-01-21T03:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      482,
+      996,
+      6
+     ],
+     "holdout": {
+      "trades": 437,
+      "pf": 0.841,
+      "win_rate": 31.1,
+      "net_pnl": -2151.09,
+      "max_dd_pct": 24.51,
+      "avg_r": -0.08,
+      "thirds": [
+       0.811,
+       0.772,
+       0.965
+      ],
+      "bootstrap_pf_gt1": 0.044,
+      "window": [
+       "2025-01-23T13:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       132,
+       301,
+       4
+      ],
+      "split_time": "2025-01-23T13:00:00"
+     },
+     "canonical": {
+      "trades": 2231,
+      "pf": 0.149,
+      "net_pnl": -25332.99
+     },
+     "verdict": "FAIL",
+     "routing_family": false
+    },
+    "pullback": {
+     "trades": 1143,
+     "pf": 0.891,
+     "win_rate": 31.6,
+     "net_pnl": -3422.71,
+     "max_dd_pct": 37.29,
+     "avg_r": -0.05,
+     "thirds": [
+      0.881,
+      0.808,
+      0.999
+     ],
+     "bootstrap_pf_gt1": 0.037,
+     "window": [
+      "2021-01-21T03:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      360,
+      781,
+      2
+     ],
+     "holdout": {
+      "trades": 333,
+      "pf": 0.989,
+      "win_rate": 33.9,
+      "net_pnl": -124.3,
+      "max_dd_pct": 15.42,
+      "avg_r": 0.01,
+      "thirds": [
+       1.269,
+       0.765,
+       0.977
+      ],
+      "bootstrap_pf_gt1": 0.473,
+      "window": [
+       "2025-01-23T13:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       112,
+       220,
+       1
+      ],
+      "split_time": "2025-01-23T13:00:00"
+     },
+     "canonical": {
+      "trades": 1636,
+      "pf": 0.126,
+      "net_pnl": -19917.61
+     },
+     "verdict": "FAIL",
+     "routing_family": false
+    },
+    "squeeze": {
+     "trades": 866,
+     "pf": 0.961,
+     "win_rate": 33.6,
+     "net_pnl": -1140.84,
+     "max_dd_pct": 21.1,
+     "avg_r": 0.01,
+     "thirds": [
+      1.006,
+      0.979,
+      0.896
+     ],
+     "bootstrap_pf_gt1": 0.31,
+     "window": [
+      "2021-01-21T03:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      290,
+      575,
+      1
+     ],
+     "holdout": {
+      "trades": 235,
+      "pf": 0.81,
+      "win_rate": 30.6,
+      "net_pnl": -1452.92,
+      "max_dd_pct": 19.25,
+      "avg_r": -0.09,
+      "thirds": [
+       0.67,
+       1.066,
+       0.731
+      ],
+      "bootstrap_pf_gt1": 0.078,
+      "window": [
+       "2025-01-23T13:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       71,
+       163,
+       1
+      ],
+      "split_time": "2025-01-23T13:00:00"
+     },
+     "canonical": {
+      "trades": 1067,
+      "pf": 0.14,
+      "net_pnl": -14321.49
+     },
+     "verdict": "FAIL",
+     "routing_family": false
+    },
+    "daybreak": {
+     "trades": 1830,
+     "pf": 0.92,
+     "win_rate": 36.4,
+     "net_pnl": -4045.89,
+     "max_dd_pct": 40.85,
+     "avg_r": -0.03,
+     "thirds": [
+      0.934,
+      1.021,
+      0.797
+     ],
+     "bootstrap_pf_gt1": 0.052,
+     "window": [
+      "2021-01-21T03:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      663,
+      1164,
+      3
+     ],
+     "holdout": {
+      "trades": 537,
+      "pf": 0.781,
+      "win_rate": 33.5,
+      "net_pnl": -3335.66,
+      "max_dd_pct": 34.3,
+      "avg_r": -0.11,
+      "thirds": [
+       0.728,
+       0.843,
+       0.78
+      ],
+      "bootstrap_pf_gt1": 0.004,
+      "window": [
+       "2025-01-23T13:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       178,
+       357,
+       2
+      ],
+      "split_time": "2025-01-23T13:00:00"
+     },
+     "canonical": {
+      "trades": 3324,
+      "pf": 0.113,
+      "net_pnl": -34673.8
+     },
+     "verdict": "FAIL",
+     "routing_family": false
+    }
+   },
+   "notes": [],
+   "bars": {
+    "H1": 34141,
+    "H4": 8921
+   }
+  },
+  "XAUUSD": {
+   "strategies": {
+    "mean_reversion": {
+     "trades": 45,
+     "pf": 0.358,
+     "win_rate": 24.4,
+     "net_pnl": -1063.96,
+     "max_dd_pct": 11.77,
+     "avg_r": -0.47,
+     "thirds": [
+      0.839,
+      0.289,
+      0.141
+     ],
+     "bootstrap_pf_gt1": 0.0,
+     "window": [
+      "2021-01-21T06:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      4,
+      32,
+      9
+     ],
+     "holdout": {
+      "trades": 19,
+      "pf": 0.11,
+      "win_rate": 5.3,
+      "net_pnl": -807.72,
+      "max_dd_pct": 8.08,
+      "avg_r": -0.84,
+      "thirds": [
+       0.0,
+       0.0,
+       0.396
+      ],
+      "bootstrap_pf_gt1": 0.0,
+      "window": [
+       "2025-01-23T21:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       1,
+       18,
+       0
+      ],
+      "split_time": "2025-01-23T21:00:00"
+     },
+     "canonical": {
+      "trades": 45,
+      "pf": 0.088,
+      "net_pnl": -2477.52
+     },
+     "verdict": "FAIL",
+     "routing_family": true
+    },
+    "momentum_breakout": {
+     "trades": 387,
+     "pf": 1.024,
+     "win_rate": 42.6,
+     "net_pnl": 290.32,
+     "max_dd_pct": 9.51,
+     "avg_r": 0.02,
+     "thirds": [
+      0.856,
+      1.355,
+      0.931
+     ],
+     "bootstrap_pf_gt1": 0.594,
+     "window": [
+      "2021-01-21T06:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      41,
+      183,
+      163
+     ],
+     "holdout": {
+      "trades": 162,
+      "pf": 1.032,
+      "win_rate": 31.5,
+      "net_pnl": 211.0,
+      "max_dd_pct": 9.39,
+      "avg_r": 0.03,
+      "thirds": [
+       1.676,
+       0.885,
+       0.755
+      ],
+      "bootstrap_pf_gt1": 0.581,
+      "window": [
+       "2025-01-23T21:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       36,
+       109,
+       17
+      ],
+      "split_time": "2025-01-23T21:00:00"
+     },
+     "canonical": {
+      "trades": 426,
+      "pf": 0.301,
+      "net_pnl": -8251.92
+     },
+     "verdict": "FAIL",
+     "routing_family": true
+    },
+    "ema_crossover": {
+     "trades": 413,
+     "pf": 1.087,
+     "win_rate": 36.8,
+     "net_pnl": 1294.58,
+     "max_dd_pct": 10.01,
+     "avg_r": 0.07,
+     "thirds": [
+      1.315,
+      0.917,
+      1.067
+     ],
+     "bootstrap_pf_gt1": 0.811,
+     "window": [
+      "2021-01-21T06:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      139,
+      260,
+      14
+     ],
+     "holdout": {
+      "trades": 127,
+      "pf": 1.005,
+      "win_rate": 35.4,
+      "net_pnl": 22.2,
+      "max_dd_pct": 6.2,
+      "avg_r": 0.03,
+      "thirds": [
+       1.148,
+       0.968,
+       0.91
+      ],
+      "bootstrap_pf_gt1": 0.48,
+      "window": [
+       "2025-01-23T21:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       41,
+       82,
+       4
+      ],
+      "split_time": "2025-01-23T21:00:00"
+     },
+     "canonical": {
+      "trades": 434,
+      "pf": 0.16,
+      "net_pnl": -11928.94
+     },
+     "verdict": "FAIL",
+     "routing_family": true
+    },
+    "bb_mr_fade": {
+     "trades": 801,
+     "pf": 0.873,
+     "win_rate": 40.3,
+     "net_pnl": -2804.48,
+     "max_dd_pct": 29.03,
+     "avg_r": -0.06,
+     "thirds": [
+      0.938,
+      0.929,
+      0.753
+     ],
+     "bootstrap_pf_gt1": 0.032,
+     "window": [
+      "2021-01-21T06:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      322,
+      478,
+      1
+     ],
+     "holdout": {
+      "trades": 241,
+      "pf": 0.677,
+      "win_rate": 34.4,
+      "net_pnl": -2326.79,
+      "max_dd_pct": 24.89,
+      "avg_r": -0.2,
+      "thirds": [
+       0.704,
+       0.57,
+       0.789
+      ],
+      "bootstrap_pf_gt1": 0.002,
+      "window": [
+       "2025-01-23T21:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       83,
+       158,
+       0
+      ],
+      "split_time": "2025-01-23T21:00:00"
+     },
+     "canonical": {
+      "trades": 907,
+      "pf": 0.085,
+      "net_pnl": -20603.47
+     },
+     "verdict": "FAIL",
+     "routing_family": true
+    },
+    "btc_trend_following": {
+     "trades": 31,
+     "pf": 1.505,
+     "win_rate": 41.9,
+     "net_pnl": 490.49,
+     "max_dd_pct": 3.27,
+     "avg_r": 0.05,
+     "thirds": [
+      0.585,
+      0.618,
+      4.808
+     ],
+     "bootstrap_pf_gt1": 0.835,
+     "window": [
+      "2021-03-11T12:00:00",
+      "2026-10-13T04:00:00"
+     ],
+     "tp_sl_timeout": [
+      11,
+      18,
+      2
+     ],
+     "holdout": {
+      "trades": 7,
+      "pf": 5.396,
+      "win_rate": 71.4,
+      "net_pnl": 679.52,
+      "max_dd_pct": 1.04,
+      "avg_r": 0.76,
+      "thirds": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "bootstrap_pf_gt1": 0.983,
+      "window": [
+       "2025-01-27T08:00:00",
+       "2026-10-13T04:00:00"
+      ],
+      "tp_sl_timeout": [
+       4,
+       2,
+       1
+      ],
+      "split_time": "2025-01-27T08:00:00"
+     },
+     "canonical": {
+      "trades": 32,
+      "pf": 0.456,
+      "net_pnl": -863.56
+     },
+     "verdict": "FAIL",
+     "routing_family": true
+    },
+    "donchian": {
+     "trades": 1397,
+     "pf": 0.966,
+     "win_rate": 33.4,
+     "net_pnl": -1390.41,
+     "max_dd_pct": 33.8,
+     "avg_r": -0.0,
+     "thirds": [
+      0.956,
+      0.846,
+      1.104
+     ],
+     "bootstrap_pf_gt1": 0.28,
+     "window": [
+      "2021-01-21T06:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      463,
+      931,
+      3
+     ],
+     "holdout": {
+      "trades": 427,
+      "pf": 1.095,
+      "win_rate": 35.8,
+      "net_pnl": 1418.71,
+      "max_dd_pct": 7.59,
+      "avg_r": 0.07,
+      "thirds": [
+       1.065,
+       1.087,
+       1.13
+      ],
+      "bootstrap_pf_gt1": 0.802,
+      "window": [
+       "2025-01-23T21:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       152,
+       274,
+       1
+      ],
+      "split_time": "2025-01-23T21:00:00"
+     },
+     "canonical": {
+      "trades": 2068,
+      "pf": 0.115,
+      "net_pnl": -33611.85
+     },
+     "verdict": "FAIL",
+     "routing_family": false
+    },
+    "pullback": {
+     "trades": 1142,
+     "pf": 1.03,
+     "win_rate": 34.9,
+     "net_pnl": 1203.81,
+     "max_dd_pct": 15.58,
+     "avg_r": 0.04,
+     "thirds": [
+      0.978,
+      1.108,
+      1.003
+     ],
+     "bootstrap_pf_gt1": 0.667,
+     "window": [
+      "2021-01-21T06:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      393,
+      744,
+      5
+     ],
+     "holdout": {
+      "trades": 336,
+      "pf": 1.01,
+      "win_rate": 34.2,
+      "net_pnl": 116.11,
+      "max_dd_pct": 9.77,
+      "avg_r": 0.02,
+      "thirds": [
+       0.94,
+       1.098,
+       0.991
+      ],
+      "bootstrap_pf_gt1": 0.547,
+      "window": [
+       "2025-01-23T21:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       113,
+       221,
+       2
+      ],
+      "split_time": "2025-01-23T21:00:00"
+     },
+     "canonical": {
+      "trades": 1660,
+      "pf": 0.102,
+      "net_pnl": -28082.96
+     },
+     "verdict": "FAIL",
+     "routing_family": false
+    },
+    "squeeze": {
+     "trades": 797,
+     "pf": 0.996,
+     "win_rate": 33.9,
+     "net_pnl": -113.8,
+     "max_dd_pct": 11.5,
+     "avg_r": 0.02,
+     "thirds": [
+      0.962,
+      1.042,
+      0.984
+     ],
+     "bootstrap_pf_gt1": 0.48,
+     "window": [
+      "2021-01-21T06:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      270,
+      527,
+      0
+     ],
+     "holdout": {
+      "trades": 241,
+      "pf": 1.002,
+      "win_rate": 34.0,
+      "net_pnl": 15.44,
+      "max_dd_pct": 11.86,
+      "avg_r": 0.02,
+      "thirds": [
+       0.982,
+       0.937,
+       1.09
+      ],
+      "bootstrap_pf_gt1": 0.471,
+      "window": [
+       "2025-01-23T21:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       82,
+       159,
+       0
+      ],
+      "split_time": "2025-01-23T21:00:00"
+     },
+     "canonical": {
+      "trades": 962,
+      "pf": 0.082,
+      "net_pnl": -19919.98
+     },
+     "verdict": "FAIL",
+     "routing_family": false
+    },
+    "daybreak": {
+     "trades": 1912,
+     "pf": 0.967,
+     "win_rate": 37.5,
+     "net_pnl": -1605.64,
+     "max_dd_pct": 38.68,
+     "avg_r": 0.0,
+     "thirds": [
+      0.879,
+      0.917,
+      1.112
+     ],
+     "bootstrap_pf_gt1": 0.218,
+     "window": [
+      "2021-01-21T06:00:00",
+      "2026-10-13T05:00:00"
+     ],
+     "tp_sl_timeout": [
+      716,
+      1193,
+      3
+     ],
+     "holdout": {
+      "trades": 551,
+      "pf": 1.099,
+      "win_rate": 40.3,
+      "net_pnl": 1937.38,
+      "max_dd_pct": 8.9,
+      "avg_r": 0.07,
+      "thirds": [
+       1.172,
+       1.164,
+       0.98
+      ],
+      "bootstrap_pf_gt1": 0.856,
+      "window": [
+       "2025-01-23T21:00:00",
+       "2026-10-13T05:00:00"
+      ],
+      "tp_sl_timeout": [
+       221,
+       329,
+       1
+      ],
+      "split_time": "2025-01-23T21:00:00"
+     },
+     "canonical": {
+      "trades": 4174,
+      "pf": 0.085,
+      "net_pnl": -56594.99
+     },
+     "verdict": "FAIL",
+     "routing_family": false
+    }
+   },
+   "notes": [],
+   "bars": {
+    "H1": 34173,
+    "H4": 9146
+   }
+  }
+ },
+ "proposals": [
+  {
+   "symbol": "USOIL",
+   "action": "KEEP/none",
+   "current": "trend_zone",
+   "current_pf": null,
+   "reason": "no PROMOTE strategy"
+  },
+  {
+   "symbol": "AUDUSD",
+   "action": "KEEP/none",
+   "current": null,
+   "current_pf": null,
+   "reason": "no PROMOTE strategy"
+  },
+  {
+   "symbol": "BTCUSD",
+   "action": "KEEP/none",
+   "current": "btc_trend_following",
+   "current_pf": 1.17,
+   "reason": "no PROMOTE strategy"
+  },
+  {
+   "symbol": "ETHUSD",
+   "action": "KEEP/none",
+   "current": "trend_zone",
+   "current_pf": 1.69,
+   "reason": "no PROMOTE strategy"
+  },
+  {
+   "symbol": "SPX500",
+   "action": "KEEP/none",
+   "current": "ema_crossover",
+   "current_pf": 1.78,
+   "reason": "no PROMOTE strategy"
+  },
+  {
+   "symbol": "XAUUSD",
+   "action": "KEEP/none",
+   "current": "trend_zone",
+   "current_pf": 1.71,
+   "reason": "no PROMOTE strategy"
+  }
+ ],
+ "drift": [
+  "baseline established (no prior atlas run)"
+ ]
+}

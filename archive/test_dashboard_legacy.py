@@ -1,4 +1,18 @@
-"""Tests for the web dashboard (overview, backtesting, forward testing)."""
+"""Tests for the web dashboard (overview, backtesting, forward testing).
+
+ARCHIVED: these exercise the retired server-rendered ``dashboard`` module --
+``from dashboard import app`` plus ``load_frames``/``RESULTS``/``DEFAULT_OUT``/
+``BASE`` and HTML-form routes (``GET /backtest`` -> "Run backtest"). That module
+was refactored into ``web_dashboard.py`` (FastAPI + JS SPA) and
+``web_backtests.py`` (JSON routes: ``POST /api/backtest/run``,
+``POST /api/backtest/forward``), while ``mt5_mcp/dashboard.py`` is now an
+unrelated Trading Intelligence API class.
+
+It was moved here because it could no longer be imported, so it aborted
+collection of the whole suite and provided zero coverage. To restore coverage,
+rewrite against the ``/api/backtest/*`` JSON routes (monkeypatch
+``web_backtests.load_frames`` so no terminal is required).
+"""
 
 from __future__ import annotations
 

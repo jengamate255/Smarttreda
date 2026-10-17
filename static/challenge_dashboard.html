@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="auth-token" content="">
+<title>FundingPips Challenge Tracker</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --card: #161b22;
+    --border: #30363d;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --green: #3fb950;
+    --red: #f85149;
+    --yellow: #d29922;
+    --blue: #58a6ff;
+    --purple: #bc8cff;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px;
+    min-height: 100vh;
+  }
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .header h1 {
+    font-size: 24px;
+    font-weight: 600;
+  }
+  .header .badge {
+    background: var(--yellow);
+    color: #000;
+    padding: 4px 12px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .header .badge.passed {
+    background: var(--green);
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+  }
+  .card h3 {
+    font-size: 13px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .card .value {
+    font-size: 28px;
+    font-weight: 700;
+  }
+  .card .sub {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .positive { color: var(--green); }
+  .negative { color: var(--red); }
+  .warning { color: var(--yellow); }
+  .neutral { color: var(--blue); }
+
+  .progress-section {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  .progress-section h2 {
+    font-size: 16px;
+    margin-bottom: 16px;
+  }
+  .progress-bar-container {
+    background: #21262d;
+    border-radius: 8px;
+    height: 32px;
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 8px;
+  }
+  .progress-bar {
+    height: 100%;
+    border-radius: 8px;
+    background: linear-gradient(90deg, var(--blue), var(--purple));
+    transition: width 0.5s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 14px;
+    min-width: 60px;
+  }
+  .progress-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .gauges {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .gauge {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+  }
+  .gauge-ring {
+    width: 100px;
+    height: 100px;
+    margin: 0 auto 12px;
+    position: relative;
+  }
+  .gauge-ring svg {
+    transform: rotate(-90deg);
+  }
+  .gauge-ring .track {
+    fill: none;
+    stroke: #21262d;
+    stroke-width: 8;
+  }
+  .gauge-ring .fill {
+    fill: none;
+    stroke-width: 8;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.5s ease;
+  }
+  .gauge-ring .center-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .gauge h4 {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 4px;
+  }
+  .gauge .gauge-label {
+    font-size: 12px;
+    color: var(--muted);
+  }
+
+  .alerts {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+  }
+  .alerts h3 {
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+  .alert-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    font-size: 13px;
+  }
+  .alert-item.warn {
+    background: rgba(210, 153, 34, 0.1);
+    border: 1px solid rgba(210, 153, 34, 0.3);
+    color: var(--yellow);
+  }
+  .alert-item.danger {
+    background: rgba(248, 81, 73, 0.1);
+    border: 1px solid rgba(248, 81, 73, 0.3);
+    color: var(--red);
+  }
+  .alert-item.ok {
+    background: rgba(63, 185, 80, 0.1);
+    border: 1px solid rgba(63, 185, 80, 0.3);
+    color: var(--green);
+  }
+
+  .daily-table {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    overflow-x: auto;
+  }
+  .daily-table h3 {
+    font-size: 14px;
+    margin-bottom: 12px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  th {
+    text-align: left;
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted);
+    font-weight: 500;
+  }
+  td {
+    padding: 8px 12px;
+    border-bottom: 1px solid #21262d;
+  }
+  tr:hover td {
+    background: rgba(88, 166, 255, 0.05);
+  }
+
+  .timestamp {
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    margin-top: 16px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>FundingPips Challenge</h1>
+  <span class="badge" id="status-badge">IN PROGRESS</span>
+</div>
+
+<div class="progress-section">
+  <h2>Profit Target Progress</h2>
+  <div class="progress-bar-container">
+    <div class="progress-bar" id="progress-bar" style="width: 0%">0%</div>
+  </div>
+  <div class="progress-labels">
+    <span>$0</span>
+    <span id="target-label">Target: $771 (8%)</span>
+  </div>
+</div>
+
+<div class="grid" id="stats-grid"></div>
+
+<div class="gauges" id="gauges"></div>
+
+<div class="alerts" id="alerts-section">
+  <h3>Risk Alerts</h3>
+  <div id="alerts-list"></div>
+</div>
+
+<div class="daily-table">
+  <h3>Daily P&L Breakdown</h3>
+  <table>
+    <thead>
+      <tr>
+        <th>Date</th>
+        <th>P&L</th>
+        <th>Trades</th>
+        <th>Wins</th>
+        <th>Losses</th>
+        <th>Win Rate</th>
+      </tr>
+    </thead>
+    <tbody id="daily-body"></tbody>
+  </table>
+</div>
+
+<div class="timestamp" id="timestamp"></div>
+
+<script>
+const data = {
+  "status": {
+    "timestamp": "2026-09-27T16:15:55.796713+00:00",
+    "initial_balance": 9642.0,
+    "current_balance": 9584.35,
+    "total_pnl": 210.2,
+    "total_pnl_pct": 2.18,
+    "target_pct": 8.0,
+    "progress_pct": 27.3,
+    "remaining_pnl": 561.16,
+    "today_pnl": 0,
+    "today_trades": 0,
+    "daily_loss_remaining_pct": 4.0,
+    "max_daily_loss_pct": 4.0,
+    "current_dd_pct": 2.78,
+    "max_drawdown_pct": 8.0,
+    "trading_days": 26,
+    "min_trading_days": 5,
+    "min_days_met": true,
+    "consistency_ratio": 116.7,
+    "consistency_ok": false,
+    "best_day_pnl": 245.26,
+    "projected_days_to_pass": 69,
+    "avg_daily_pnl": 8.08,
+    "challenge_passed": false,
+    "risk_alerts": [
+      "CONSISTENCY RISK: best day is 117% of total profit (max 40.0%)"
+    ]
+  },
+  "daily": [
+    {"date": "2026-09-25", "pnl": -47.33, "trades": 4, "wins": 1, "losses": 3},
+    {"date": "2026-09-10", "pnl": -53.12, "trades": 2, "wins": 0, "losses": 2},
+    {"date": "2026-09-09", "pnl": 18.08, "trades": 3, "wins": 1, "losses": 2},
+    {"date": "2026-09-08", "pnl": 70.64, "trades": 1, "wins": 1, "losses": 0},
+    {"date": "2026-09-02", "pnl": 0.0, "trades": 1, "wins": 0, "losses": 1},
+    {"date": "2026-08-28", "pnl": -25.02, "trades": 4, "wins": 0, "losses": 4},
+    {"date": "2026-08-19", "pnl": 245.26, "trades": 13, "wins": 7, "losses": 6},
+    {"date": "2026-08-13", "pnl": -0.98, "trades": 1, "wins": 0, "losses": 1},
+    {"date": "2026-08-11", "pnl": 78.2, "trades": 3, "wins": 2, "losses": 1},
+    {"date": "2026-08-10", "pnl": -42.0, "trades": 3, "wins": 2, "losses": 1}
+  ]
+};
+
+const s = data.status;
+const target_amount = s.initial_balance * s.target_pct / 100;
+
+// Badge
+const badge = document.getElementById('status-badge');
+if (s.challenge_passed) {
+  badge.textContent = 'PASSED';
+  badge.classList.add('passed');
+}
+
+// Progress bar
+const bar = document.getElementById('progress-bar');
+bar.style.width = Math.max(5, s.progress_pct) + '%';
+bar.textContent = s.progress_pct.toFixed(1) + '%';
+document.getElementById('target-label').textContent =
+  `Target: $${target_amount.toFixed(0)} (${s.target_pct}%) | Remaining: $${s.remaining_pnl.toFixed(0)}`;
+
+// Stats grid
+const stats = [
+  { label: 'Initial Balance', value: `$${s.initial_balance.toLocaleString()}`, cls: '' },
+  { label: 'Current Balance', value: `$${s.current_balance.toLocaleString()}`, cls: '' },
+  { label: 'Total P&L', value: `$${s.total_pnl >= 0 ? '+' : ''}${s.total_pnl.toFixed(2)}`, cls: s.total_pnl >= 0 ? 'positive' : 'negative' },
+  { label: 'P&L %', value: `${s.total_pnl_pct.toFixed(2)}%`, cls: s.total_pnl_pct >= 0 ? 'positive' : 'negative' },
+  { label: 'Today P&L', value: `$${s.today_pnl >= 0 ? '+' : ''}${s.today_pnl.toFixed(2)}`, cls: s.today_pnl >= 0 ? 'positive' : 'negative' },
+  { label: 'Today Trades', value: s.today_trades, cls: 'neutral' },
+  { label: 'Trading Days', value: `${s.trading_days} / ${s.min_trading_days} min`, cls: s.min_days_met ? 'positive' : 'warning' },
+  { label: 'Avg Daily P&L', value: `$${s.avg_daily_pnl.toFixed(2)}`, cls: s.avg_daily_pnl >= 0 ? 'positive' : 'negative' },
+  { label: 'Projected Days', value: s.projected_days_to_pass > 0 ? `${s.projected_days_to_pass} days` : '-', cls: 'neutral' },
+];
+
+const grid = document.getElementById('stats-grid');
+stats.forEach(st => {
+  grid.innerHTML += `
+    <div class="card">
+      <h3>${st.label}</h3>
+      <div class="value ${st.cls}">${st.value}</div>
+    </div>`;
+});
+
+// Gauges
+function makeGauge(label, pct, max, color, detail) {
+  const r = 42;
+  const c = 2 * Math.PI * r;
+  const clamped = Math.min(pct / max * 100, 100);
+  const offset = c - (clamped / 100) * c;
+  return `
+    <div class="gauge">
+      <div class="gauge-ring">
+        <svg width="100" height="100" viewBox="0 0 100 100">
+          <circle class="track" cx="50" cy="50" r="${r}"/>
+          <circle class="fill" cx="50" cy="50" r="${r}"
+            stroke="${color}"
+            stroke-dasharray="${c}"
+            stroke-dashoffset="${offset}"/>
+        </svg>
+        <div class="center-text" style="color:${color}">${pct.toFixed(1)}%</div>
+      </div>
+      <h4>${label}</h4>
+      <div class="gauge-label">${detail}</div>
+    </div>`;
+}
+
+const gauges = document.getElementById('gauges');
+gauges.innerHTML += makeGauge('Profit Target', s.total_pnl_pct, s.target_pct, '#58a6ff',
+  `${s.total_pnl_pct.toFixed(2)}% / ${s.target_pct}%`);
+gauges.innerHTML += makeGauge('Daily Loss Used', s.max_daily_loss_pct - s.daily_loss_remaining_pct, s.max_daily_loss_pct,
+  s.daily_loss_remaining_pct < 1 ? '#f85149' : '#3fb950',
+  `$${(s.daily_loss_remaining_pct / 100 * s.initial_balance).toFixed(0)} remaining`);
+gauges.innerHTML += makeGauge('Drawdown', s.current_dd_pct, s.max_drawdown_pct,
+  s.current_dd_pct > s.max_drawdown_pct * 0.75 ? '#f85149' : '#3fb950',
+  `${s.current_dd_pct.toFixed(2)}% / ${s.max_drawdown_pct}%`);
+gauges.innerHTML += makeGauge('Consistency', Math.min(s.consistency_ratio, 100), 40,
+  s.consistency_ok ? '#3fb950' : '#d29922',
+  s.consistency_ok ? 'OK' : `Best day: $${s.best_day_pnl.toFixed(0)}`);
+
+// Alerts
+const alertsList = document.getElementById('alerts-list');
+if (s.risk_alerts.length === 0) {
+  alertsList.innerHTML = '<div class="alert-item ok">All clear - no risk alerts</div>';
+} else {
+  s.risk_alerts.forEach(a => {
+    const cls = a.includes('DRAWDOWN') ? 'danger' : 'warn';
+    alertsList.innerHTML += `<div class="alert-item ${cls}">${a}</div>`;
+  });
+}
+if (s.min_days_met) {
+  alertsList.innerHTML += `<div class="alert-item ok">Min trading days met (${s.trading_days}/${s.min_trading_days})</div>`;
+}
+
+// Daily table
+const tbody = document.getElementById('daily-body');
+data.daily.forEach(d => {
+  const wr = d.trades > 0 ? (d.wins / d.trades * 100).toFixed(0) : '-';
+  const cls = d.pnl > 0 ? 'positive' : d.pnl < 0 ? 'negative' : '';
+  tbody.innerHTML += `
+    <tr>
+      <td>${d.date}</td>
+      <td class="${cls}">$${d.pnl >= 0 ? '+' : ''}${d.pnl.toFixed(2)}</td>
+      <td>${d.trades}</td>
+      <td class="positive">${d.wins}</td>
+      <td class="negative">${d.losses}</td>
+      <td>${wr}%</td>
+    </tr>`;
+});
+
+// Timestamp
+document.getElementById('timestamp').textContent = `Last updated: ${new Date(s.timestamp).toLocaleString()}`;
+
+// Auto-refresh every 60s
+setInterval(async () => {
+  try {
+    const token = document.querySelector('meta[name="auth-token"]')?.content || '';
+    const res = await fetch('/api/challenge/status', {
+      headers: token ? {'x-auth-token': token} : {}
+    });
+    if (res.ok) location.reload();
+  } catch(e) {}
+}, 60000);
+</script>
+</body>
+</html>

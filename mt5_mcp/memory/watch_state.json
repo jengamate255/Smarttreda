@@ -1,0 +1,24 @@
+{
+  "fired": {
+    "xag-entry-ready": {
+      "active": true,
+      "price": 60.788,
+      "ts": 1792177303.7645676
+    },
+    "eth-bounce": {
+      "active": false,
+      "price": 2487.97,
+      "ts": 1792150183.8216574
+    },
+    "btc-breakout": {
+      "active": true,
+      "price": 81134.26,
+      "ts": 1792177303.7645676
+    },
+    "usoil-breakout": {
+      "active": true,
+      "price": 97.803,
+      "ts": 1792177303.7645676
+    }
+  }
+}

@@ -516,25 +516,13 @@ def _journal_fill(sym: str, plan, res) -> None:
             rr=plan.risk_reward,
             session_hour=datetime.now(timezone.utc).hour,
             reason=plan.reason or "",
+            trend_confidence=float(getattr(plan, "trend_confidence", 0) or 0),
+            confirmation_confidence=float(getattr(plan, "confirmation_confidence", 0) or 0),
+            sl_pips=float(getattr(plan, "sl_pips", 0) or 0),
         )
     except Exception as e:
         logger.warning(f"journal fill failed {sym}: {e}")
 
-
-def _notify_fill(sym: str, plan, res) -> None:
-    # fill notice to Telegram (never crash the runner on notify failure)
-    try:
-        from mt5_mcp.telegram_alerts import send_telegram, trade_entry_msg
-
-        send_telegram(trade_entry_msg(
-            sym, plan.action, float(plan.lots), float(plan.entry),
-            sl=float(plan.sl), tp=float(plan.tp),
-            confidence=float(plan.confidence or 0),
-            ticket=int(getattr(res, "ticket", 0) or 0),
-            setup="confirm_exec relaxed", rr=str(plan.risk_reward or ""),
-        ))
-    except Exception as ne:
-        logger.warning(f"{sym} fill telegram failed: {ne}")
 
 
 def scan_symbol(client, sym: str, state: dict) -> int:
@@ -542,11 +530,9 @@ def scan_symbol(client, sym: str, state: dict) -> int:
     from mt5_mcp.strategy import evaluate_strategy
     from mt5_mcp.market_intel import market_health
     from analysis_agent import is_available
-    from mt5_mcp.consensus import (
-        risk_cap as consensus_risk_cap,
-        publish as consensus_publish,
-        check as consensus_check,
-    )
+    from mt5_mcp.consensus import risk_cap as consensus_risk_cap
+    from mt5_mcp.pipeline import publish_stance, run_gates
+    from mt5_mcp.notifier import trade_filled
 
     try:
         if client.positions(sym):
@@ -560,19 +546,25 @@ def scan_symbol(client, sym: str, state: dict) -> int:
         avail, reasons = is_available(short, h, min_confidence=MIN_CONF, min_score=MIN_SCORE, min_health=MIN_HEALTH, min_rr=MIN_RR)
         logger.info(f"{sym} health={h:.1f} plan={plan.action}/{plan.confidence:.1f} valid={plan.valid} score={plan.trade_score:.1f} RR={plan.risk_reward} zone={plan.zone_strength:.1f} conf={plan.confirmation} avail={avail} {'|'.join(reasons)}")
         _record_gate(sym, h, plan, avail, reasons)
-        # consensus board: record this engine's read on every evaluation
-        consensus_publish("confirm", sym, plan.action, plan.confidence)
+        publish_stance("confirm", sym, plan.action, float(plan.confidence or 0))
         if not avail:
             return 0
         # need entry/sl/tp
         if not plan.entry or not plan.sl or not plan.tp:
             logger.info(f"{sym} no entry levels")
             return 0
-        # consensus layer: allowlist + cross-engine veto (fail-open inside)
-        cver = consensus_check(sym, plan.action, "confirm",
-                               score=float(plan.confidence or 0))
-        if not cver.get("allowed"):
-            logger.info(f"{sym} consensus blocked: {'; '.join(cver.get('violations', []))}")
+        # unified gate: consensus allowlist/veto + compliance (fail-open consensus)
+        gate_verdict = run_gates(
+            symbol=sym, side=plan.action, lots=float(plan.lots),
+            sl_price=float(plan.sl),
+            confidence=float(plan.confidence or 0),
+            source="confirm", score=float(plan.confidence or 0),
+            setup="confirm_exec",
+            tp_price=float(plan.tp),
+            entry_price=float(plan.entry),
+        )
+        if not gate_verdict.allowed:
+            logger.info(f"{sym} gate blocked: {'; '.join(gate_verdict.violations)}")
             return 0
         # execute
         if DRY_RUN:
@@ -589,7 +581,14 @@ def scan_symbol(client, sym: str, state: dict) -> int:
             logger.info(f"EXECUTED {sym} ticket {res.ticket} {plan.action} {plan.lots} RR {plan.risk_reward}")
             _note_entry(state)
             _journal_fill(sym, plan, res)
-            _notify_fill(sym, plan, res)
+            trade_filled(
+                symbol=sym, side=plan.action, lots=float(plan.lots),
+                entry=float(plan.entry), sl=float(plan.sl), tp=float(plan.tp),
+                ticket=int(getattr(res, "ticket", 0) or 0),
+                confidence=float(plan.confidence or 0),
+                setup="confirm_exec relaxed",
+                rr=str(plan.risk_reward or ""),
+            )
             return 1
         logger.warning(f"EXEC FAILED {sym}: {getattr(res, 'error', 'rejected')} checks={getattr(res, 'checks', [])}")
         return 0

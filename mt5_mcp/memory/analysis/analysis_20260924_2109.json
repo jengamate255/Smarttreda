@@ -1,0 +1,115 @@
+{
+  "at": "2026-09-24T21:09:04.028027+00:00",
+  "cycle": 100,
+  "compliance_mode": "normal",
+  "results": [
+    {
+      "symbol": "EURCHF",
+      "bar": "2026-09-24 20:00:00",
+      "health_score": 63.5,
+      "verdict": "cautious",
+      "regime": "trending_bearish",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 78.5,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "MTF confluence 0/2 timeframes aligned with bullish (min 1)"
+      },
+      "available": false,
+      "reasons": [
+        "MTF confluence 0/2 timeframes aligned with bullish (min 1)",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "sydney",
+        "active": [
+          "sydney"
+        ],
+        "hour_utc": 21
+      }
+    },
+    {
+      "symbol": "EURUSD",
+      "bar": "2026-09-24 20:00:00",
+      "health_score": 75.7,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 89.1,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong supply zone being revisited"
+      },
+      "available": false,
+      "reasons": [
+        "No strong supply zone being revisited",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "sydney",
+        "active": [
+          "sydney"
+        ],
+        "hour_utc": 21
+      }
+    },
+    {
+      "symbol": "AUDNZD",
+      "bar": "2026-09-24 20:00:00",
+      "health_score": 67.0,
+      "verdict": "cautious",
+      "regime": "transition",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 100.0,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 80.4,
+        "confirmation": "",
+        "reason": "SKIPPED: SL 47.6 pips exceeds max 30.0"
+      },
+      "available": false,
+      "reasons": [
+        "SKIPPED: SL 47.6 pips exceeds max 30.0",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "sydney",
+        "active": [
+          "sydney"
+        ],
+        "hour_utc": 21
+      }
+    }
+  ]
+}

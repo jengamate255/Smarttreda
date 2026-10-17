@@ -1,0 +1,457 @@
+{
+  "last_bar": {
+    "EURUSD": "2026-10-14 00:00:00",
+    "GBPUSD": "2026-10-14 00:00:00",
+    "USDCHF": "2026-10-14 00:00:00",
+    "USDCAD": "2026-10-14 00:00:00",
+    "AUDUSD": "2026-10-14 00:00:00",
+    "NZDUSD": "2026-10-14 00:00:00",
+    "CHFJPY": "2026-10-14 00:00:00",
+    "EURJPY": "2026-10-14 00:00:00",
+    "GBPJPY": "2026-10-14 00:00:00",
+    "NZDJPY": "2026-10-14 00:00:00",
+    "GBPCHF": "2026-10-14 00:00:00",
+    "NZDCAD": "2026-10-14 00:00:00",
+    "AUDNZD": "2026-10-14 00:00:00",
+    "EURAUD": "2026-10-14 00:00:00",
+    "EURCHF": "2026-10-14 00:00:00",
+    "XAUUSD": "2026-10-13 23:00:00",
+    "XAGUSD": "2026-10-13 23:00:00",
+    "USOIL": "2026-10-13 23:00:00",
+    "JP225": "2026-10-12 05:00:00",
+    "USDJPY": "2026-09-24 01:00:00"
+  },
+  "last_plan": {
+    "EURUSD": {
+      "bar": "2026-10-14 00:00:00",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 100.0,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong supply zone being revisited"
+      },
+      "available": false,
+      "health_score": 76.2
+    },
+    "GBPUSD": {
+      "bar": "2026-10-14 00:00:00",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 99.4,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 75.4,
+        "confirmation": "",
+        "reason": "no bearish confirmation candle found"
+      },
+      "available": false,
+      "health_score": 59.2
+    },
+    "USDCHF": {
+      "bar": "2026-10-14 00:00:00",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 100.0,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong demand zone being revisited"
+      },
+      "available": false,
+      "health_score": 71.6
+    },
+    "USDCAD": {
+      "bar": "2026-10-14 00:00:00",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 0.0,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "no breakout (close 1.42183 within 1.42039-1.42720)"
+      },
+      "available": false,
+      "health_score": 63.0
+    },
+    "AUDUSD": {
+      "bar": "2026-10-14 00:00:00",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 79.5,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "HTF trend is sideways; strategy waits for a directional trend"
+      },
+      "available": false,
+      "health_score": 60.5
+    },
+    "NZDUSD": {
+      "bar": "2026-10-14 00:00:00",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 100.0,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong supply zone being revisited"
+      },
+      "available": false,
+      "health_score": 72.7
+    },
+    "CHFJPY": {
+      "bar": "2026-10-14 00:00:00",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 69.5,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "HTF trend is sideways; strategy waits for a directional trend"
+      },
+      "available": false,
+      "health_score": 60.7
+    },
+    "EURJPY": {
+      "bar": "2026-10-14 00:00:00",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 99.7,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 75.6,
+        "confirmation": "",
+        "reason": "SKIPPED: SL 139.8 pips exceeds max 30.0"
+      },
+      "available": false,
+      "health_score": 72.4
+    },
+    "GBPJPY": {
+      "bar": "2026-10-14 00:00:00",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 62.9,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "HTF trend is sideways; strategy waits for a directional trend"
+      },
+      "available": false,
+      "health_score": 71.2
+    },
+    "NZDJPY": {
+      "bar": "2026-10-14 00:00:00",
+      "plan": {
+        "action": "SELL",
+        "valid": false,
+        "confidence": 91.3,
+        "trade_score": 92.8,
+        "entry": 88.862,
+        "sl": 89.062,
+        "tp": 87.962,
+        "sl_pips": 20.0,
+        "tp_pips": 90.0,
+        "risk_reward": 4.5,
+        "zone_strength": 90.27601478011032,
+        "confirmation": "shooting_star (bearish, conf 0.85)",
+        "reason": "HTF trend bearish (EMA50/200, conf 100%); supply zone 88.82100-88.93300 strength 90/100 touches 25; confirmation: shooting_star (bearish, 85%); RR 4.50 (min 2.2), risk 0.1% = 9.40 USD; MTF confluence: 0/2 timeframes aligned with bearish (+0% bonus)"
+      },
+      "available": false,
+      "health_score": 61.5
+    },
+    "GBPCHF": {
+      "bar": "2026-10-14 00:00:00",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 77.0,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong demand zone being revisited"
+      },
+      "available": false,
+      "health_score": 72.1
+    },
+    "NZDCAD": {
+      "bar": "2026-10-14 00:00:00",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 92.4,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong supply zone being revisited"
+      },
+      "available": false,
+      "health_score": 65.5
+    },
+    "AUDNZD": {
+      "bar": "2026-10-14 00:00:00",
+      "plan": {
+        "action": "BUY",
+        "valid": true,
+        "confidence": 96.0,
+        "trade_score": 106.5,
+        "entry": 1.24432,
+        "sl": 1.24232,
+        "tp": 1.25332,
+        "sl_pips": 20.0,
+        "tp_pips": 90.0,
+        "risk_reward": 4.5,
+        "zone_strength": 97.54901153074755,
+        "confirmation": "bullish_engulfing (bullish, conf 0.71)",
+        "reason": "HTF trend bullish (EMA50/200, conf 99%); demand zone 1.24297-1.24464 strength 98/100 touches 10; confirmation: bullish_engulfing (bullish, 71%); RR 4.50 (min 2.2), risk 0.1% = 9.40 USD; MTF confluence: 2/2 timeframes aligned with bullish (+15% bonus)"
+      },
+      "available": true,
+      "health_score": 73.4
+    },
+    "EURAUD": {
+      "bar": "2026-10-14 00:00:00",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 86.8,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 79.7,
+        "confirmation": "",
+        "reason": "SKIPPED: SL 86.7 pips exceeds max 30.0"
+      },
+      "available": false,
+      "health_score": 74.1
+    },
+    "EURCHF": {
+      "bar": "2026-10-14 00:00:00",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 66.3,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "HTF trend is sideways; strategy waits for a directional trend"
+      },
+      "available": false,
+      "health_score": 69.3
+    },
+    "XAUUSD": {
+      "bar": "2026-10-13 23:00:00",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 92.1,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong supply zone being revisited"
+      },
+      "available": false,
+      "health_score": 54.9
+    },
+    "XAGUSD": {
+      "bar": "2026-10-13 23:00:00",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 91.7,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong supply zone being revisited"
+      },
+      "available": false,
+      "health_score": 64.9
+    },
+    "USOIL": {
+      "bar": "2026-10-13 23:00:00",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 72.2,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong demand zone being revisited"
+      },
+      "available": false,
+      "health_score": 63.3
+    },
+    "JP225": {
+      "bar": "2026-10-12 05:00:00",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 69.9,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "HTF trend is sideways; strategy waits for a directional trend"
+      },
+      "available": false,
+      "health_score": 63.2
+    },
+    "USDJPY": {
+      "bar": "2026-09-24 01:00:00",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 61.7,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "HTF trend is sideways; strategy waits for a directional trend"
+      },
+      "available": false,
+      "health_score": 86.4
+    }
+  },
+  "last_notify": {
+    "USDCHF": {
+      "ts": 1790005402.689885,
+      "msg": "USDCHF BUY @ 0.82113 SL=0.8175 TP=0.83202 conf=85% score=95 health=88 regime=trending_bullish"
+    },
+    "GBPCHF": {
+      "ts": 1790005402.689885,
+      "msg": "GBPCHF BUY @ 1.09784 SL=1.09584 TP=1.10684 conf=86% score=98 health=74 regime=transition"
+    },
+    "NZDCAD": {
+      "ts": 1791330164.482749,
+      "msg": "NZDCAD SELL @ 0.79918 SL=0.80118 TP=0.79018 conf=95% score=104 health=78 regime=trending_bearish"
+    },
+    "AUDNZD": {
+      "ts": 1791931737.954152,
+      "msg": "AUDNZD BUY @ 1.24432 SL=1.24232 TP=1.25332 conf=96% score=106 health=73 regime=trending_bullish"
+    },
+    "EURCHF": {
+      "ts": 1790280013.105941,
+      "msg": "EURCHF BUY @ 0.94199 SL=0.93733 TP=0.95598 conf=76% score=80 health=71 regime=trending_bearish"
+    },
+    "NZDUSD": {
+      "ts": 1791283024.477879,
+      "msg": "NZDUSD SELL @ 0.56058 SL=0.56258 TP=0.55158 conf=95% score=106 health=76 regime=trending_bearish"
+    },
+    "NZDJPY": {
+      "ts": 1791559956.262639,
+      "msg": "NZDJPY SELL @ 88.836 SL=89.036 TP=87.936 conf=98% score=105 health=63 regime=transition"
+    }
+  },
+  "runs": 2946
+}

@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import time
 from functools import lru_cache
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
@@ -49,6 +50,15 @@ class MT5Config(BaseModel):
         return self.login is not None and self.login > 0
 
 
+class PropRiskConfig(BaseModel):
+    enabled: bool = False
+    account_login: int = 0
+    server: str = ""
+    initial_balance: float | None = Field(default=None, gt=0)
+    reset_utc_offset_seconds: int = Field(default=10800, ge=-50400, le=50400)
+    safety_buffer_percent: float = Field(default=0.1, ge=0.1, le=2.0)
+
+
 class RiskConfig(BaseModel):
     default_risk_percent: float = 0.5
     max_risk_percent: float = 0.5
@@ -83,6 +93,18 @@ class RiskConfig(BaseModel):
     min_volume: float | None = None
     max_volume: float | None = None
     blocked_symbols: list[str] = Field(default_factory=list)
+    # Oct 9 log-mode request; only effective inside a bounded forward_test
+    # window, with no strict quality/performance/prop policy enabled.
+    reject_orders: bool = True
+    # Record-only (enforced when reject_orders=true): UTC hours during
+    # which opening orders are allowed (None/empty = any hour).  Live
+    # value [0,2,7,8,9,17,23] = the hours that made money in the
+    # 2026-09-27..10-02 review; all other hours lost -1220.
+    allowed_hours_utc: list[int] | None = None
+    # Comments starting with any of these prefixes are recorded (and
+    # blocked when reject_orders=true): the desk scan's own setups,
+    # which lost -125 combined in the review.
+    blocked_setup_prefixes: list[str] = Field(default_factory=list)
 
 
 class StrategyConfig(BaseModel):
@@ -138,7 +160,41 @@ class BoomCrashConfig(BaseModel):
     watchlist: list[str] = Field(default_factory=list)
 
 
+class PerformanceRiskConfig(BaseModel):
+    enabled: bool = False
+    mode: Literal["rolling", "last_trade"] = "rolling"
+    window: int = Field(default=20, ge=1, le=200)
+    min_trades: int = Field(default=20, ge=1, le=200)
+    lookback_days: int = Field(default=90, ge=1, le=365)
+    losing_percent: float = Field(default=0.1, gt=0, le=0.1)
+    winning_percent: float = Field(default=1.0, gt=0, le=1)
+    winning_profit_factor: float = Field(default=1.2, gt=1)
+    loss_streak_limit: int = Field(default=3, ge=1)
+
+
+class QualityConfig(BaseModel):
+    enabled: bool = False
+    entry_timeframe: str = "M5"
+    max_entry_drift_atr: float = Field(0.25, gt=0, le=1)
+    max_zone_distance_atr: float = Field(0.5, ge=0, le=2)
+    shadow_db_path: str = "memory/entry_shadow.db"
+    shadow_min_trades: int = Field(20, ge=20)
+    shadow_min_profit_factor: float = Field(1.2, gt=1)
+    shadow_min_expectancy_r: float = Field(0.1, gt=0)
+    shadow_cost_r: float = Field(0.05, ge=0)
+    shadow_horizon_bars: int = Field(72, ge=12, le=500)
+    broker_time_offsets: dict[str, int] = Field(default_factory=dict)
+
+
+class ForwardTestConfig(BaseModel):
+    test_id: str = ""
+    # Explicit UTC epoch bounds. No window means enforcement, not an endless test.
+    starts_at: float = Field(default=0, ge=0, allow_inf_nan=False)
+    expires_at: float = Field(default=0, ge=0, allow_inf_nan=False)
+
+
 class Settings(BaseModel):
+    forward_test: ForwardTestConfig = Field(default_factory=ForwardTestConfig)
     server: ServerConfig = Field(default_factory=ServerConfig)
     mt5: MT5Config = Field(default_factory=MT5Config)
     risk: RiskConfig = Field(default_factory=RiskConfig)
@@ -148,11 +204,14 @@ class Settings(BaseModel):
     deriv: DerivConfig = Field(default_factory=DerivConfig)
     deriv_mt5: MT5Config = Field(default_factory=MT5Config)
     boom_crash: BoomCrashConfig = Field(default_factory=BoomCrashConfig)
+    quality: QualityConfig = Field(default_factory=QualityConfig)
+    performance_risk: PerformanceRiskConfig = Field(default_factory=PerformanceRiskConfig)
+    prop_risk: PropRiskConfig = Field(default_factory=PropRiskConfig)
 
     def resolve_paths(self, base: Path = BASE_DIR) -> Settings:
         data = self.model_dump()
-        for section in ("memory", "logging"):
-            for key in ("db_path", "screenshot_dir", "report_dir", "log_dir"):
+        for section in ("memory", "logging", "quality"):
+            for key in ("db_path", "shadow_db_path", "screenshot_dir", "report_dir", "log_dir"):
                 raw = data.get(section, {}).get(key)
                 if raw and isinstance(raw, str) and not Path(raw).is_absolute():
                     data[section][key] = str(base / raw)
@@ -209,6 +268,11 @@ def _apply_env_overrides(data: dict[str, Any]) -> dict[str, Any]:
         ),
         "risk.max_risk_percent": ("MT5_MCP_RISK_MAX", "risk.max_risk_percent", float),
         "risk.min_risk_reward": ("MT5_MCP_RISK_MIN_RR", "risk.min_risk_reward", float),
+        "risk.reject_orders": (
+            "MT5_MCP_REJECT_ORDERS",
+            "risk.reject_orders",
+            str,
+        ),
         "server.transport": ("MT5_MCP_TRANSPORT", "server.transport", str),
         "logging.level": ("MT5_MCP_LOG_LEVEL", "logging.level", str),
     }
@@ -218,8 +282,11 @@ def _apply_env_overrides(data: dict[str, Any]) -> dict[str, Any]:
             continue
         section, key = path.split(".", 1)
         try:
-            if cast is str and key == "enabled":
-                data[section][key] = _env_bool(env_name, data[section].get(key, False))
+            if cast is str and key in ("enabled", "reject_orders"):
+                default = True if key == "reject_orders" else False
+                data[section][key] = _env_bool(
+                    env_name, data[section].get(key, default)
+                )
             else:
                 data[section][key] = cast(raw)
         except (KeyError, TypeError, ValueError):
@@ -234,6 +301,9 @@ def get_settings() -> Settings:
         "server": {},
         "mt5": {},
         "risk": {},
+        "quality": {},
+        "performance_risk": {},
+        "prop_risk": {},
         "strategy": {},
         "memory": {},
         "logging": {},
@@ -255,12 +325,36 @@ def get_settings() -> Settings:
             )
     data = _apply_env_overrides(data)
     settings = Settings.model_validate(data)
+    if settings.quality.enabled:
+        settings.risk.reject_orders = True
     return settings.resolve_paths()
 
 
 def reload_settings() -> Settings:
     get_settings.cache_clear()
     return get_settings()
+
+
+def rejections_enabled() -> bool:
+    """True when gates may reject opening orders.
+
+    Log mode requires an identified, bounded window of at most seven days.
+    The stop marker is checked each call, even with cached settings. Any error
+    fails closed. Strict quality/performance/prop policy always takes priority.
+    """
+    try:
+        settings = get_settings()
+        if (BASE_DIR / "memory" / "forward_test.stop").exists():
+            return True
+        if (settings.risk.reject_orders or settings.quality.enabled or
+                settings.performance_risk.enabled or settings.prop_risk.enabled):
+            return True
+        test = settings.forward_test
+        return not (test.test_id.strip() and
+                    0 < test.expires_at - test.starts_at <= 7 * 86400 and
+                    test.starts_at <= time.time() < test.expires_at)
+    except Exception:  # noqa: BLE001 - fail-closed
+        return True
 
 
 def setup_logging(settings: Settings | None = None) -> logging.Logger:

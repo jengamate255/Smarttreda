@@ -1,0 +1,673 @@
+{
+  "scope": "Frozen price-rule comparison; not complete live desk or account replay",
+  "manifest": {
+    "symbols": [
+      "USOIL",
+      "AUDUSD",
+      "BTCUSD",
+      "ETHUSD",
+      "SPX500",
+      "XAUUSD"
+    ],
+    "start": 1775012400,
+    "end": 1791968764,
+    "offset": 10800,
+    "frames": {
+      "USOIL:M5": {
+        "rows": 40130,
+        "first": "2026-03-23 01:00:00+00:00",
+        "last": "2026-10-14 09:05:00+00:00",
+        "sha256": "92bc1182ad2128f6bb7485b2d70451c024fc96b885989e118a31ad1419f1da8c"
+      },
+      "USOIL:H1": {
+        "rows": 4789,
+        "first": "2025-12-22 03:00:00+00:00",
+        "last": "2026-10-14 09:00:00+00:00",
+        "sha256": "05e02d03297522b4a83a1f64e7e657f6bfd5764ef1ac53b17f072787e42cb7c5"
+      },
+      "USOIL:H4": {
+        "rows": 2379,
+        "first": "2025-04-01 04:00:00+00:00",
+        "last": "2026-10-14 08:00:00+00:00",
+        "sha256": "ec6bc21252a8a673d7995a869c06a5a4b68e3e1d6b875c56076b05d82dc70bff"
+      },
+      "AUDUSD:M5": {
+        "rows": 42360,
+        "first": "2026-03-23 00:00:00+00:00",
+        "last": "2026-10-14 09:05:00+00:00",
+        "sha256": "68c030cb785e32a8b0efc2472ca984707af0fb53cddc8e1205131f5d54ae6bdf"
+      },
+      "AUDUSD:H1": {
+        "rows": 5049,
+        "first": "2025-12-22 03:00:00+00:00",
+        "last": "2026-10-14 09:00:00+00:00",
+        "sha256": "93902d6c3cbb23e33663e2a529efc201d5ebac09869251893c4c078605911afc"
+      },
+      "AUDUSD:H4": {
+        "rows": 2398,
+        "first": "2025-04-01 04:00:00+00:00",
+        "last": "2026-10-14 08:00:00+00:00",
+        "sha256": "bd5954d57ba07b1c164e60a1e3a02da10932fd39b431b85d61fa61682fc510df"
+      },
+      "BTCUSD:M5": {
+        "rows": 45277,
+        "first": "2026-03-23 00:00:00+00:00",
+        "last": "2026-10-14 09:05:00+00:00",
+        "sha256": "55e168a59de5728c4259a565c66ec21233feb7c99fcd0bb6b7f940132c37682f"
+      },
+      "BTCUSD:H1": {
+        "rows": 5289,
+        "first": "2025-12-22 03:00:00+00:00",
+        "last": "2026-10-14 09:00:00+00:00",
+        "sha256": "77915ceaf72710f7bbfb1822368f8a2b826dc6da41c7ae2f648b21f7ba36f8a3"
+      },
+      "BTCUSD:H4": {
+        "rows": 2458,
+        "first": "2025-04-01 04:00:00+00:00",
+        "last": "2026-10-14 08:00:00+00:00",
+        "sha256": "46bc68e052f0278c05a1385e30de6a9c444fa7e83bdb281a75e67de3116f8c11"
+      },
+      "ETHUSD:M5": {
+        "rows": 45277,
+        "first": "2026-03-23 00:00:00+00:00",
+        "last": "2026-10-14 09:05:00+00:00",
+        "sha256": "f98ef92af6fc6e20bd02c0410ccb6fb80ab399061d9f6c869c9c66451eba47d1"
+      },
+      "ETHUSD:H1": {
+        "rows": 5289,
+        "first": "2025-12-22 03:00:00+00:00",
+        "last": "2026-10-14 09:00:00+00:00",
+        "sha256": "68370eaa85e9377354f7beaa6cd5bb2973bf5079015a5b6a57f8066ddc7d03aa"
+      },
+      "ETHUSD:H4": {
+        "rows": 2458,
+        "first": "2025-04-01 04:00:00+00:00",
+        "last": "2026-10-14 08:00:00+00:00",
+        "sha256": "572c99091ba5b6a17a6e9f55d6fa4eef478653e097d7864f61dc681e8af84180"
+      },
+      "SPX500:M5": {
+        "rows": 40317,
+        "first": "2026-03-23 01:00:00+00:00",
+        "last": "2026-10-14 09:05:00+00:00",
+        "sha256": "3e7e576c1a0a2979cb8b9cb9e842c6362356e2bc9c457e7b3130d1915a43ecfd"
+      },
+      "SPX500:H1": {
+        "rows": 4802,
+        "first": "2025-12-22 03:00:00+00:00",
+        "last": "2026-10-14 09:00:00+00:00",
+        "sha256": "7d9000802addeccc122028d62b90171bd538778de49884d16d2a76e816b65c43"
+      },
+      "SPX500:H4": {
+        "rows": 2376,
+        "first": "2025-04-01 04:00:00+00:00",
+        "last": "2026-10-14 08:00:00+00:00",
+        "sha256": "9c8226e64a4ec5de149fd3698f33acad80dee563e49369791111f33c043bdaf0"
+      },
+      "XAUUSD:M5": {
+        "rows": 40182,
+        "first": "2026-03-23 01:00:00+00:00",
+        "last": "2026-10-14 09:05:00+00:00",
+        "sha256": "342ec51d7c31ab70de7b822dff5da60efcae3eeac0e26efe1af32d3e2f90ad44"
+      },
+      "XAUUSD:H1": {
+        "rows": 4795,
+        "first": "2025-12-22 03:00:00+00:00",
+        "last": "2026-10-14 09:00:00+00:00",
+        "sha256": "f21e63d53ba92f2694ba4a8a11d20f53d0bff19dc01e2a6640d737b3df716450"
+      },
+      "XAUUSD:H4": {
+        "rows": 2381,
+        "first": "2025-04-01 04:00:00+00:00",
+        "last": "2026-10-14 08:00:00+00:00",
+        "sha256": "34dc0d7bdfcda592d96db08117e298daefe72ec2311d4374d17701c94c542e47"
+      }
+    },
+    "point": {
+      "USOIL": 0.001,
+      "AUDUSD": 1e-05,
+      "BTCUSD": 0.01,
+      "ETHUSD": 0.01,
+      "SPX500": 0.01,
+      "XAUUSD": 0.01
+    },
+    "sl_atr": 4.5,
+    "tp_r": 2.0
+  },
+  "frozen_policy": {
+    "min_risk_reward": 2.0,
+    "allowed_hours_utc": [
+      0,
+      2,
+      7,
+      8,
+      9,
+      17,
+      23
+    ],
+    "max_entry_drift_atr": 0.25,
+    "max_zone_distance_atr": 0.5,
+    "shadow_cost_r": 0.05,
+    "shadow_horizon_bars": 72
+  },
+  "holdout_utc": "2026-08-16T09:04:14+00:00",
+  "results": [
+    {
+      "symbol": "USOIL",
+      "comparison": {
+        "previous": {
+          "trades": [],
+          "checks": 0,
+          "missed": 0,
+          "unresolved": 0,
+          "reasons": {},
+          "full": {
+            "trades": 0,
+            "wins": 0,
+            "net_r": 0.0,
+            "expectancy_r": null,
+            "profit_factor": null,
+            "no_losses": false,
+            "max_closed_drawdown_r": 0.0,
+            "ambiguous": 0
+          },
+          "shared_funnel": {
+            "scan_boundaries": 6343,
+            "allowed_hour_scans": 1941,
+            "history_atr_spread_ready": 1941,
+            "closed_h1_h4_aligned": 952,
+            "fresh_zone_location_pass": 2,
+            "entry_confirmation_pass": 1,
+            "confirmed_pattern_pass": 0
+          },
+          "holdout": {
+            "trades": 0,
+            "wins": 0,
+            "net_r": 0.0,
+            "expectancy_r": null,
+            "profit_factor": null,
+            "no_losses": false,
+            "max_closed_drawdown_r": 0.0,
+            "ambiguous": 0
+          }
+        },
+        "updated": {
+          "trades": [],
+          "checks": 0,
+          "missed": 0,
+          "unresolved": 0,
+          "reasons": {},
+          "full": {
+            "trades": 0,
+            "wins": 0,
+            "net_r": 0.0,
+            "expectancy_r": null,
+            "profit_factor": null,
+            "no_losses": false,
+            "max_closed_drawdown_r": 0.0,
+            "ambiguous": 0
+          },
+          "shared_funnel": {
+            "scan_boundaries": 6343,
+            "allowed_hour_scans": 1941,
+            "history_atr_spread_ready": 1941,
+            "closed_h1_h4_aligned": 952,
+            "fresh_zone_location_pass": 2,
+            "entry_confirmation_pass": 1,
+            "confirmed_pattern_pass": 0
+          },
+          "holdout": {
+            "trades": 0,
+            "wins": 0,
+            "net_r": 0.0,
+            "expectancy_r": null,
+            "profit_factor": null,
+            "no_losses": false,
+            "max_closed_drawdown_r": 0.0,
+            "ambiguous": 0
+          }
+        }
+      }
+    },
+    {
+      "symbol": "AUDUSD",
+      "comparison": {
+        "previous": {
+          "trades": [],
+          "checks": 0,
+          "missed": 0,
+          "unresolved": 0,
+          "reasons": {},
+          "full": {
+            "trades": 0,
+            "wins": 0,
+            "net_r": 0.0,
+            "expectancy_r": null,
+            "profit_factor": null,
+            "no_losses": false,
+            "max_closed_drawdown_r": 0.0,
+            "ambiguous": 0
+          },
+          "shared_funnel": {
+            "scan_boundaries": 6704,
+            "allowed_hour_scans": 1964,
+            "history_atr_spread_ready": 1964,
+            "closed_h1_h4_aligned": 1056,
+            "fresh_zone_location_pass": 4,
+            "entry_confirmation_pass": 1,
+            "confirmed_pattern_pass": 0
+          },
+          "holdout": {
+            "trades": 0,
+            "wins": 0,
+            "net_r": 0.0,
+            "expectancy_r": null,
+            "profit_factor": null,
+            "no_losses": false,
+            "max_closed_drawdown_r": 0.0,
+            "ambiguous": 0
+          }
+        },
+        "updated": {
+          "trades": [],
+          "checks": 0,
+          "missed": 0,
+          "unresolved": 0,
+          "reasons": {},
+          "full": {
+            "trades": 0,
+            "wins": 0,
+            "net_r": 0.0,
+            "expectancy_r": null,
+            "profit_factor": null,
+            "no_losses": false,
+            "max_closed_drawdown_r": 0.0,
+            "ambiguous": 0
+          },
+          "shared_funnel": {
+            "scan_boundaries": 6704,
+            "allowed_hour_scans": 1964,
+            "history_atr_spread_ready": 1964,
+            "closed_h1_h4_aligned": 1056,
+            "fresh_zone_location_pass": 4,
+            "entry_confirmation_pass": 1,
+            "confirmed_pattern_pass": 0
+          },
+          "holdout": {
+            "trades": 0,
+            "wins": 0,
+            "net_r": 0.0,
+            "expectancy_r": null,
+            "profit_factor": null,
+            "no_losses": false,
+            "max_closed_drawdown_r": 0.0,
+            "ambiguous": 0
+          }
+        }
+      }
+    },
+    {
+      "symbol": "BTCUSD",
+      "comparison": {
+        "previous": {
+          "trades": [],
+          "checks": 0,
+          "missed": 0,
+          "unresolved": 0,
+          "reasons": {},
+          "full": {
+            "trades": 0,
+            "wins": 0,
+            "net_r": 0.0,
+            "expectancy_r": null,
+            "profit_factor": null,
+            "no_losses": false,
+            "max_closed_drawdown_r": 0.0,
+            "ambiguous": 0
+          },
+          "shared_funnel": {
+            "scan_boundaries": 7188,
+            "allowed_hour_scans": 2103,
+            "history_atr_spread_ready": 2103,
+            "closed_h1_h4_aligned": 920,
+            "fresh_zone_location_pass": 0,
+            "entry_confirmation_pass": 0,
+            "confirmed_pattern_pass": 0
+          },
+          "holdout": {
+            "trades": 0,
+            "wins": 0,
+            "net_r": 0.0,
+            "expectancy_r": null,
+            "profit_factor": null,
+            "no_losses": false,
+            "max_closed_drawdown_r": 0.0,
+            "ambiguous": 0
+          }
+        },
+        "updated": {
+          "trades": [],
+          "checks": 0,
+          "missed": 0,
+          "unresolved": 0,
+          "reasons": {},
+          "full": {
+            "trades": 0,
+            "wins": 0,
+            "net_r": 0.0,
+            "expectancy_r": null,
+            "profit_factor": null,
+            "no_losses": false,
+            "max_closed_drawdown_r": 0.0,
+            "ambiguous": 0
+          },
+          "shared_funnel": {
+            "scan_boundaries": 7188,
+            "allowed_hour_scans": 2103,
+            "history_atr_spread_ready": 2103,
+            "closed_h1_h4_aligned": 920,
+            "fresh_zone_location_pass": 0,
+            "entry_confirmation_pass": 0,
+            "confirmed_pattern_pass": 0
+          },
+          "holdout": {
+            "trades": 0,
+            "wins": 0,
+            "net_r": 0.0,
+            "expectancy_r": null,
+            "profit_factor": null,
+            "no_losses": false,
+            "max_closed_drawdown_r": 0.0,
+            "ambiguous": 0
+          }
+        }
+      }
+    },
+    {
+      "symbol": "ETHUSD",
+      "comparison": {
+        "previous": {
+          "trades": [],
+          "checks": 0,
+          "missed": 0,
+          "unresolved": 0,
+          "reasons": {},
+          "full": {
+            "trades": 0,
+            "wins": 0,
+            "net_r": 0.0,
+            "expectancy_r": null,
+            "profit_factor": null,
+            "no_losses": false,
+            "max_closed_drawdown_r": 0.0,
+            "ambiguous": 0
+          },
+          "shared_funnel": {
+            "scan_boundaries": 7188,
+            "allowed_hour_scans": 2103,
+            "history_atr_spread_ready": 2103,
+            "closed_h1_h4_aligned": 1186,
+            "fresh_zone_location_pass": 1,
+            "entry_confirmation_pass": 0,
+            "confirmed_pattern_pass": 0
+          },
+          "holdout": {
+            "trades": 0,
+            "wins": 0,
+            "net_r": 0.0,
+            "expectancy_r": null,
+            "profit_factor": null,
+            "no_losses": false,
+            "max_closed_drawdown_r": 0.0,
+            "ambiguous": 0
+          }
+        },
+        "updated": {
+          "trades": [],
+          "checks": 0,
+          "missed": 0,
+          "unresolved": 0,
+          "reasons": {},
+          "full": {
+            "trades": 0,
+            "wins": 0,
+            "net_r": 0.0,
+            "expectancy_r": null,
+            "profit_factor": null,
+            "no_losses": false,
+            "max_closed_drawdown_r": 0.0,
+            "ambiguous": 0
+          },
+          "shared_funnel": {
+            "scan_boundaries": 7188,
+            "allowed_hour_scans": 2103,
+            "history_atr_spread_ready": 2103,
+            "closed_h1_h4_aligned": 1186,
+            "fresh_zone_location_pass": 1,
+            "entry_confirmation_pass": 0,
+            "confirmed_pattern_pass": 0
+          },
+          "holdout": {
+            "trades": 0,
+            "wins": 0,
+            "net_r": 0.0,
+            "expectancy_r": null,
+            "profit_factor": null,
+            "no_losses": false,
+            "max_closed_drawdown_r": 0.0,
+            "ambiguous": 0
+          }
+        }
+      }
+    },
+    {
+      "symbol": "SPX500",
+      "comparison": {
+        "previous": {
+          "trades": [],
+          "checks": 0,
+          "missed": 0,
+          "unresolved": 0,
+          "reasons": {},
+          "full": {
+            "trades": 0,
+            "wins": 0,
+            "net_r": 0.0,
+            "expectancy_r": null,
+            "profit_factor": null,
+            "no_losses": false,
+            "max_closed_drawdown_r": 0.0,
+            "ambiguous": 0
+          },
+          "shared_funnel": {
+            "scan_boundaries": 6374,
+            "allowed_hour_scans": 1954,
+            "history_atr_spread_ready": 1954,
+            "closed_h1_h4_aligned": 720,
+            "fresh_zone_location_pass": 0,
+            "entry_confirmation_pass": 0,
+            "confirmed_pattern_pass": 0
+          },
+          "holdout": {
+            "trades": 0,
+            "wins": 0,
+            "net_r": 0.0,
+            "expectancy_r": null,
+            "profit_factor": null,
+            "no_losses": false,
+            "max_closed_drawdown_r": 0.0,
+            "ambiguous": 0
+          }
+        },
+        "updated": {
+          "trades": [],
+          "checks": 0,
+          "missed": 0,
+          "unresolved": 0,
+          "reasons": {},
+          "full": {
+            "trades": 0,
+            "wins": 0,
+            "net_r": 0.0,
+            "expectancy_r": null,
+            "profit_factor": null,
+            "no_losses": false,
+            "max_closed_drawdown_r": 0.0,
+            "ambiguous": 0
+          },
+          "shared_funnel": {
+            "scan_boundaries": 6374,
+            "allowed_hour_scans": 1954,
+            "history_atr_spread_ready": 1954,
+            "closed_h1_h4_aligned": 720,
+            "fresh_zone_location_pass": 0,
+            "entry_confirmation_pass": 0,
+            "confirmed_pattern_pass": 0
+          },
+          "holdout": {
+            "trades": 0,
+            "wins": 0,
+            "net_r": 0.0,
+            "expectancy_r": null,
+            "profit_factor": null,
+            "no_losses": false,
+            "max_closed_drawdown_r": 0.0,
+            "ambiguous": 0
+          }
+        }
+      }
+    },
+    {
+      "symbol": "XAUUSD",
+      "comparison": {
+        "previous": {
+          "trades": [],
+          "checks": 0,
+          "missed": 0,
+          "unresolved": 0,
+          "reasons": {},
+          "full": {
+            "trades": 0,
+            "wins": 0,
+            "net_r": 0.0,
+            "expectancy_r": null,
+            "profit_factor": null,
+            "no_losses": false,
+            "max_closed_drawdown_r": 0.0,
+            "ambiguous": 0
+          },
+          "shared_funnel": {
+            "scan_boundaries": 6351,
+            "allowed_hour_scans": 1946,
+            "history_atr_spread_ready": 1946,
+            "closed_h1_h4_aligned": 1076,
+            "fresh_zone_location_pass": 1,
+            "entry_confirmation_pass": 0,
+            "confirmed_pattern_pass": 0
+          },
+          "holdout": {
+            "trades": 0,
+            "wins": 0,
+            "net_r": 0.0,
+            "expectancy_r": null,
+            "profit_factor": null,
+            "no_losses": false,
+            "max_closed_drawdown_r": 0.0,
+            "ambiguous": 0
+          }
+        },
+        "updated": {
+          "trades": [],
+          "checks": 0,
+          "missed": 0,
+          "unresolved": 0,
+          "reasons": {},
+          "full": {
+            "trades": 0,
+            "wins": 0,
+            "net_r": 0.0,
+            "expectancy_r": null,
+            "profit_factor": null,
+            "no_losses": false,
+            "max_closed_drawdown_r": 0.0,
+            "ambiguous": 0
+          },
+          "shared_funnel": {
+            "scan_boundaries": 6351,
+            "allowed_hour_scans": 1946,
+            "history_atr_spread_ready": 1946,
+            "closed_h1_h4_aligned": 1076,
+            "fresh_zone_location_pass": 1,
+            "entry_confirmation_pass": 0,
+            "confirmed_pattern_pass": 0
+          },
+          "holdout": {
+            "trades": 0,
+            "wins": 0,
+            "net_r": 0.0,
+            "expectancy_r": null,
+            "profit_factor": null,
+            "no_losses": false,
+            "max_closed_drawdown_r": 0.0,
+            "ambiguous": 0
+          }
+        }
+      }
+    }
+  ],
+  "failures": [],
+  "live_edge_confirmed": false,
+  "limitations": [
+    "Historical news, health, consensus and learned trust are unavailable; no values invented.",
+    "Does not replay confluence/directional portfolio scoring or exit management; this isolates structural pattern selection and target checks.",
+    "Desk setup blocks remain enforced live; these are paper counterfactuals, not permission to trade.",
+    "One open paper trade and one entry per UTC day per symbol; no portfolio/account cap replay.",
+    "Bid OHLC with broker spread and 0.05R configured extra cost; conservative stop priority for ambiguous bars.",
+    "Missing spread is forward-filled from past observations only; gapped outcomes are not filled."
+  ],
+  "aggregate": {
+    "previous": {
+      "full": {
+        "trades": 0,
+        "wins": 0,
+        "net_r": 0.0,
+        "expectancy_r": null,
+        "profit_factor": null,
+        "no_losses": false,
+        "max_closed_drawdown_r": 0.0,
+        "ambiguous": 0
+      },
+      "holdout": {
+        "trades": 0,
+        "wins": 0,
+        "net_r": 0.0,
+        "expectancy_r": null,
+        "profit_factor": null,
+        "no_losses": false,
+        "max_closed_drawdown_r": 0.0,
+        "ambiguous": 0
+      }
+    },
+    "updated": {
+      "full": {
+        "trades": 0,
+        "wins": 0,
+        "net_r": 0.0,
+        "expectancy_r": null,
+        "profit_factor": null,
+        "no_losses": false,
+        "max_closed_drawdown_r": 0.0,
+        "ambiguous": 0
+      },
+      "holdout": {
+        "trades": 0,
+        "wins": 0,
+        "net_r": 0.0,
+        "expectancy_r": null,
+        "profit_factor": null,
+        "no_losses": false,
+        "max_closed_drawdown_r": 0.0,
+        "ambiguous": 0
+      }
+    }
+  }
+}

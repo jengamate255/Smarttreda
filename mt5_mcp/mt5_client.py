@@ -67,6 +67,9 @@ class MT5Error(RuntimeError):
     """Raised when the MT5 terminal is unreachable or a request is rejected."""
 
 
+from mt5_mcp.prop_risk import serialized_admission, mark_sending, record_result
+
+
 class MT5Client:
     """Thread-safe wrapper around the MetaTrader 5 Python API."""
 
@@ -341,7 +344,8 @@ class MT5Client:
         if from_pos is None:
             data = self._rates_newest(symbol, tf, tf_name, count)
         else:
-            data = self._call("copy_rates_from_pos", symbol, tf, from_pos, count)
+            native_tf = getattr(self._mt5, "TIMEFRAME_" + tf_name, tf)
+            data = self._call("copy_rates_from_pos", symbol, native_tf, from_pos, count)
         if data is None or len(data) == 0:
             data = self._aggregate_rates(symbol, tf_name, count)
             if data is None or len(data) == 0:
@@ -384,15 +388,25 @@ class MT5Client:
         except Exception:
             pass
         now = datetime.now(timezone.utc)
+        try:
+            tick = self._call("symbol_info_tick", symbol)
+            stamp = tick.get("time", 0) if isinstance(tick, dict) else getattr(tick, "time", 0)
+            if stamp and abs(time.time() - int(stamp)) <= 14 * 3600:
+                # History uses the same server-clock epochs as quotes on some brokers.
+                now = datetime.fromtimestamp(int(stamp), timezone.utc)
+        except Exception:
+            pass
         span = timedelta(seconds=count * tf * 60)
         try:
-            data = self._call("copy_rates_range", symbol, tf, now - span, now)
+            native_tf = getattr(self._mt5, "TIMEFRAME_" + tf_name, tf)
+            data = self._call("copy_rates_range", symbol, native_tf, now - span, now)
             if data is not None and len(data) > 0:
                 return data
         except Exception:
             pass
         try:
-            return self._call("copy_rates_from_pos", symbol, tf, 0, count)
+            native_tf = getattr(self._mt5, "TIMEFRAME_" + tf_name, tf)
+            return self._call("copy_rates_from_pos", symbol, native_tf, 0, count)
         except Exception:
             return None
 
@@ -408,7 +422,8 @@ class MT5Client:
         if from_pos is None:
             data = self._rates_newest(symbol, src_tf, src_tf_name, needed)
         else:
-            data = self._call("copy_rates_from_pos", symbol, src_tf, from_pos, needed)
+            native_tf = getattr(self._mt5, "TIMEFRAME_" + src_tf_name, src_tf)
+            data = self._call("copy_rates_from_pos", symbol, native_tf, from_pos, needed)
         if data is None or len(data) == 0:
             return None
         frame = pd.DataFrame(data)
@@ -458,7 +473,9 @@ class MT5Client:
             if symbol
             else self._call("positions_get")
         )
-        return [self._tuple_to_dict(p) for p in (data or [])]
+        if data is None:
+            raise MT5Error("Open-position evidence unavailable")
+        return [self._tuple_to_dict(p) for p in data]
 
     def pending_orders(self, symbol: str = "") -> list[dict[str, Any]]:
         data = (
@@ -466,7 +483,9 @@ class MT5Client:
             if symbol
             else self._call("orders_get")
         )
-        return [self._tuple_to_dict(o) for o in (data or [])]
+        if data is None:
+            raise MT5Error("Pending-order evidence unavailable")
+        return [self._tuple_to_dict(o) for o in data]
 
     def closed_orders(self, days: int = 30, symbol: str = "") -> list[dict[str, Any]]:
         """Closed orders with realized P&L attached.
@@ -522,6 +541,12 @@ class MT5Client:
             if d.get("type") in (DEAL_TYPE_BUY, DEAL_TYPE_SELL, DEAL_TYPE_BALANCE)
         ]
 
+    def account_deals_since(self, epoch_seconds: int) -> list[dict[str, Any]]:
+        data = self._call("history_deals_get", date_from=int(epoch_seconds), date_to=int(time.time())+86400)
+        if data is None:
+            raise MT5Error("Complete account history unavailable")
+        return [self._tuple_to_dict(d) for d in data]
+
     def deals_since(self, epoch_seconds: int, symbol: str = "") -> list[dict[str, Any]]:
         kwargs: dict[str, Any] = {
             "date_from": epoch_seconds,
@@ -571,8 +596,18 @@ class MT5Client:
     def _filling(self, symbol: str) -> int:
         return self._filling_modes(symbol)[0]
 
+    @serialized_admission
     def order_send(self, request: dict[str, Any]) -> dict[str, Any]:
         request = dict(request)
+        # Every process that reaches this funnel (MCP tools, gateway HTTP,
+        # dashboards, watchers, daemons) is gated here; closing/modifying
+        # requests pass through untouched.
+        from mt5_mcp import execution_gate
+
+        try:
+            execution_gate.require(request, client=self, source="mt5_client")
+        except execution_gate.OrderBlocked as exc:
+            raise MT5Error(f"Order blocked by execution gate: {exc}") from exc
         if "type_time" not in request:
             request["type_time"] = MT5_TIME_GTC_ALIAS
         if "type_filling" in request:
@@ -583,9 +618,20 @@ class MT5Client:
         for attempt_no, filling in enumerate(candidates, start=1):
             attempt = dict(request)
             attempt["type_filling"] = filling
-            result = self._tuple_to_dict(self._call("order_send", attempt))
+            mark_sending()
+            raw = self._call("order_send", attempt)
+            logger.warning("DEBUG order_send raw=%r type=%s", raw, type(raw).__name__)
+            if raw is None:
+                try:
+                    last_err = self._mt5.last_error()
+                    logger.warning("DEBUG mt5.last_error()=%s", last_err)
+                except Exception as e:
+                    logger.warning("DEBUG mt5.last_error() failed: %s", e)
+            result = self._tuple_to_dict(raw)
+            record_result(result)
+            logger.warning("DEBUG order_send result dict=%s", result)
             retcode = result.get("retcode")
-            if retcode in (RETCODE_DONE, RETCODE_PLACED):
+            if retcode in (RETCODE_DONE, RETCODE_PLACED, 10010):
                 return result
             if retcode != RETCODE_INVALID_FILL or attempt_no == len(candidates):
                 break
@@ -628,7 +674,9 @@ class MT5Client:
             return False, "trading disabled for this symbol"
         weekday = time.gmtime().tm_wday
         if weekday >= 5:
-            return False, "market closed (weekend)"
+            from mt5_mcp.compliance import is_synthetic_symbol
+            if not is_synthetic_symbol(symbol):
+                return False, "market closed (weekend)"
         tick = self._tuple_to_dict(self._call("symbol_info_tick", symbol))
         tick_time = int(tick.get("time", 0) or 0)
         if tick_time:

@@ -262,9 +262,13 @@ def main() -> int:
         "trade_watch": {
             "pidfile": "logs/trade_watch.pid",
             "pattern": "run_synthetic_watcher.py",
-            "cmd": [sys.executable, str(ROOT / "run_synthetic_watcher.py"), "--live", "--interval", "15",
-                    "--confidence-floor", "75", "--max-spike-age", "15", "--lookback", "60",
-                    "--log-file", str(ROOT / "logs" / "trade_watch_live.log")],
+            "cmd": [sys.executable, "-X", "utf8", str(ROOT / "run_synthetic_watcher.py"),
+                    "--symbols",
+                    "BOOM1000,BOOM900,BOOM600,BOOM500,BOOM300,BOOM200,BOOM150,BOOM100,BOOM99,BOOM50,"
+                    "CRASH1000,CRASH900,CRASH600,CRASH500,CRASH300,CRASH200,CRASH150,CRASH100,CRASH99,CRASH50",
+                    "--live", "--interval", "15",
+                    "--confidence-floor", "60", "--max-spike-age", "60", "--lookback", "60",
+                    "--log-file", str(ROOT / "logs" / "trade_watch.log")],
             "env": _env_for("DERIV"),
             "log": "logs/dbg_tradewatch.log",
         },

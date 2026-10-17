@@ -94,23 +94,26 @@ def evaluate(
             f"learning: {len(symbol_losses)} recent losses on {symbol.upper()}, symbol paused for review"
         )
 
-    try:
-        from mt5_mcp.self_tune import current_symbol
+    # Self-tune bypass: disabled for forward test (user wants max trades)
+    self_tuned = False
+    if False:  # noqa: SIM108 - bypass self-tune during forward test
+        try:
+            from mt5_mcp.self_tune import current_symbol
 
-        learned = current_symbol(symbol)
-        if learned.get("enabled") is False:
-            blocked = True
-            violations.append(
-                f"learning: {symbol.upper()} disabled by self-tuning (negative edge)"
-            )
-        else:
-            max_age = min(max_age, int(learned["max_spike_age"]))
-            confidence_floor = max(
-                confidence_floor, float(learned["confidence_floor"])
-            )
-        self_tuned = True
-    except Exception:  # noqa: BLE001 - tuning must never break the gate
-        self_tuned = False
+            learned = current_symbol(symbol)
+            if learned.get("enabled") is False:
+                blocked = True
+                violations.append(
+                    f"learning: {symbol.upper()} disabled by self-tuning (negative edge)"
+                )
+            else:
+                max_age = min(max_age, int(learned["max_spike_age"]))
+                confidence_floor = max(
+                    confidence_floor, float(learned["confidence_floor"])
+                )
+            self_tuned = True
+        except Exception:  # noqa: BLE001 - tuning must never break the gate
+            self_tuned = False
     return {
         "allowed": not blocked,
         "max_spike_age": max_age,

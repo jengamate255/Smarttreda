@@ -1,0 +1,7 @@
+{
+  "passed": true,
+  "verified_trades": 0,
+  "history_files_checked": 18,
+  "errors": [],
+  "scope": "Independent OHLC fill, R accounting, timing, nonoverlap/day and cache integrity verification; not evidence of profitability"
+}

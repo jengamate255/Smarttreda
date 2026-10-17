@@ -1,0 +1,52 @@
+[
+  {
+    "id": "xau-retest",
+    "symbol": "XAUUSD",
+    "kind": "zone",
+    "lower": 4365.0,
+    "upper": 4385.0,
+    "direction": "SELL",
+    "note": "broken 100-strength support -> resistance retest; short with reversal candle, SL above 4397",
+    "ttl_minutes": 360
+  },
+  {
+    "id": "eth-bounce",
+    "symbol": "ETHUSD",
+    "kind": "cross",
+    "level": 2490.0,
+    "above": true,
+    "direction": "BUY",
+    "note": "bounce off 7-touch 2480 support confirmed above 2490; SL 2478, TP 2512 then 2524",
+    "ttl_minutes": 360
+  },
+  {
+    "id": "btc-breakout",
+    "symbol": "BTCUSD",
+    "kind": "h1_close",
+    "level": 79217.0,
+    "above": true,
+    "direction": "BUY",
+    "note": "100-strength resistance (5 touches) break; buy retest 79217, SL 78800, TP 80000",
+    "ttl_minutes": 480
+  },
+  {
+    "id": "usoil-breakout",
+    "symbol": "USOIL",
+    "kind": "h1_close",
+    "level": 94.43,
+    "above": true,
+    "direction": "BUY",
+    "note": "rising-channel breakout; buy retest 94.43, SL 93.62, TP 95.13 - RR 0.52 at current levels, wait for better entry",
+    "ttl_minutes": 240
+  },
+  {
+    "id": "xag-entry-ready",
+    "symbol": "XAGUSD",
+    "kind": "cross",
+    "level": 66.15,
+    "above": false,
+    "direction": "BUY",
+    "note": "desk pick: descending triangle + W1/H4/M15 bullish MTF. Entry 66.22, SL 65.16, TP 67.57. Blocked by spread (0.15% > 0.1% limit). Fires when price pulls back below 66.15 for a cleaner entry.",
+    "ttl_minutes": 480
+  }
+]

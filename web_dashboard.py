@@ -580,7 +580,11 @@ def _fetch_rates_raw(symbol: str, tf_key: str, count: int):
 
     # client.rates() returns a pandas DataFrame with columns: time, open, high, low, close, tick_volume, spread
     df = data
-    times = df["time"].astype("int64").values.astype(int).tolist()  # convert to Python int list
+    if pd.api.types.is_numeric_dtype(df["time"]):
+        times = df["time"].astype("int64").tolist()
+    else:
+        # Pandas datetime storage may use ns or us; chart timestamps are seconds.
+        times = pd.to_datetime(df["time"], utc=True).to_numpy(dtype="datetime64[s]").astype("int64").tolist()
     opens = df["open"].values.tolist()
     highs = df["high"].values.tolist()
     lows = df["low"].values.tolist()
@@ -672,7 +676,8 @@ def rates(symbol: str = "EURUSD", timeframe: str = "H1", count: int = Query(300,
         macd_hist = _sanitize(_pad_front(macd_hist, n))
 
         tick = mt5.symbol_info_tick(symbol)
-        point = mt5.symbol_info(symbol).point if mt5.symbol_info(symbol) else 0.0
+        symbol_info = mt5.symbol_info(symbol)
+        point = symbol_info.point if symbol_info else 0.0
         spread = 0
         if tick and point and point > 0:
             try:
@@ -684,6 +689,8 @@ def rates(symbol: str = "EURUSD", timeframe: str = "H1", count: int = Query(300,
             "symbol": symbol,
             "timeframe": timeframe,
             "count": n,
+            "digits": int(symbol_info.digits) if symbol_info else None,
+            "point": float(point),
             "times": times,
             "open": opens,
             "high": highs,
@@ -1318,6 +1325,114 @@ def journal_distribution(days: int = Query(30, ge=1, le=365)):
         return {"error": str(exc)}
 
 
+# ---------- Strategy Performance Dashboard ----------
+
+@app.get("/api/strategy_performance")
+def strategy_performance(
+    window_30: bool = True,
+    window_60: bool = True,
+    window_90: bool = True,
+):
+    """Per-strategy performance metrics with rolling windows (30/60/90 days).
+
+    Groups journal trades by setup (strategy) field and calculates:
+    total trades, win rate, total P&L, profit factor, avg RR.
+    """
+    try:
+        j = get_journal()
+        now = datetime.datetime.now(datetime.timezone.utc)
+
+        windows = {}
+        for label, days in [("30d", 30), ("60d", 60), ("90d", 90)]:
+            if label == "30d" and not window_30:
+                continue
+            if label == "60d" and not window_60:
+                continue
+            if label == "90d" and not window_90:
+                continue
+
+            cutoff = (now - datetime.timedelta(days=days)).isoformat()
+            with j._lock:
+                conn = j._conn()
+                rows = conn.execute(
+                    "SELECT setup, pnl, rr, outcome FROM trades "
+                    "WHERE close_time >= ? AND pnl IS NOT NULL "
+                    "ORDER BY close_time ASC",
+                    [cutoff],
+                ).fetchall()
+
+            # Group by strategy/setup
+            by_setup: dict[str, dict] = {}
+            for row in rows:
+                setup = row["setup"] or "manual"
+                if setup not in by_setup:
+                    by_setup[setup] = {
+                        "trades": 0, "wins": 0, "losses": 0,
+                        "pnl": 0.0, "gross_win": 0.0, "gross_loss": 0.0,
+                        "rr_values": [],
+                    }
+                s = by_setup[setup]
+                s["trades"] += 1
+                pnl = float(row["pnl"] or 0.0)
+                s["pnl"] += pnl
+                if pnl > 0:
+                    s["wins"] += 1
+                    s["gross_win"] += pnl
+                elif pnl < 0:
+                    s["losses"] += 1
+                    s["gross_loss"] += abs(pnl)
+                if row["rr"] is not None:
+                    s["rr_values"].append(float(row["rr"]))
+
+            # Compute derived metrics
+            strategies = {}
+            for name, s in by_setup.items():
+                total = s["wins"] + s["losses"]
+                pf = (
+                    round(s["gross_win"] / s["gross_loss"], 2)
+                    if s["gross_loss"] > 0
+                    else (999.0 if s["gross_win"] > 0 else 0.0)
+                )
+                rr_vals = s["rr_values"]
+                strategies[name] = {
+                    "trades": s["trades"],
+                    "wins": s["wins"],
+                    "losses": s["losses"],
+                    "win_rate": round(s["wins"] / total * 100, 1) if total else 0.0,
+                    "total_pnl": round(s["pnl"], 2),
+                    "profit_factor": pf,
+                    "avg_rr": round(sum(rr_vals) / len(rr_vals), 2) if rr_vals else 0.0,
+                    "avg_win": round(s["gross_win"] / s["wins"], 2) if s["wins"] else 0.0,
+                    "avg_loss": round(s["gross_loss"] / s["losses"], 2) if s["losses"] else 0.0,
+                }
+
+            # Overall totals for this window
+            all_pnls = [float(r["pnl"] or 0.0) for r in rows]
+            all_wins = [p for p in all_pnls if p > 0]
+            all_losses_p = [p for p in all_pnls if p < 0]
+            total_gw = sum(all_wins)
+            total_gl = abs(sum(all_losses_p))
+            total_trades = len(all_pnls)
+            total_wins = len(all_wins)
+
+            windows[label] = {
+                "days": days,
+                "total_trades": total_trades,
+                "total_wins": total_wins,
+                "total_pnl": round(sum(all_pnls), 2),
+                "win_rate": round(total_wins / total_trades * 100, 1) if total_trades else 0.0,
+                "profit_factor": round(total_gw / total_gl, 2) if total_gl > 0 else (
+                    999.0 if total_gw > 0 else 0.0
+                ),
+                "strategies": strategies,
+            }
+
+        return {"windows": windows}
+    except Exception as exc:
+        logger.warning("strategy performance failed: %s", exc)
+        return {"error": str(exc)}
+
+
 # ---------- Extracted routers ----------
 from web_backtests import router as backtests_router  # noqa: E402
 import web_boomcrash as _boomcrash  # noqa: E402
@@ -1359,6 +1474,9 @@ app.include_router(_boomcrash.router)
 import web_account as _account_mod
 _account_mod.configure(require_connected=_require_connected, tick_quote=_tick_quote)
 app.include_router(account_router)
+
+from web_challenge import router as challenge_router  # noqa: E402
+app.include_router(challenge_router)
 
 
 
@@ -1919,6 +2037,38 @@ def _summary_snapshot() -> dict:
         return {"type": "summary", "connected": False}
 
 
+def _breakout_snapshot():
+    """Collect read-only breakout candidates outside the HTTP event loop."""
+    from forex_breakout_watch import _find_breakout, FOREX_SYMBOLS
+
+    args = _forex_args()
+    args.confidence_floor = 25.0
+    args.live = False
+    client = get_client()
+    client.ensure_connected()
+    signals = []
+    for sym in FOREX_SYMBOLS:
+        try:
+            if _has_exposure(client, sym):
+                continue
+            setup = _find_breakout(client, None, args, sym)
+            if setup:
+                signals.append({
+                    "symbol": sym,
+                    "side": setup["side"],
+                    "entry": round(setup["entry"], 5),
+                    "sl": round(setup["sl"], 5),
+                    "tp": round(setup["tp"], 5),
+                    "confidence": round(setup["confidence"], 1),
+                    "range_high": round(setup["range_high"], 5),
+                    "range_low": round(setup["range_low"], 5),
+                    "atr": round(setup["atr"], 5),
+                })
+        except Exception:
+            logger.debug("Breakout snapshot unavailable for %s", sym, exc_info=True)
+    return sorted(signals, key=lambda signal: signal["confidence"], reverse=True)
+
+
 async def _ws_broadcast_loop():
     """Broadcast live account/position/compliance/breakout updates to all WS clients."""
     position_interval = 3  # seconds (was 1 - hammered MT5 IPC 86k times/day)
@@ -1980,7 +2130,7 @@ async def _ws_broadcast_loop():
             if now - last_compliance >= compliance_interval:
                 try:
                     from mt5_mcp.compliance import evaluate as compliance_evaluate
-                    comp = compliance_evaluate()
+                    comp = await asyncio.to_thread(compliance_evaluate)
                     payload["compliance"] = {
                         "mode": comp.get("mode"),
                         "halt_reason": comp.get("halt_reason", ""),
@@ -2001,39 +2151,7 @@ async def _ws_broadcast_loop():
                         subs_snapshot = list(_ws_subscriptions.values())
                     has_forex_viewer = any("forex-breakout" in s for s in subs_snapshot)
                     if has_forex_viewer:
-                        from forex_breakout_watch import _find_breakout
-                        from forex_breakout_watch import FOREX_SYMBOLS
-                        
-                        args = _forex_args()
-                        args.confidence_floor = 25.0  # show all candidates
-                        args.live = False
-                        
-                        client = get_client()
-                        client.ensure_connected()
-                        
-                        breakout_signals = []
-                        for sym in FOREX_SYMBOLS:
-                            try:
-                                if _has_exposure(client, sym):
-                                    continue
-                                setup = _find_breakout(client, None, args, sym)
-                                if setup:
-                                    breakout_signals.append({
-                                        "symbol": sym,
-                                        "side": setup["side"],
-                                        "entry": round(setup["entry"], 5),
-                                        "sl": round(setup["sl"], 5),
-                                        "tp": round(setup["tp"], 5),
-                                        "confidence": round(setup["confidence"], 1),
-                                        "range_high": round(setup["range_high"], 5),
-                                        "range_low": round(setup["range_low"], 5),
-                                        "atr": round(setup["atr"], 5),
-                                    })
-                            except Exception:
-                                pass
-                        
-                        if breakout_signals:
-                            payload["breakout_signals"] = sorted(breakout_signals, key=lambda x: x["confidence"], reverse=True)
+                        payload["breakout_signals"] = await asyncio.to_thread(_breakout_snapshot)
                     last_breakout = now
                 except Exception:
                     pass

@@ -70,6 +70,7 @@ class BacktestParams:
     min_zone_score: float = 70.0
     min_trade_score: float = 70.0
     min_confidence_percent: float = 60.0
+    max_confidence_percent: float = 100.0  # upper confidence bound (100 = off)
     lookback: int = 400
     risk_percent: float = 0.5
     tp_min: float = 80.0
@@ -132,6 +133,7 @@ class TradeRecord:
     trend_confidence: float
     zone_strength: float
     confirmation: str
+    confidence: float = 0.0
     ml_score: float = 0.0
     total_cost: float = 0.0  # spread + slippage + commission in account currency
     regime: str = ""  # "trend", "range", "volatile"
@@ -639,6 +641,8 @@ class Backtester:
         if best_zone is None:
             return None
         zone_atr = max(zone_atrs) if zone_atrs else 1e-9
+        # DEBUG
+        # import sys; print(f"ZONE_OK bar={i} trend={trend.direction} zone_str={best_zone.strength:.1f}", file=sys.stderr)
 
         confirm_frame = self.frames[p.confirmation_timeframe].iloc[
             : int(positions[p.confirmation_timeframe][i])
@@ -684,6 +688,7 @@ class Backtester:
         entry, sl, tp, sl_pips, tp_pips, _ = _choose_entry_math(
             action, entry_price, best_zone, zone_atr, self.pip,
             p.sl_min, p.tp_min, p.tp_max, p.min_rr,
+            sl_max=p.sl_max,
         )
         if entry is None:
             return None
@@ -692,6 +697,8 @@ class Backtester:
             trend.confidence, float(best_zone.strength), confirmation.confidence, rr, p.min_rr
         )
         if trade_score < p.min_trade_score or confidence < p.min_confidence_percent:
+            return None
+        if confidence > p.max_confidence_percent:
             return None
 
         # Sizing variants
@@ -750,6 +757,7 @@ class Backtester:
             trend_confidence=round(trend.confidence, 3),
             zone_strength=float(best_zone.strength),
             confirmation=f"{confirmation.pattern} ({confirmation.direction})",
+            confidence=round(confidence, 2),
             ml_score=round(ml_score, 3),
             total_cost=round(total_cost, 2),
             regime=regime,
@@ -1014,11 +1022,14 @@ def load_frames(
 
 
 def _variant_name(p: BacktestParams) -> str:
-    return (
+    name = (
         f"{p.symbol}_{p.trend_timeframe}_"
         f"{'+'.join(p.zone_timeframes)}_z{int(p.min_zone_score)}"
         f"_rr{p.min_rr:g}_tp{p.tp_min:g}-{p.tp_max:g}"
+        f"_conf{p.min_confidence_percent:g}-{p.max_confidence_percent:g}"
+        f"_score{p.min_trade_score:g}_risk{p.risk_percent:g}"
     )
+    return name
 
 
 def save_result(result: BacktestResult, out_dir: Path) -> Path:
@@ -1045,6 +1056,10 @@ def rebuild_summary(out_dir: Path) -> Path:
                 "trend_tf": data["params"]["trend_timeframe"],
                 "zone_tfs": "+".join(data["params"]["zone_timeframes"]),
                 "min_zone_score": data["params"]["min_zone_score"],
+                "min_conf": data["params"].get("min_confidence_percent", ""),
+                "max_conf": data["params"].get("max_confidence_percent", ""),
+                "min_score": data["params"].get("min_trade_score", ""),
+                "risk": data["params"].get("risk_percent", ""),
                 "min_rr": data["params"]["min_rr"],
                 "tp_min": data["params"]["tp_min"],
                 "tp_max": data["params"]["tp_max"],
@@ -1130,8 +1145,13 @@ def sensitivity_analysis(
         ]
 
     results: dict[str, list[dict]] = {}
+    print("  running base backtest...", flush=True)
     base_result = Backtester(base_params, frames, info).run()
 
+    n_params = len([n for n in params_to_sweep
+                    if isinstance(getattr(base_params, n, None), (int, float))])
+    step_i = 0
+    total_steps = max(1, n_params * steps)
     for param_name in params_to_sweep:
         base_val = getattr(base_params, param_name, None)
         if base_val is None or not isinstance(base_val, (int, float)):
@@ -1144,6 +1164,13 @@ def sensitivity_analysis(
             setattr(p_copy, param_name, new_val)
             bt = Backtester(p_copy, frames, info)
             r = bt.run()
+            step_i += 1
+            if step_i % 5 == 0 or step_i == total_steps:
+                print(
+                    f"  sweep {step_i}/{total_steps} "
+                    f"({param_name}={new_val}) pf={r.profit_factor:.3f}",
+                    flush=True,
+                )
             sweep.append({
                 "value": new_val,
                 "pct_change": round(pct * 100, 1),
@@ -1245,6 +1272,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--zone-tfs", default="H1,H4", help="comma-separated timeframes")
     parser.add_argument("--confirm-tf", default="H1")
     parser.add_argument("--min-zone-score", type=float, default=70.0)
+    parser.add_argument("--min-conf", type=float, default=60.0)
+    parser.add_argument("--max-conf", type=float, default=100.0)
+    parser.add_argument("--min-score", type=float, default=70.0)
     parser.add_argument("--risk", type=float, default=0.5)
     parser.add_argument("--tp-min", type=float, default=80.0)
     parser.add_argument("--tp-max", type=float, default=100.0)
@@ -1293,6 +1323,9 @@ def main(argv: list[str] | None = None) -> int:
                 zone_timeframes=[tf.upper() for tf in args.zone_tfs.split(",") if tf.strip()],
                 confirmation_timeframe=args.confirm_tf.upper(),
                 min_zone_score=args.min_zone_score,
+                min_confidence_percent=args.min_conf,
+                max_confidence_percent=args.max_conf,
+                min_trade_score=args.min_score,
                 risk_percent=args.risk,
                 tp_min=args.tp_min,
                 tp_max=args.tp_max,

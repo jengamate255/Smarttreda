@@ -95,9 +95,11 @@ MT5_TIME_GTC_ALIAS = 0
 ORDER_FILLING_FOK = 0
 ORDER_FILLING_IOC = 1
 ORDER_FILLING_RETURN = 2
+ORDER_FILLING_BOC = 3
 
 RETCODE_DONE = 10009
 RETCODE_PLACED = 10008
+RETCODE_INVALID_FILL = 10030
 
 T = TypeVar("T", bound=Callable[..., Any])
 
@@ -168,6 +170,7 @@ class TradePlan(BaseModel):
     tp_pips: float | None = None
     risk_reward: float | None = None
     htf_trend: str = ""
+    trend_confidence: float = 0.0
     confirmation: str = ""
     confirmation_confidence: float = 0.0
     zone_strength: float = 0.0
@@ -255,12 +258,135 @@ def price_to_pips(distance: float, info: Any) -> float:
     return distance / pip if pip else 0.0
 
 
-def pip_value_per_lot(info: Any) -> float:
+def _formula_pip_value(info: Any) -> float:
+    """Pip value implied by the broker-reported tick value (no validation)."""
     tick_size = _attr(info, "trade_tick_size") or _attr(info, "tick_size") or 0.0
     tick_value = _attr(info, "trade_tick_value") or _attr(info, "tick_value") or 0.0
     if not tick_size:
         return 0.0
     return tick_value / tick_size * pip_size(info)
+
+
+# Brokers occasionally under-report ``trade_tick_value`` for symbols whose
+# profit currency equals the account currency. XAUUSD on FundingPips reports
+# trade_tick_value = 0.01 where the true value is $1.00 (100x low); USOIL is
+# 1000x low and XAGUSD 10x low. Because compliance.py derives both the
+# per-trade risk and the portfolio open-risk cap from this number, an
+# under-report silently disables the risk caps: a 0.20 lot gold trade that the
+# gate scores as $5.97 of risk actually risks $597 (6.2% of equity, not 0.5%).
+#
+# Resolution order, most authoritative first:
+#   1. order_calc_profit  - the broker's own P/L math, when a session is live
+#                           (cached per symbol, at most one IPC per process).
+#   2. contract x pip     - exact whenever the profit currency IS the account
+#                           currency, so no FX conversion is involved.
+#   3. tick value formula - correct for cross-currency quotes (JPY/CAD/CHF/...)
+#                           and the offline/backtest fallback.
+#
+# A negative lookup is never cached, so a helper called before the first
+# connect still resolves correctly once a session exists.
+_ACCOUNT_CCY: str | None = None
+_ACCOUNT_CCY_GAVE_UP = False
+_ACCOUNT_CCY_ERRORS = 0
+_PIP_VALUE_CACHE: dict[str, float] = {}
+
+
+def reset_pip_value_cache(currency: str | None = None) -> None:
+    """Drop cached pip-value state (tests, or after switching account)."""
+    global _ACCOUNT_CCY, _ACCOUNT_CCY_GAVE_UP, _ACCOUNT_CCY_ERRORS
+    _ACCOUNT_CCY = currency.upper() if currency else None
+    _ACCOUNT_CCY_GAVE_UP = bool(currency)
+    _ACCOUNT_CCY_ERRORS = 0
+    _PIP_VALUE_CACHE.clear()
+
+
+def account_currency() -> str | None:
+    """Account currency of the live session, cached. None when unknown."""
+    global _ACCOUNT_CCY, _ACCOUNT_CCY_GAVE_UP, _ACCOUNT_CCY_ERRORS
+    if _ACCOUNT_CCY:
+        return _ACCOUNT_CCY
+    if _ACCOUNT_CCY_GAVE_UP:
+        return None
+    try:
+        from mt5_mcp.client import get_client
+
+        client = get_client()
+        if not getattr(client, "connected", False):
+            # Unresolved rather than failed: never connect from here (this
+            # helper is called inside backtests that must stay offline).
+            return None
+        _ACCOUNT_CCY = str(client.account_info().get("currency") or "").upper()
+    except Exception:  # noqa: BLE001 - offline / import cycle / bad config
+        _ACCOUNT_CCY_ERRORS += 1
+        if _ACCOUNT_CCY_ERRORS >= 3:
+            _ACCOUNT_CCY_GAVE_UP = True
+        return None
+    if not _ACCOUNT_CCY:
+        _ACCOUNT_CCY_GAVE_UP = True
+    return _ACCOUNT_CCY or None
+
+
+def _broker_pip_value(symbol: str, info: Any) -> float:
+    """One pip for 1.00 lot straight from the broker's P/L math, else 0.0."""
+    pip = pip_size(info)
+    if not symbol or pip <= 0:
+        return 0.0
+    try:
+        from mt5_mcp.client import get_client
+
+        client = get_client()
+        if not getattr(client, "connected", False):
+            return 0.0
+        ask = float(_attr(info, "ask") or 0.0)
+        if ask <= 0:
+            ask = float(client.tick(symbol).get("ask") or 0.0)
+        if ask <= 0:
+            return 0.0
+        return abs(
+            client.order_calc_profit(ORDER_TYPE_BUY, symbol, 1.0, ask, ask + pip)
+        )
+    except Exception:  # noqa: BLE001 - the probe is best-effort
+        return 0.0
+
+
+def pip_value_per_lot(info: Any, symbol: str | None = None) -> float:
+    """Account-currency value of one pip for 1.00 lot.
+
+    Repairs brokers that under-report ``trade_tick_value`` (see the block
+    comment above). ``symbol`` is optional -- it is taken from ``info["name"]``
+    when omitted, and only used to cache broker probes.
+    """
+    formula = _formula_pip_value(info)
+    name = str(symbol or _attr(info, "name") or "")
+    cached = _PIP_VALUE_CACHE.get(name) if name else None
+    if cached is not None:
+        return cached
+
+    contract = float(_attr(info, "trade_contract_size") or 0.0)
+    profit_ccy = str(_attr(info, "currency_profit") or "").upper()
+    account_ccy = account_currency()
+    expected = 0.0
+    if contract > 0 and account_ccy and profit_ccy == account_ccy:
+        # 1.0 of price on 1.00 lot is worth contract_size, no FX involved.
+        expected = contract * pip_size(info)
+
+    probe = _broker_pip_value(name, info) if name else 0.0
+    if probe > 0 and (not expected or abs(probe - expected) <= expected * 0.35):
+        if name:
+            _PIP_VALUE_CACHE[name] = probe
+        return probe
+    if expected > 0 and formula < expected * 0.9:
+        logger.warning(
+            "pip_value_per_lot: broker under-reports %s (reported %.6f/lot/pip "
+            "vs %.6f expected) -- using contract maths",
+            name or profit_ccy,
+            formula,
+            expected,
+        )
+        if name:
+            _PIP_VALUE_CACHE[name] = expected
+        return expected
+    return formula
 
 
 def round_to_step(

@@ -1,0 +1,707 @@
+{
+ "generated": "2026-10-10 22:36:34",
+ "bars": 10000,
+ "stage_a_only": false,
+ "spreads_snapshot": {
+  "EURUSD": 5.0
+ },
+ "symbols": {
+  "EURUSD": {
+   "base_config": {
+    "symbol": "EURUSD",
+    "trend_timeframe": "H4",
+    "zone_timeframes": [
+     "H1"
+    ],
+    "confirmation_timeframe": "H1",
+    "min_zone_score": 65.0,
+    "min_trade_score": 70.0,
+    "min_confidence_percent": 65.0,
+    "lookback": 400,
+    "risk_percent": 0.25,
+    "tp_min": 50.0,
+    "tp_max": 75.0,
+    "sl_min": 12.0,
+    "sl_max": 22.0,
+    "min_rr": 2.5,
+    "bars": 10000
+   },
+   "baseline": {
+    "realistic": {
+     "cost": "realistic",
+     "n": 3,
+     "pf": 0.329,
+     "wr": 33.3,
+     "net": -52.69,
+     "dd": 0.79,
+     "avg_rr": 5.21,
+     "thirds": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "holdout": {
+      "n": 0,
+      "pf": null
+     },
+     "boot": null,
+     "verdict": "FAIL",
+     "tp_sl_to": [
+      0,
+      3,
+      0
+     ],
+     "window": [
+      "2026-02-02T04:00:00",
+      "2026-10-09T23:00:00"
+     ],
+     "errors": []
+    },
+    "canonical": {
+     "cost": "canonical",
+     "n": 3,
+     "pf": 0.04,
+     "wr": 33.3,
+     "net": -115.69,
+     "dd": 1.21,
+     "avg_rr": 5.21,
+     "thirds": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "holdout": {
+      "n": 0,
+      "pf": null
+     },
+     "boot": null,
+     "verdict": "FAIL",
+     "tp_sl_to": [
+      0,
+      3,
+      0
+     ],
+     "window": [
+      "2026-02-02T04:00:00",
+      "2026-10-09T23:00:00"
+     ],
+     "errors": []
+    }
+   },
+   "sensitivity": [
+    [
+     "zone",
+     "z50",
+     {
+      "cost": "realistic",
+      "n": 3,
+      "pf": 0.329,
+      "wr": 33.3,
+      "net": -52.69,
+      "dd": 0.79,
+      "avg_rr": 5.21,
+      "thirds": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "holdout": {
+       "n": 0,
+       "pf": null
+      },
+      "boot": null,
+      "verdict": "FAIL",
+      "tp_sl_to": [
+       0,
+       3,
+       0
+      ],
+      "window": [
+       "2026-02-02T04:00:00",
+       "2026-10-09T23:00:00"
+      ],
+      "errors": []
+     }
+    ],
+    [
+     "zone",
+     "z55",
+     {
+      "cost": "realistic",
+      "n": 3,
+      "pf": 0.329,
+      "wr": 33.3,
+      "net": -52.69,
+      "dd": 0.79,
+      "avg_rr": 5.21,
+      "thirds": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "holdout": {
+       "n": 0,
+       "pf": null
+      },
+      "boot": null,
+      "verdict": "FAIL",
+      "tp_sl_to": [
+       0,
+       3,
+       0
+      ],
+      "window": [
+       "2026-02-02T04:00:00",
+       "2026-10-09T23:00:00"
+      ],
+      "errors": []
+     }
+    ],
+    [
+     "zone",
+     "z60",
+     {
+      "cost": "realistic",
+      "n": 3,
+      "pf": 0.329,
+      "wr": 33.3,
+      "net": -52.69,
+      "dd": 0.79,
+      "avg_rr": 5.21,
+      "thirds": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "holdout": {
+       "n": 0,
+       "pf": null
+      },
+      "boot": null,
+      "verdict": "FAIL",
+      "tp_sl_to": [
+       0,
+       3,
+       0
+      ],
+      "window": [
+       "2026-02-02T04:00:00",
+       "2026-10-09T23:00:00"
+      ],
+      "errors": []
+     }
+    ],
+    [
+     "zone",
+     "z65",
+     {
+      "cost": "realistic",
+      "n": 3,
+      "pf": 0.329,
+      "wr": 33.3,
+      "net": -52.69,
+      "dd": 0.79,
+      "avg_rr": 5.21,
+      "thirds": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "holdout": {
+       "n": 0,
+       "pf": null
+      },
+      "boot": null,
+      "verdict": "FAIL",
+      "tp_sl_to": [
+       0,
+       3,
+       0
+      ],
+      "window": [
+       "2026-02-02T04:00:00",
+       "2026-10-09T23:00:00"
+      ],
+      "errors": []
+     }
+    ],
+    [
+     "zone",
+     "z70",
+     {
+      "cost": "realistic",
+      "n": 3,
+      "pf": 0.329,
+      "wr": 33.3,
+      "net": -52.69,
+      "dd": 0.79,
+      "avg_rr": 5.21,
+      "thirds": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "holdout": {
+       "n": 0,
+       "pf": null
+      },
+      "boot": null,
+      "verdict": "FAIL",
+      "tp_sl_to": [
+       0,
+       3,
+       0
+      ],
+      "window": [
+       "2026-02-02T04:00:00",
+       "2026-10-09T23:00:00"
+      ],
+      "errors": []
+     }
+    ],
+    [
+     "zone",
+     "z75",
+     {
+      "cost": "realistic",
+      "n": 3,
+      "pf": 0.329,
+      "wr": 33.3,
+      "net": -52.69,
+      "dd": 0.79,
+      "avg_rr": 5.21,
+      "thirds": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "holdout": {
+       "n": 0,
+       "pf": null
+      },
+      "boot": null,
+      "verdict": "FAIL",
+      "tp_sl_to": [
+       0,
+       3,
+       0
+      ],
+      "window": [
+       "2026-02-02T04:00:00",
+       "2026-10-09T23:00:00"
+      ],
+      "errors": []
+     }
+    ],
+    [
+     "zone",
+     "z80",
+     {
+      "cost": "realistic",
+      "n": 3,
+      "pf": 0.329,
+      "wr": 33.3,
+      "net": -52.69,
+      "dd": 0.79,
+      "avg_rr": 5.21,
+      "thirds": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "holdout": {
+       "n": 0,
+       "pf": null
+      },
+      "boot": null,
+      "verdict": "FAIL",
+      "tp_sl_to": [
+       0,
+       3,
+       0
+      ],
+      "window": [
+       "2026-02-02T04:00:00",
+       "2026-10-09T23:00:00"
+      ],
+      "errors": []
+     }
+    ],
+    [
+     "rr",
+     "rr1.8",
+     {
+      "cost": "realistic",
+      "n": 3,
+      "pf": 0.329,
+      "wr": 33.3,
+      "net": -52.69,
+      "dd": 0.79,
+      "avg_rr": 5.21,
+      "thirds": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "holdout": {
+       "n": 0,
+       "pf": null
+      },
+      "boot": null,
+      "verdict": "FAIL",
+      "tp_sl_to": [
+       0,
+       3,
+       0
+      ],
+      "window": [
+       "2026-02-02T04:00:00",
+       "2026-10-09T23:00:00"
+      ],
+      "errors": []
+     }
+    ],
+    [
+     "rr",
+     "rr2",
+     {
+      "cost": "realistic",
+      "n": 3,
+      "pf": 0.329,
+      "wr": 33.3,
+      "net": -52.69,
+      "dd": 0.79,
+      "avg_rr": 5.21,
+      "thirds": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "holdout": {
+       "n": 0,
+       "pf": null
+      },
+      "boot": null,
+      "verdict": "FAIL",
+      "tp_sl_to": [
+       0,
+       3,
+       0
+      ],
+      "window": [
+       "2026-02-02T04:00:00",
+       "2026-10-09T23:00:00"
+      ],
+      "errors": []
+     }
+    ],
+    [
+     "rr",
+     "rr2.2",
+     {
+      "cost": "realistic",
+      "n": 3,
+      "pf": 0.329,
+      "wr": 33.3,
+      "net": -52.69,
+      "dd": 0.79,
+      "avg_rr": 5.21,
+      "thirds": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "holdout": {
+       "n": 0,
+       "pf": null
+      },
+      "boot": null,
+      "verdict": "FAIL",
+      "tp_sl_to": [
+       0,
+       3,
+       0
+      ],
+      "window": [
+       "2026-02-02T04:00:00",
+       "2026-10-09T23:00:00"
+      ],
+      "errors": []
+     }
+    ],
+    [
+     "rr",
+     "rr2.5",
+     {
+      "cost": "realistic",
+      "n": 3,
+      "pf": 0.329,
+      "wr": 33.3,
+      "net": -52.69,
+      "dd": 0.79,
+      "avg_rr": 5.21,
+      "thirds": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "holdout": {
+       "n": 0,
+       "pf": null
+      },
+      "boot": null,
+      "verdict": "FAIL",
+      "tp_sl_to": [
+       0,
+       3,
+       0
+      ],
+      "window": [
+       "2026-02-02T04:00:00",
+       "2026-10-09T23:00:00"
+      ],
+      "errors": []
+     }
+    ],
+    [
+     "rr",
+     "rr3",
+     {
+      "cost": "realistic",
+      "n": 3,
+      "pf": 0.329,
+      "wr": 33.3,
+      "net": -52.69,
+      "dd": 0.79,
+      "avg_rr": 5.21,
+      "thirds": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "holdout": {
+       "n": 0,
+       "pf": null
+      },
+      "boot": null,
+      "verdict": "FAIL",
+      "tp_sl_to": [
+       0,
+       3,
+       0
+      ],
+      "window": [
+       "2026-02-02T04:00:00",
+       "2026-10-09T23:00:00"
+      ],
+      "errors": []
+     }
+    ],
+    [
+     "exits",
+     "live",
+     {
+      "cost": "realistic",
+      "n": 3,
+      "pf": 0.329,
+      "wr": 33.3,
+      "net": -52.69,
+      "dd": 0.79,
+      "avg_rr": 5.21,
+      "thirds": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "holdout": {
+       "n": 0,
+       "pf": null
+      },
+      "boot": null,
+      "verdict": "FAIL",
+      "tp_sl_to": [
+       0,
+       3,
+       0
+      ],
+      "window": [
+       "2026-02-02T04:00:00",
+       "2026-10-09T23:00:00"
+      ],
+      "errors": []
+     }
+    ],
+    [
+     "exits",
+     "notrail",
+     {
+      "cost": "realistic",
+      "n": 3,
+      "pf": 2.456,
+      "wr": 33.3,
+      "net": 114.35,
+      "dd": 0.79,
+      "avg_rr": 5.21,
+      "thirds": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "holdout": {
+       "n": 0,
+       "pf": null
+      },
+      "boot": null,
+      "verdict": "FAIL",
+      "tp_sl_to": [
+       0,
+       2,
+       1
+      ],
+      "window": [
+       "2026-02-02T04:00:00",
+       "2026-10-09T23:00:00"
+      ],
+      "errors": []
+     }
+    ],
+    [
+     "exits",
+     "nopartial",
+     {
+      "cost": "realistic",
+      "n": 3,
+      "pf": 0.329,
+      "wr": 33.3,
+      "net": -52.69,
+      "dd": 0.79,
+      "avg_rr": 5.21,
+      "thirds": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "holdout": {
+       "n": 0,
+       "pf": null
+      },
+      "boot": null,
+      "verdict": "FAIL",
+      "tp_sl_to": [
+       0,
+       3,
+       0
+      ],
+      "window": [
+       "2026-02-02T04:00:00",
+       "2026-10-09T23:00:00"
+      ],
+      "errors": []
+     }
+    ],
+    [
+     "exits",
+     "plain",
+     {
+      "cost": "realistic",
+      "n": 3,
+      "pf": 1.492,
+      "wr": 33.3,
+      "net": 38.64,
+      "dd": 0.79,
+      "avg_rr": 5.21,
+      "thirds": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "holdout": {
+       "n": 0,
+       "pf": null
+      },
+      "boot": null,
+      "verdict": "FAIL",
+      "tp_sl_to": [
+       1,
+       2,
+       0
+      ],
+      "window": [
+       "2026-02-02T04:00:00",
+       "2026-10-09T23:00:00"
+      ],
+      "errors": []
+     }
+    ],
+    [
+     "exits",
+     "hold120",
+     {
+      "cost": "realistic",
+      "n": 3,
+      "pf": 0.329,
+      "wr": 33.3,
+      "net": -52.69,
+      "dd": 0.79,
+      "avg_rr": 5.21,
+      "thirds": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "holdout": {
+       "n": 0,
+       "pf": null
+      },
+      "boot": null,
+      "verdict": "FAIL",
+      "tp_sl_to": [
+       0,
+       3,
+       0
+      ],
+      "window": [
+       "2026-02-02T04:00:00",
+       "2026-10-09T23:00:00"
+      ],
+      "errors": []
+     }
+    ],
+    [
+     "exits",
+     "hold200",
+     {
+      "cost": "realistic",
+      "n": 3,
+      "pf": 0.329,
+      "wr": 33.3,
+      "net": -52.69,
+      "dd": 0.79,
+      "avg_rr": 5.21,
+      "thirds": [
+       0.0,
+       0.0,
+       0.0
+      ],
+      "holdout": {
+       "n": 0,
+       "pf": null
+      },
+      "boot": null,
+      "verdict": "FAIL",
+      "tp_sl_to": [
+       0,
+       3,
+       0
+      ],
+      "window": [
+       "2026-02-02T04:00:00",
+       "2026-10-09T23:00:00"
+      ],
+      "errors": []
+     }
+    ]
+   ]
+  }
+ }
+}

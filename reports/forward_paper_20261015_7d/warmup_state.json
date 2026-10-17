@@ -1,0 +1,98 @@
+{
+  "status": "running",
+  "last_run": 1792018665.9467654,
+  "books": {
+    "trend_zone": {
+      "positions": [],
+      "closed": [],
+      "seen": {},
+      "days": {}
+    },
+    "mean_reversion": {
+      "positions": [],
+      "closed": [],
+      "seen": {
+        "USOIL": 1792018800,
+        "AUDUSD": 1792022400,
+        "BTCUSD": 1792022400,
+        "ETHUSD": 1792022400,
+        "SPX500": 1792018800,
+        "XAUUSD": 1792018800
+      },
+      "days": {},
+      "floating": 0.0,
+      "day_equity": {
+        "2026-10-14": 9393.87
+      }
+    },
+    "momentum_breakout": {
+      "positions": [],
+      "closed": [],
+      "seen": {
+        "USOIL": 1792018800,
+        "AUDUSD": 1792022400,
+        "BTCUSD": 1792022400,
+        "ETHUSD": 1792022400,
+        "SPX500": 1792018800,
+        "XAUUSD": 1792018800
+      },
+      "days": {},
+      "floating": 0.0,
+      "day_equity": {
+        "2026-10-14": 9393.87
+      }
+    },
+    "btc_trend_following": {
+      "positions": [],
+      "closed": [],
+      "seen": {
+        "USOIL": 1792008000,
+        "AUDUSD": 1792008000,
+        "BTCUSD": 1792008000,
+        "ETHUSD": 1792008000,
+        "SPX500": 1792008000,
+        "XAUUSD": 1792008000
+      },
+      "days": {},
+      "floating": 0.0,
+      "day_equity": {
+        "2026-10-14": 9393.87
+      }
+    },
+    "ema_crossover": {
+      "positions": [],
+      "closed": [],
+      "seen": {
+        "USOIL": 1792018800,
+        "AUDUSD": 1792022400,
+        "BTCUSD": 1792022400,
+        "ETHUSD": 1792022400,
+        "SPX500": 1792018800,
+        "XAUUSD": 1792018800
+      },
+      "days": {},
+      "floating": 0.0,
+      "day_equity": {
+        "2026-10-14": 9393.87
+      }
+    },
+    "bb_mr_fade": {
+      "positions": [],
+      "closed": [],
+      "seen": {
+        "USOIL": 1792018800,
+        "AUDUSD": 1792022400,
+        "BTCUSD": 1792022400,
+        "ETHUSD": 1792022400,
+        "SPX500": 1792018800,
+        "XAUUSD": 1792018800
+      },
+      "days": {},
+      "floating": 0.0,
+      "day_equity": {
+        "2026-10-14": 9393.87
+      }
+    }
+  },
+  "errors": []
+}

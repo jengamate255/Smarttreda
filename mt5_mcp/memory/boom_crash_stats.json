@@ -1,0 +1,25 @@
+{
+  "description": "Boom/Crash Spike Drift Paper Trading Journal",
+  "setup": "boom_crash_spike_drift",
+  "expected_win_rate": 0.80,
+  "strategy": "Buy dips on BOOM, sell rips on CRASH after spike detection + confirmation",
+  "symbols_allowed": ["BOOM100", "BOOM300", "BOOM500", "BOOM1000", "CRASH100", "CRASH300", "CRASH500", "CRASH1000"],
+  "risk_per_trade_percent": 0.5,
+  "max_open_trades": 2,
+  "session_hours_utc": [8, 9, 10, 14, 15, 16, 17],
+  "journal_file": "boom_crash_journal.csv",
+  "stats": {
+    "total_trades": 0,
+    "wins": 0,
+    "losses": 0,
+    "win_rate": 0.0,
+    "total_pnl": 0.0,
+    "avg_win": 0.0,
+    "avg_loss": 0.0,
+    "profit_factor": 0.0,
+    "max_drawdown": 0.0,
+    "best_session": null,
+    "worst_session": null
+  },
+  "trade_log": []
+}

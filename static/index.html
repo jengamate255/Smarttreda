@@ -10,7 +10,7 @@
 <link rel="icon" type="image/png" href="/static/icons/icon-192.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <link rel="stylesheet" href="static/style.css">
 <link rel="stylesheet" href="static/dojo.css">
 <meta name="auth-token" content="">
@@ -318,7 +318,7 @@ body {
 /* ═══ MAIN LAYOUT ═══ */
 .main-layout {
   display: grid;
-  grid-template-columns: 1fr 380px;
+  grid-template-columns: minmax(0, 1fr) 380px;
   gap: 1px;
   background: var(--border);
   min-height: calc(100vh - 56px);
@@ -326,6 +326,7 @@ body {
 
 /* ═══ LEFT COLUMN ═══ */
 .left-col {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   background: var(--bg-0);
@@ -534,6 +535,8 @@ body {
 .chart-container {
   flex: 1;
   position: relative;
+  min-width: 0;
+  overflow: hidden;
   min-height: 400px;
 }
 
@@ -1198,7 +1201,7 @@ body {
 
 /* ═══ RESPONSIVE ═══ */
 @media (max-width: 1200px) {
-  .main-layout { grid-template-columns: 1fr; }
+  .main-layout { grid-template-columns: minmax(0, 1fr); }
   .right-sidebar { display: none; }
   .account-strip { grid-template-columns: repeat(3, 1fr); }
 }
@@ -1209,6 +1212,9 @@ body {
   .account-strip { grid-template-columns: repeat(2, 1fr); }
   .bottom-panels { grid-template-columns: 1fr; }
   .chart-container { min-height: 300px; }
+  .chart-toolbar { flex-wrap: wrap; gap: 10px; }
+  .chart-toolbar-left { flex-wrap: wrap; min-width: 0; max-width: 100%; }
+  .tf-group { flex-wrap: wrap; max-width: 100%; }
 }
 
 /* ═══ ANIMATIONS ═══ */
@@ -1506,6 +1512,7 @@ html {
   scroll-behavior: smooth;
 }
 </style>
+<link rel="stylesheet" href="/static/operations.css">
 </head>
 <body>
 
@@ -1516,9 +1523,9 @@ html {
       <div class="logo-icon">⚡</div>
       MT5 Terminal
     </div>
-    <div id="status-pill" class="status-pill">
+    <div id="status-pill" class="status-pill offline">
       <span class="status-dot"></span>
-      <span id="status-text">Connected</span>
+      <span id="status-text">Connecting…</span>
     </div>
   </div>
 
@@ -1549,15 +1556,15 @@ html {
   <div class="header-right">
     <div class="header-stat">
       <span class="header-stat-label">Balance</span>
-      <span class="header-stat-value" id="h-balance">$9,529.01</span>
+      <span class="header-stat-value" id="h-balance">—</span>
     </div>
     <div class="header-stat">
       <span class="header-stat-label">Equity</span>
-      <span class="header-stat-value" id="h-equity">$9,529.01</span>
+      <span class="header-stat-value" id="h-equity">—</span>
     </div>
     <div class="header-stat">
       <span class="header-stat-label">P&L</span>
-      <span class="header-stat-value profit" id="h-pnl">+$0.00</span>
+      <span class="header-stat-value profit" id="h-pnl">—</span>
     </div>
     <button class="theme-toggle" id="theme-toggle" aria-label="Toggle theme">
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
@@ -1571,6 +1578,18 @@ html {
   <span id="news-banner-text">Fed Rate Decision — 2:00 PM ET</span>
 </div>
 
+<section class="operations-strip" aria-label="Operational status">
+  <div class="trade-sound-controls"><button type="button" class="ops-link" id="trade-sound-toggle" aria-pressed="true">Enable sound</button><button type="button" class="ops-link" id="trade-sound-test">Test sound</button><span id="trade-sound-status" role="status">Click Enable sound to allow trade sounds</span></div>
+  <div class="ops-heading"><span class="ops-eyebrow">OPERATIONS</span><span id="ops-freshness" role="status">Waiting for live data</span><button id="ops-refresh" type="button" class="ops-link">Refresh</button></div>
+  <div id="ops-status" class="ops-grid" aria-live="polite"><div class="ops-caption">Loading account, execution mode, risk policy and engine votes…</div></div>
+  <div id="ops-attention" class="ops-attention" role="status"></div>
+</section>
+
+<details class="quality-overview quality-monitor">
+  <summary><span>Entry quality</span><span id="quality-mode" role="status">Loading policy...</span></summary>
+  <div id="quality-summary"><p class="ops-caption">Loading quality policy...</p></div>
+</details>
+
 <!-- ═══ WATCHLIST (rendered live by app.js) ═══ -->
 <div class="watchlist" id="watchlist"></div>
 
@@ -1583,30 +1602,41 @@ html {
     <div class="account-strip">
       <div class="account-card">
         <span class="account-card-label">Balance</span>
-        <span class="account-card-value" id="c-balance">$9,529.01</span>
+        <span class="account-card-value" id="c-balance">—</span>
       </div>
       <div class="account-card">
         <span class="account-card-label">Equity</span>
-        <span class="account-card-value" id="c-equity">$9,529.01</span>
+        <span class="account-card-value" id="c-equity">—</span>
       </div>
       <div class="account-card">
         <span class="account-card-label">Free Margin</span>
-        <span class="account-card-value" id="c-margin">$9,529.01</span>
+        <span class="account-card-value" id="c-margin">—</span>
       </div>
       <div class="account-card">
         <span class="account-card-label">Daily P&L</span>
-        <span class="account-card-value profit" id="c-daily">+$0.00</span>
+        <span class="account-card-value profit" id="c-daily">—</span>
       </div>
       <div class="account-card">
         <span class="account-card-label">Floating P&L</span>
-        <span class="account-card-value" id="c-floating">$0.00</span>
+        <span class="account-card-value" id="c-floating">—</span>
       </div>
       <div class="account-card">
         <span class="account-card-label">Open Positions</span>
-        <span class="account-card-value" id="c-positions">0</span>
+        <span class="account-card-value" id="c-positions">—</span>
       </div>
     </div>
 
+<div class="positions-priority">      <!-- Positions -->
+      <div class="bottom-panel">
+        <div class="panel-header">
+          <span class="panel-title">Open Positions <span class="panel-badge" id="pos-count">—</span></span>
+        </div>
+        <div class="panel-body" id="positions-list">
+          <div style="padding:20px;text-align:center;color:var(--text-3)">Loading positions…</div>
+        </div>
+      </div>
+
+</div>
     <!-- Chart -->
     <div class="chart-area">
       <div class="chart-toolbar">
@@ -1637,19 +1667,7 @@ html {
       </div>
     </div>
 
-    <!-- Bottom Panels -->
-    <div class="bottom-panels">
-      <!-- Positions -->
-      <div class="bottom-panel">
-        <div class="panel-header">
-          <span class="panel-title">Open Positions <span class="panel-badge" id="pos-count">0</span></span>
-        </div>
-        <div class="panel-body" id="positions-list">
-          <div style="padding:20px;text-align:center;color:var(--text-3)">No open positions</div>
-        </div>
-      </div>
-
-      <!-- News Feed -->
+    <details class="news-details"><summary>Market news &amp; macro calendar</summary><div class="bottom-panels">      <!-- News Feed -->
       <div class="bottom-panel">
         <div class="panel-header">
           <span class="panel-title">📰 Market News</span>
@@ -1669,70 +1687,25 @@ html {
           <div class="macro-item"><span class="macro-event" style="color:var(--text-3)">Loading live calendar…</span></div>
         </div>
       </div>
-    </div>
+</div></details>
   </div>
 
   <!-- RIGHT SIDEBAR -->
   <aside class="right-sidebar">
-    <!-- Trade Plan -->
-    <div class="trade-plan">
-      <div class="plan-header">
-        <span class="plan-symbol" id="plan-symbol">ETHUSD</span>
-        <span class="plan-action buy" id="plan-action">BUY</span>
-      </div>
-      <div class="plan-grid">
-        <div class="plan-field">
-          <span class="plan-field-label">Entry</span>
-          <span class="plan-field-value" id="plan-entry">2,409.89</span>
-        </div>
-        <div class="plan-field">
-          <span class="plan-field-label">Stop Loss</span>
-          <span class="plan-field-value" id="plan-sl">2,361.66</span>
-        </div>
-        <div class="plan-field">
-          <span class="plan-field-label">Take Profit</span>
-          <span class="plan-field-value" id="plan-tp">2,567.23</span>
-        </div>
-        <div class="plan-field">
-          <span class="plan-field-label">Risk/Reward</span>
-          <span class="plan-field-value" id="plan-rr">3.00</span>
-        </div>
-        <div class="plan-field">
-          <span class="plan-field-label">Lots</span>
-          <span class="plan-field-value" id="plan-lots">0.92</span>
-        </div>
-        <div class="plan-field">
-          <span class="plan-field-label">Risk</span>
-          <span class="plan-field-value" id="plan-risk">$47.15</span>
-        </div>
-      </div>
-      <div class="trade-actions">
-        <button class="trade-btn buy" onclick="executeTrade('BUY')">BUY</button>
-        <button class="trade-btn sell" onclick="executeTrade('SELL')">SELL</button>
-      </div>
-    </div>
-
-    <!-- Risk Overview -->
-    <div style="padding:16px;border-bottom:1px solid var(--border)">
-      <div class="panel-title" style="margin-bottom:12px">🛡️ Risk Overview</div>
-      <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:4px">
-        <span>Daily Loss Limit</span>
-        <span style="color:var(--profit)">$0 / $285.87</span>
-      </div>
-      <div class="risk-bar"><div class="risk-fill low" style="width:0%"></div></div>
-      
-      <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:4px">
-        <span>Open Risk</span>
-        <span style="color:var(--text-1)">$47.15 / $285.87</span>
-      </div>
-      <div class="risk-bar"><div class="risk-fill low" style="width:16%"></div></div>
-      
-      <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:4px">
-        <span>Drawdown</span>
-        <span style="color:var(--profit)">$0 / $762.32</span>
-      </div>
-      <div class="risk-bar"><div class="risk-fill low" style="width:0%"></div></div>
-    </div>
+    <section class="trade-plan" aria-label="Current trade plan">
+      <div class="plan-header"><span class="panel-title">Current plan</span><span id="plan-badge" class="plan-badge wait">WAIT</span></div>
+      <div id="plan-tf" class="ops-caption"></div>
+      <div id="plan-body"><div class="plan-wait">Loading the selected symbol…</div></div>
+    </section>
+    <section class="decision-panel" aria-label="Trade decision trace">
+      <div class="panel-title">Why this decision?</div>
+      <div id="decision-trace"><p class="ops-caption">Waiting for a current plan and gate data.</p></div>
+    </section>
+    <section class="risk-overview" aria-label="Risk overview">
+      <div class="panel-title">Risk budget</div>
+      <div id="risk-summary"><p class="ops-caption">Loading compliance…</p></div>
+      <button type="button" class="ops-link" data-section="risk">Open risk controls →</button>
+    </section>
 
     <!-- Alerts -->
     <div style="flex:1;overflow-y:auto">
@@ -1766,12 +1739,26 @@ html {
 <!-- ═══ ALERTS SECTION ═══ -->
 <div id="section-alerts" class="dash-section hidden">
   <div style="max-width:900px;margin:0 auto;padding:20px">
-    <h2 style="margin-bottom:16px">🔔 Trade Alerts</h2>
+    <div class="alerts-heading"><h2>Trade Alerts</h2><button type="button" class="btn" id="alerts-refresh">Refresh</button></div>
+    <h3>Recent trade activity</h3>
+    <p class="ops-caption">Recorded fills, exits, trailing updates and engine notifications. Times are shown in your local timezone.</p>
+    <div id="alerts-events-status" role="status"></div>
+    <div id="alerts-events-list" class="alert-list" tabindex="0" role="region" aria-label="Recent trade activity"><div class="plan-empty">Loading recent activity…</div></div>
+    <h3 style="margin-top:24px">Price alerts</h3>
+    <p class="ops-caption">Create a one-time notification when a symbol reaches your price.</p>
+    <form id="alert-form" class="alert-form">
+      <label>Symbol<input id="alert-symbol" placeholder="EURUSD" required maxlength="64"></label>
+      <label>Condition<select id="alert-condition"><option value="above">Above</option><option value="below">Below</option></select></label>
+      <label>Price<input id="alert-price" type="number" min="0.00000001" step="any" required placeholder="1.10000"></label>
+      <label>Name (optional)<input id="alert-name" maxlength="200" placeholder="Price target"></label>
+      <button type="submit" class="btn" id="alert-create">Create alert</button>
+    </form>
+    <div id="alerts-price-status" role="status"></div>
     <div id="alerts-full-list">
       <div class="empty-state">
         <div class="empty-state-icon">🔔</div>
         <div class="empty-state-title">No alerts yet</div>
-        <div class="empty-state-text">Trade signals and risk warnings will appear here</div>
+        <div class="empty-state-text">Create a price alert above.</div>
       </div>
     </div>
   </div>
@@ -1814,329 +1801,15 @@ html {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
     Portfolio
   </button>
-  <button class="mobile-nav-btn" data-section="dojo">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-    Dojo
-  </button>
+  <button class="mobile-nav-btn" data-section="risk"><span aria-hidden="true">◇</span>Risk</button>
+  <details class="mobile-more"><summary>More</summary><div class="mobile-more-menu">
+    <button type="button" data-section="dojo">Dojo</button>
+    <button type="button" data-section="diagnostic">Diagnostic</button>
+  </div></details>
 </nav>
 
-<script>
-// ═══ THEME TOGGLE ═══
-const themeToggle = document.getElementById('theme-toggle');
-const savedTheme = localStorage.getItem('theme') || 'dark';
-document.documentElement.setAttribute('data-theme', savedTheme);
+<!-- Dashboard modules: one bootstrap, no legacy bundle -->
 
-themeToggle.addEventListener('click', () => {
-  const current = document.documentElement.getAttribute('data-theme');
-  const next = current === 'dark' ? 'light' : 'dark';
-  document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('theme', next);
-});
-
-// ═══ NAVIGATION ═══
-const sections = ['live', 'news', 'alerts', 'portfolio', 'risk', 'dojo', 'diagnostic'];
-
-function showSection(name) {
-  sections.forEach(s => {
-    const el = document.getElementById('section-' + s);
-    if (el) {
-      if (s === name) {
-        el.classList.remove('hidden');
-        // Trigger reflow for animation
-        el.style.animation = 'none';
-        el.offsetHeight; // Trigger reflow
-        el.style.animation = null;
-      } else {
-        el.classList.add('hidden');
-      }
-    }
-  });
-
-  // Render Dojo when switching to it
-  if (name === 'dojo' && typeof Dojo !== 'undefined') {
-    const dojoEl = document.getElementById('section-dojo');
-    dojoEl.innerHTML = Dojo.render();
-    Dojo.init();
-  }
-
-  // Render Diagnostic when switching to it
-  if (name === 'diagnostic' && typeof Diagnostic !== 'undefined') {
-    Diagnostic.load();
-  }
-  
-  // Save last active section
-  localStorage.setItem('lastSection', name);
-}
-
-document.querySelectorAll('.nav-btn, .mobile-nav-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll(`[data-section="${btn.dataset.section}"]`).forEach(b => b.classList.add('active'));
-    showSection(btn.dataset.section);
-  });
-});
-
-// Restore last active section on load
-const lastSection = localStorage.getItem('lastSection');
-if (lastSection && sections.includes(lastSection)) {
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll(`[data-section="${lastSection}"]`).forEach(b => b.classList.add('active'));
-  showSection(lastSection);
-}
-
-// ═══ WATCHLIST ═══
-document.querySelectorAll('.watchlist-item').forEach(item => {
-  item.addEventListener('click', () => {
-    document.querySelectorAll('.watchlist-item').forEach(i => i.classList.remove('active'));
-    item.classList.add('active');
-    const symbol = item.dataset.symbol;
-    document.getElementById('symbol-input').value = symbol;
-    // Trigger chart update
-    if (typeof loadChart === 'function') loadChart(symbol);
-  });
-});
-
-// ═══ TIMEFRAME BUTTONS ═══
-document.querySelectorAll('.tf-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tf-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    // Trigger timeframe change
-  });
-});
-
-// ═══ TRADE EXECUTION ═══
-function executeTrade(action) {
-  const symbol = document.getElementById('symbol-input').value;
-  const entry = document.getElementById('plan-entry').textContent;
-  const sl = document.getElementById('plan-sl').textContent;
-  const tp = document.getElementById('plan-tp').textContent;
-  const lots = document.getElementById('plan-lots').textContent;
-  const rr = document.getElementById('plan-rr').textContent;
-  const risk = document.getElementById('plan-risk').textContent;
-  
-  const message = `Execute ${action} ${symbol}?
-
-Entry: ${entry}
-Stop Loss: ${sl}
-Take Profit: ${tp}
-Lots: ${lots}
-Risk/Reward: ${rr}
-Risk Amount: ${risk}`;
-  
-  if (confirm(message)) {
-    // Show loading state
-    const btn = event.target;
-    const originalText = btn.textContent;
-    btn.textContent = 'Executing...';
-    btn.disabled = true;
-    btn.style.opacity = '0.6';
-    
-    // Call API to execute trade
-    fetch('/api/trade', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({
-        symbol, 
-        action, 
-        lots: parseFloat(lots), 
-        sl: parseFloat(sl), 
-        tp: parseFloat(tp)
-      })
-    })
-    .then(r => r.json())
-    .then(data => {
-      btn.textContent = originalText;
-      btn.disabled = false;
-      btn.style.opacity = '1';
-      
-      if (data.success) {
-        showNotification(`✓ ${action} ${symbol} executed successfully!`, 'success');
-        // Refresh positions
-        if (typeof updatePositions === 'function') {
-          fetch('/api/positions').then(r => r.json()).then(pos => updatePositions(pos.positions));
-        }
-      } else {
-        showNotification(`✗ Trade failed: ${data.error}`, 'error');
-      }
-    })
-    .catch(err => {
-      btn.textContent = originalText;
-      btn.disabled = false;
-      btn.style.opacity = '1';
-      showNotification(`✗ Trade failed: ${err.message}`, 'error');
-    });
-  }
-}
-
-// ═══ NOTIFICATION SYSTEM ═══
-// Create notification container for proper stacking
-const notifContainer = document.createElement('div');
-notifContainer.className = 'notification-container';
-document.body.appendChild(notifContainer);
-
-function showNotification(message, type = 'info', duration = 3000) {
-  const notification = document.createElement('div');
-  notification.className = `notification notification-${type}`;
-  notification.textContent = message;
-  notification.style.cssText = `
-    padding: 16px 24px;
-    background: ${type === 'success' ? 'var(--profit)' : type === 'error' ? 'var(--loss)' : 'var(--blue)'};
-    color: white;
-    border-radius: var(--r-md);
-    box-shadow: var(--shadow-lg);
-    font-weight: 600;
-    animation: slideIn 0.3s ease;
-  `;
-
-  notifContainer.appendChild(notification);
-
-  setTimeout(() => {
-    notification.style.animation = 'slideOut 0.3s ease';
-    setTimeout(() => notification.remove(), 300);
-  }, duration);
-}
-
-// Add notification animations
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes slideIn {
-    from {
-      transform: translateX(400px);
-      opacity: 0;
-    }
-    to {
-      transform: translateX(0);
-      opacity: 1;
-    }
-  }
-  
-  @keyframes slideOut {
-    from {
-      transform: translateX(0);
-      opacity: 1;
-    }
-    to {
-      transform: translateX(400px);
-      opacity: 0;
-    }
-  }
-`;
-document.head.appendChild(style);
-
-// ═══ REAL-TIME UPDATES (WebSocket placeholder) ═══
-function updateWatchlist(data) {
-  // Update watchlist prices
-}
-
-function updatePositions(positions) {
-  const container = document.getElementById('positions-list');
-  if (!positions || positions.length === 0) {
-    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-3)">No open positions</div>';
-    return;
-  }
-  
-  container.innerHTML = positions.map(p => `
-    <div class="position-item">
-      <span class="position-symbol">${p.symbol}</span>
-      <div class="position-details">
-        <span>${p.type} ${p.lots}</span>
-        <span>@ ${p.open}</span>
-      </div>
-      <span class="position-pnl ${p.pnl >= 0 ? 'profit' : 'loss'}">${p.pnl >= 0 ? '+' : ''}$${p.pnl.toFixed(2)}</span>
-      <button class="position-close" onclick="closePosition(${p.ticket})" title="Close position">✕</button>
-    </div>
-  `).join('');
-}
-
-function closePosition(ticket) {
-  if (confirm('Close this position?')) {
-    fetch(`/api/positions/${ticket}/close`, {method: 'POST'})
-      .then(r => r.json())
-      .then(data => {
-        if (data.success) {
-          showNotification('✓ Position closed successfully!', 'success');
-          // Refresh positions
-          fetch('/api/positions').then(r => r.json()).then(pos => updatePositions(pos.positions));
-        } else {
-          showNotification(`✗ Failed to close: ${data.error}`, 'error');
-        }
-      })
-      .catch(err => {
-        showNotification(`✗ Failed to close: ${err.message}`, 'error');
-      });
-  }
-}
-
-// ═══ KEYBOARD SHORTCUTS ═══
-document.addEventListener('keydown', (e) => {
-  // Don't trigger shortcuts when typing in inputs
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-
-  const key = e.key.toLowerCase();
-
-  // Navigation shortcuts (1-6 for sections)
-  const sectionMap = {
-    '1': 'live',
-    '2': 'news',
-    '3': 'alerts',
-    '4': 'portfolio',
-    '5': 'risk',
-    '6': 'dojo'
-  };
-
-  if (sectionMap[key]) {
-    showSection(sectionMap[key]);
-    // Update nav button active states
-    document.querySelectorAll('.nav-btn, .mobile-nav-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll(`[data-section="${sectionMap[key]}"]`).forEach(b => b.classList.add('active'));
-  }
-
-  // Refresh shortcut
-  if (key === 'r' && (e.ctrlKey || e.metaKey)) {
-    e.preventDefault();
-    location.reload();
-  }
-});
-
-// ═══ AUTO-HIDE NAV ON SCROLL ═══
-(function() {
-  let lastScrollY = window.scrollY;
-  let ticking = false;
-  const THRESHOLD = 10;
-
-  function onScroll() {
-    const currentY = window.scrollY;
-    const header = document.querySelector('.header');
-    const mobileNav = document.querySelector('.mobile-nav');
-
-    if (currentY > lastScrollY && currentY > 80) {
-      header?.classList.add('header-hidden');
-      mobileNav?.classList.add('nav-hidden');
-    } else if (currentY < lastScrollY) {
-      header?.classList.remove('header-hidden');
-      mobileNav?.classList.remove('nav-hidden');
-    }
-
-    lastScrollY = currentY;
-    ticking = false;
-  }
-
-  window.addEventListener('scroll', () => {
-    if (!ticking) {
-      requestAnimationFrame(onScroll);
-      ticking = true;
-    }
-  }, { passive: true });
-})();
-
-// ═══ INITIAL LOAD ════
-console.log('MT5 Trading Terminal loaded');
-</script>
-
-<!-- Legacy scripts -->
 <script src="/static/vendor/lightweight-charts.js"></script>
 <script src="/static/app.core.js"></script>
 <script src="/static/app.chart.js"></script>
@@ -2144,6 +1817,10 @@ console.log('MT5 Trading Terminal loaded');
 <script src="/static/app.diagnostic.js"></script>
 <script src="/static/app.dojo.js"></script>
 <script src="/static/app.risk.js"></script>
-<script src="/static/app.js"></script>
+<script src="/static/app.portfolio.js"></script>
+<script src="/static/app.navigation.js"></script>
+<script src="/static/app.operations.js"></script>
+<script src="/static/app.agents.js"></script>
+<script src="/static/app.sound.js"></script>
 </body>
 </html>

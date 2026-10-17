@@ -1,0 +1,22 @@
+{
+  "login": 11911448,
+  "server": "FundingPips2-SIM",
+  "equity": 9420.87,
+  "balance": 9446.33,
+  "initial_balance_verified": true,
+  "initial_balance": 10000.0,
+  "daily_opening_baseline": "Opening equity needs an overnight baseline",
+  "outcome_risk": {
+    "enabled": true,
+    "state": "losing",
+    "risk_percent": 0.1,
+    "mode": "rolling",
+    "trades": 20,
+    "minimum": 20,
+    "net_pnl": -164.34,
+    "profit_factor": 0.572,
+    "consecutive_losses": 3
+  },
+  "positions": 2,
+  "pending_orders": 0
+}

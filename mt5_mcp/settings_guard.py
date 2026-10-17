@@ -14,6 +14,7 @@ Called every cycle from analysis_agent.main(); alerts via mt5_mcp.notify.
 from __future__ import annotations
 
 import hashlib
+import copy
 import json
 import logging
 from pathlib import Path
@@ -26,24 +27,56 @@ MEM = ROOT / "memory"
 HASH_FILE = MEM / "settings.sha256"
 GOOD_COPY = MEM / "settings.good.json"
 
-# The values this trading stack was retuned to (2026-09-27..10-01 sessions).
-# If any of these differ, the file was clobbered by an unknown writer.
+# Quality mode (2026-10-13): enforce existing loss-review restrictions.
+# Spread never blocks, per user policy; sizing still accounts for spread.
+# Preserve the narrowed allowlist and outcome/prop risk ceilings.
 ALLOWLIST = [
-    "EURUSD", "EURJPY", "GBPJPY", "USDJPY", "SPX500", "XAUUSD", "ETHUSD",
-    "USDCAD", "GBPUSD", "USDCHF", "BTCUSD",
+    "USOIL", "AUDUSD", "BTCUSD", "ETHUSD", "SPX500", "XAUUSD",
 ]
 CRITICAL: dict[tuple[str, str], object] = {
     ("risk", "max_spread_points"): 0,
+    ("risk", "max_spread_relative"): 0,
+    ("risk", "reject_orders"): True,
+    ("quality", "enabled"): True,
     ("risk", "confidence_floor_percent"): 80,
     ("risk", "max_trades_per_day"): 2,
     ("risk", "max_daily_loss_percent"): 4.0,
     ("risk", "max_risk_percent"): 1.0,
+    ("risk", "conservative_risk_percent"): 0.1,
+    ("risk", "max_drawdown_percent"): 8.0,
+    ("performance_risk", "enabled"): True,
+    ("performance_risk", "mode"): "rolling",
+    ("performance_risk", "window"): 20,
+    ("performance_risk", "min_trades"): 20,
+    ("performance_risk", "losing_percent"): 0.1,
+    ("performance_risk", "winning_percent"): 1.0,
+    ("prop_risk", "enabled"): True,
+    ("prop_risk", "account_login"): 11911448,
+    ("prop_risk", "server"): "FundingPips2-SIM",
+    ("prop_risk", "initial_balance"): 10000.0,
+    ("prop_risk", "reset_utc_offset_seconds"): 10800,
+    ("prop_risk", "safety_buffer_percent"): 0.1,
+    ("risk", "allowed_hours_utc"): [0, 2, 7, 8, 9, 17, 23],
+    ("risk", "blocked_setup_prefixes"): ["desk-", "desk:"],
+    ("consensus", "risk_percent"): 1.0,
     ("consensus", "allowed_symbols"): ALLOWLIST,
 }
 
 
 def _hash(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def rollback_candidate(data: dict) -> dict:
+    """Offline candidate only: preserve every unrelated setting and credential.
+
+    Never call verify_settings here: that routine mutates live guard files and
+    can notify Telegram. Environment overrides require separate manual review.
+    """
+    candidate = copy.deepcopy(data)
+    candidate.setdefault("risk", {})["reject_orders"] = True
+    candidate.setdefault("forward_test", {})["expires_at"] = 0
+    return candidate
 
 
 def _alert(message: str) -> None:
@@ -78,6 +111,11 @@ def verify_settings() -> str:
         baseline = ""
 
     if not baseline:
+        try:
+            if _criticals(json.loads(SETTINGS.read_text(encoding="utf-8"))):
+                return "unreadable"
+        except (ValueError, TypeError, AttributeError):
+            return "unreadable"
         HASH_FILE.write_text(current_hash, encoding="utf-8")
         GOOD_COPY.write_bytes(SETTINGS.read_bytes())
         logger.info("settings guard: baselined settings.json (%s)", current_hash[:8])
@@ -112,6 +150,14 @@ def verify_settings() -> str:
         return "rebaselined"
 
     if GOOD_COPY.exists():
+        # A historical Oct 9 log-mode copy must not undo the current strict
+        # policy on restoration. Leave the files untouched if it is unsafe.
+        try:
+            if _criticals(json.loads(GOOD_COPY.read_text(encoding="utf-8"))):
+                logger.error("settings guard: known-good copy fails current criticals")
+                return "unreadable"
+        except (ValueError, TypeError, AttributeError):
+            return "unreadable"
         SETTINGS.write_bytes(GOOD_COPY.read_bytes())
         logger.error("settings guard: restored settings.json; bad keys: %s", "; ".join(bad))
         _alert(

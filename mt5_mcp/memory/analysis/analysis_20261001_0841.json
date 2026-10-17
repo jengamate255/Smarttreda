@@ -1,0 +1,46 @@
+{
+  "at": "2026-10-01T08:41:06.367175+00:00",
+  "cycle": 1315,
+  "compliance_mode": "conservative",
+  "results": [
+    {
+      "symbol": "EURCHF",
+      "bar": "2026-10-01 07:00:00",
+      "health_score": 83.0,
+      "verdict": "tradeable",
+      "regime": "trending_bullish",
+      "strategy_source": "bb_mr_fade",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 0.0,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "no bb_mr_fade setup (RSI 53.1, close vs BB 0.94590/0.94790)"
+      },
+      "available": false,
+      "reasons": [
+        "no bb_mr_fade setup (RSI 53.1, close vs BB 0.94590/0.94790)",
+        "no executable direction",
+        "confidence 0.0 < 75",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "london",
+        "active": [
+          "london",
+          "tokyo"
+        ],
+        "hour_utc": 8
+      }
+    }
+  ]
+}

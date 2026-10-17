@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import json
 import logging
+import math
 import os
 import time
 from datetime import datetime, timedelta, timezone
@@ -30,7 +31,7 @@ from pathlib import Path
 
 from mt5_mcp.client import get_client
 from mt5_mcp.common import TRADE_ACTION_REMOVE, pip_size, pip_value_per_lot
-from mt5_mcp.config import get_settings
+from mt5_mcp.config import get_settings, rejections_enabled
 from mt5_mcp.tools.news import get_provider, news_status
 
 logger = logging.getLogger("mt5_mcp")
@@ -209,7 +210,7 @@ def _daily_pnl(client, day_start: int) -> float:
         if int(deal.get("type") or 0) in (DEAL_TYPE_BUY, DEAL_TYPE_SELL):
             total += float(deal.get("profit") or 0.0) + float(
                 deal.get("swap") or 0.0
-            ) + float(deal.get("fee") or 0.0)
+            ) + float(deal.get("fee") or 0.0) + float(deal.get("commission") or 0.0)
     return total
 
 
@@ -233,7 +234,7 @@ def _consecutive_losses(client, day_start: int) -> int:
         position = int(deal.get("position_id") or 0)
         pnl = float(deal.get("profit") or 0.0) + float(
             deal.get("swap") or 0.0
-        ) + float(deal.get("fee") or 0.0)
+        ) + float(deal.get("fee") or 0.0) + float(deal.get("commission") or 0.0)
         closes.setdefault(position, []).append(pnl)
         times[position] = max(times.get(position, 0), int(deal.get("time") or 0))
     ordered = sorted(closes.items(), key=lambda item: times[item[0]])
@@ -291,14 +292,65 @@ def _peak_equity(state: dict, equity: float) -> float:
 
 
 def _in_news_blackout(settings) -> bool:
-    window = timedelta(minutes=settings.news_blackout_minutes)
+    """Check if we're in a news blackout window.
+
+    Enhanced with LLM sentiment analysis: dynamically adjusts blackout window
+    based on event impact score from LLM (0-100). High-impact events get
+    longer blackouts, low-impact events get shorter or no blackout.
+    """
+    base_window = timedelta(minutes=settings.news_blackout_minutes)
     now = datetime.now(timezone.utc)
+
     for event in get_provider().upcoming(hours=24) or []:
         if event.impact != "high":
             continue
         event_time = getattr(event, "time", None)
         if event_time is None:
             continue
+
+        # Calculate dynamic window based on LLM sentiment analysis
+        window = base_window
+        try:
+            from mt5_mcp.groq_llm import analyze_news_sentiment
+            currency = getattr(event, "currency", "")
+            title = getattr(event, "title", "")
+            forecast = getattr(event, "forecast", "")
+            previous = getattr(event, "previous", "")
+
+            sentiment = analyze_news_sentiment(
+                currency=currency,
+                event_title=title,
+                forecast=forecast,
+                previous=previous,
+                context=f"Event time: {event_time.isoformat() if event_time else 'unknown'}",
+            )
+
+            # Adjust window based on LLM impact score
+            if sentiment.impact_score >= 80:
+                # Very high impact: extend window by 50%
+                window = timedelta(minutes=settings.news_blackout_minutes * 1.5)
+                logger.info(
+                    "LLM news: %s %s impact=%.0f (very high), extending blackout to %d min",
+                    currency, title, sentiment.impact_score, window.total_seconds() / 60,
+                )
+            elif sentiment.impact_score >= 60:
+                # High impact: use base window
+                window = base_window
+            elif sentiment.impact_score >= 40:
+                # Medium impact: reduce window by 30%
+                window = timedelta(minutes=settings.news_blackout_minutes * 0.7)
+            else:
+                # Low impact: reduce window by 50%
+                window = timedelta(minutes=settings.news_blackout_minutes * 0.5)
+
+            # Use LLM-suggested blackout if provided and longer
+            if sentiment.blackout_minutes > 0:
+                llm_window = timedelta(minutes=sentiment.blackout_minutes)
+                window = max(window, llm_window)
+
+        except Exception as exc:
+            logger.debug("LLM news sentiment failed, using base window: %s", exc)
+
         if abs(event_time - now) <= window:
             return True
     return False
@@ -348,10 +400,10 @@ def _resolve_mode(
     return "normal", ""
 
 
-def evaluate(state_path: Path | None = None) -> dict:
+def evaluate(state_path: Path | None = None, client=None) -> dict:
     """Full compliance dashboard. Detects mode transitions and halts."""
     state_path = state_path or STATE_PATH
-    client = get_client()
+    client = client or get_client()
     settings = get_settings().risk
     state = _load_state(state_path)
     rolled = _roll_day(state)
@@ -418,8 +470,20 @@ def evaluate(state_path: Path | None = None) -> dict:
     _save_state(state_path, state)
 
     if newly_halted:
-        cancelled = _cancel_pendings(client)
-        _record_event("halt", f"trading halted ({halt_reason}); cancelled {cancelled} pending")
+        # Log mode (risk.reject_orders=false): the halt is recorded and
+        # the mode persists, but pending orders are left alone - the
+        # forward test must not have its pendings silently cancelled.
+        if rejections_enabled():
+            cancelled = _cancel_pendings(client)
+            _record_event(
+                "halt",
+                f"trading halted ({halt_reason}); cancelled {cancelled} pending",
+            )
+        else:
+            _record_event(
+                "halt",
+                f"trading halted ({halt_reason}); log-mode: pending orders left open",
+            )
 
     news_blocked = _in_news_blackout(settings)
     liquidity_blocked = _in_liquidity_blackout(client, settings)
@@ -453,7 +517,7 @@ def evaluate(state_path: Path | None = None) -> dict:
     if daily_used >= settings.daily_conservative_ratio:
         warnings.append(
             f"daily loss buffer: {daily_used * 100:.0f}% of limit used - "
-            "conservative mode (0.25% risk, A+ only)"
+            f"conservative mode ({settings.conservative_risk_percent:g}% risk, A+ only)"
         )
     if dd_pct >= settings.max_drawdown_percent * settings.drawdown_conservative_ratio:
         warnings.append(
@@ -473,7 +537,44 @@ def evaluate(state_path: Path | None = None) -> dict:
         else settings.max_risk_percent
     )
 
+    # Drawdown recovery: override risk cap when account is in drawdown
+    from mt5_mcp.drawdown_recovery import drawdown_recovery_risk_percent
+    dd_recovery = drawdown_recovery_risk_percent(
+        equity=equity,
+        max_risk_percent=settings.max_risk_percent,
+        reduced_risk_percent=settings.conservative_risk_percent,
+        enabled=True,
+    )
+    if dd_recovery["mode"] == "reduced":
+        per_trade_cap = min(per_trade_cap, dd_recovery["risk_percent"])
+        if "drawdown recovery active" not in warnings:
+            warnings.append(
+                f"drawdown recovery active: risk reduced to "
+                f"{per_trade_cap:.1f}% (drawdown {dd_recovery['drawdown_percent']:.1f}%)"
+            )
+    elif dd_recovery.get("changed"):
+        # Mode just changed back to normal — per_trade_cap stays at normal
+        pass
+
+    from mt5_mcp.performance_risk import snapshot as performance_snapshot
+    performance = performance_snapshot(client)
+    if performance["enabled"]:
+        per_trade_cap = min(per_trade_cap, performance["risk_percent"])
+
+    from mt5_mcp.prop_risk import snapshot as prop_snapshot
+    prop = prop_snapshot(client)
+    if prop["enabled"]:
+        per_trade_cap = min(per_trade_cap, prop["new_trade_budget"]/equity*100 if equity>0 else 0)
+        if not prop.get("available") or prop["new_trade_budget"] <= 0:
+            warnings.append(prop.get("reason") or "Prop loss-floor buffer exhausted; no new risk")
+            mode, color = "halted", "RED"
+            halt_reason = prop.get("reason") or "Prop daily/overall risk buffer exhausted"
+            if rejections_enabled():
+                _cancel_pendings(client)
+
     return {
+        "performance_risk": performance,
+        "prop_risk": prop,
         "mode": mode,
         "halt_reason": halt_reason,
         "status": color,
@@ -509,6 +610,8 @@ def evaluate(state_path: Path | None = None) -> dict:
             group: round(risk, 2) for group, risk in sorted(groups.items())
         },
         "per_trade_risk_cap_percent": per_trade_cap,
+        "drawdown_recovery_mode": dd_recovery["mode"],
+        "drawdown_recovery_risk_percent": dd_recovery["risk_percent"],
         "confidence_floor_percent": settings.confidence_floor_percent,
         "news_blocked": news_blocked,
         "news_blocked_reason": news_blocked_reason,
@@ -517,7 +620,7 @@ def evaluate(state_path: Path | None = None) -> dict:
         "news_data_age_sec": nstatus.get("news_data_age_sec"),
         "liquidity_blocked": liquidity_blocked,
         "warnings": warnings,
-        "trading_allowed": mode != "halted",
+        "trading_allowed": mode != "halted" and (not prop["enabled"] or prop["new_trade_budget"] > 0),
     }
 
 
@@ -530,10 +633,11 @@ def gate(
     confidence: float | None = None,
     entry_price: float | None = None,
     state_path: Path | None = None,
+    client=None,
 ) -> dict:
     """Pre-trade veto gate. Returns verdict with violations; trade only if allowed."""
     state_path = state_path or STATE_PATH
-    client = get_client()
+    client = client or get_client()
     settings = get_settings().risk
     violations: list[str] = []
     warnings: list[str] = []
@@ -548,7 +652,7 @@ def gate(
 
     account = client.account_info()
     equity = float(account.get("equity") or 0.0)
-    status = evaluate(state_path)
+    status = evaluate(state_path, client=client)
 
     # Blocked symbols check
     blocked = [s.upper() for s in settings.blocked_symbols]
@@ -603,12 +707,40 @@ def gate(
     pip_value = pip_value_per_lot(info)
     risk_amount = lots * (sl_pips or 0.0) * pip_value if sl_pips else 0.0
 
-    cap_percent = (
-        settings.conservative_risk_percent
-        if status["mode"] == "conservative"
-        else settings.max_risk_percent
-    )
+    prop = status.get("prop_risk", {})
+    if prop.get("enabled"):
+        try:
+            from mt5_mcp.prop_risk import stop_risk
+            live_entry = float(tick.get("ask") if side == "BUY" else tick.get("bid"))
+            adverse_entry = max(entry,live_entry) if side=="BUY" else min(entry,live_entry)
+            stop = sl_price if sl_price is not None else adverse_entry + (-1 if side=="BUY" else 1)*(sl_pips or 0)*pip_size(info)
+            risk_amount = stop_risk(info,adverse_entry,stop,lots,0 if side=="BUY" else 1)
+        except (ValueError, TypeError, KeyError):
+            violations.append("Verified stop-risk pricing unavailable")
+            risk_amount = float("inf")
+        if not prop.get("available"):
+            violations.append(prop.get("reason") or "Prop loss-floor evidence unavailable")
+        if risk_amount >= prop.get("new_trade_budget",0):
+            violations.append("Proposed risk exhausts the reserved prop daily/overall loss buffer")
+        if status["trades_today"] + prop.get("pending_orders",0) >= status["max_trades_per_day"]:
+            violations.append("Daily entry limit reserved by filled and pending orders")
+        if prop.get("open_positions",0) + prop.get("pending_orders",0) >= settings.max_positions:
+            violations.append("Position slots reserved by open positions and pending orders")
+
+    if not math.isfinite(risk_amount) or not math.isfinite(lots) or lots <= 0:
+        violations.append("Invalid trade risk or volume")
+
+    # Use drawdown recovery risk cap from evaluate() if active
+    cap_percent = status.get("per_trade_risk_cap_percent", status.get("drawdown_recovery_risk_percent"))
+    if cap_percent is None:
+        cap_percent = (
+            settings.conservative_risk_percent
+            if status["mode"] == "conservative"
+            else settings.max_risk_percent
+        )
     cap = equity * cap_percent / 100.0
+    from mt5_mcp.consensus import risk_cap
+    cap = min(cap,equity*risk_cap()/100)
     if risk_amount - cap > 1e-6:
         violations.append(
             f"risk {risk_amount:.2f} exceeds cap {cap_percent:.2f}% "
@@ -680,8 +812,19 @@ def gate(
 
 def _verdict(violations: list[str], warnings: list[str], status: dict | None) -> dict:
     allowed = len(violations) == 0
+    # Forward-test log mode (risk.reject_orders=false): the rules engine
+    # still reports every violation (callers record it as evidence) but
+    # the trade is allowed.  Enforcement returns untouched when enabled.
+    if not allowed and not rejections_enabled():
+        allowed = True
+        warnings = warnings + [
+            f"log-only mode: {len(violations)} compliance violation(s) "
+            "recorded, order allowed (risk.reject_orders=false)"
+        ]
     return {
         "allowed": allowed,
+        "rules_allowed": not violations,
+        "log_mode": not rejections_enabled(),
         "mode": status["mode"] if status else "unknown",
         "status": status["status"] if status else "unknown",
         "violations": violations,

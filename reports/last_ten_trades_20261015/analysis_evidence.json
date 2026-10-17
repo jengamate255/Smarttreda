@@ -1,0 +1,2463 @@
+{
+  "trades": 10,
+  "wins": 2,
+  "losses": 8,
+  "gross_winning_net_pnl": 135.72,
+  "gross_losing_net_pnl": -214.51,
+  "net_pnl": -78.79,
+  "profit_factor": 0.6326977763274441,
+  "details": [
+    {
+      "trade": {
+        "ticket": 403463489,
+        "symbol": "GBPJPY",
+        "side": "SELL",
+        "open_time_broker": 1791389701,
+        "close_time_broker": 1791991000,
+        "entry": 209.036,
+        "exit": 210.27,
+        "net_pnl": -7.89,
+        "deals": [
+          {
+            "ticket": 378662210,
+            "order": 403463489,
+            "time": 1791389701,
+            "time_msc": 1791389701404,
+            "type": 1,
+            "entry": 0,
+            "magic": 20260601,
+            "position_id": 403463489,
+            "reason": 3,
+            "volume": 0.01,
+            "price": 209.036,
+            "commission": -0.1,
+            "swap": 0.0,
+            "profit": 0.0,
+            "fee": 0.0,
+            "symbol": "GBPJPY",
+            "comment": "desk-ascending_triangle",
+            "external_id": "rFSQ9odL5HfpiS9RB"
+          },
+          {
+            "ticket": 379219731,
+            "order": 406860675,
+            "time": 1791991000,
+            "time_msc": 1791991000864,
+            "type": 0,
+            "entry": 1,
+            "magic": 20260601,
+            "position_id": 403463489,
+            "reason": 4,
+            "volume": 0.01,
+            "price": 210.27,
+            "commission": 0.0,
+            "swap": 0.0,
+            "profit": -7.79,
+            "fee": 0.0,
+            "symbol": "GBPJPY",
+            "comment": "[sl 210.269]",
+            "external_id": "rDAtBBoP3lXfpdL5HfinWV"
+          }
+        ]
+      },
+      "journal": {
+        "id": 294,
+        "ticket": 403463489,
+        "symbol": "GBPJPY",
+        "side": "SELL",
+        "setup": "desk:ascending_triangle",
+        "timeframe": null,
+        "entry": 209.025,
+        "exit_price": null,
+        "sl": 210.26896789,
+        "tp": 206.53706422000002,
+        "lots": 0.01,
+        "open_time": "2026-10-07T13:14:57.553728+00:00",
+        "close_time": "2026-10-07T13:14:57.553728+00:00",
+        "pnl": null,
+        "outcome": null,
+        "reason": null,
+        "mistakes": null,
+        "lessons": null,
+        "screenshot_path": null,
+        "market_conditions": null,
+        "confidence": 81.7,
+        "trade_score": 81.7,
+        "zone_strength": null,
+        "session_hour": 13,
+        "duration_seconds": null,
+        "rr": 2.0,
+        "created_at": "2026-10-07T13:14:57.553728+00:00",
+        "updated_at": "2026-10-07T13:14:57.553728+00:00",
+        "trend_confidence": null,
+        "confirmation_confidence": null,
+        "sl_pips": 124.39678899999933,
+        "separation_atr": null,
+        "mtf_aligned": null,
+        "atr_val": null,
+        "zone_proximity": null,
+        "zone_touches": null
+      },
+      "events": [
+        {
+          "ts": "2026-10-07T13:14:58.065128+00:00",
+          "kind": "execute",
+          "symbol": "GBPJPY",
+          "status": "filled",
+          "side": "SELL",
+          "lots": 0.01,
+          "sl": 210.26896789,
+          "tp": 206.53706422000002,
+          "ticket": 403463489,
+          "error": "",
+          "confluence": 81.7
+        },
+        {
+          "ts": "2026-10-11T01:17:12.793469+00:00",
+          "kind": "position_closed",
+          "ticket": 403463489,
+          "symbol": "GBPJPY",
+          "side": "SELL",
+          "action": "closed",
+          "pnl": 0.0,
+          "entry": 209.025,
+          "close": 0.0,
+          "reason": "closed (details unavailable)"
+        }
+      ],
+      "entry_scan": [
+        {
+          "ts": "2026-10-07T13:15:00.793225+00:00",
+          "kind": "scan",
+          "scanned": 23,
+          "top": [
+            {
+              "symbol": "NZDCAD",
+              "confluence": 85.2,
+              "dir": "SELL",
+              "health": 57.2,
+              "pattern": "falling_channel"
+            },
+            {
+              "symbol": "GBPJPY",
+              "confluence": 81.7,
+              "dir": "SELL",
+              "health": 62.7,
+              "pattern": "ascending_triangle"
+            },
+            {
+              "symbol": "NZDUSD",
+              "confluence": 76.5,
+              "dir": "BUY",
+              "health": 61.5,
+              "pattern": "inverse_head_and_shoulders"
+            },
+            {
+              "symbol": "USDCAD",
+              "confluence": 76.2,
+              "dir": "BUY",
+              "health": 64.0,
+              "pattern": "falling_wedge"
+            },
+            {
+              "symbol": "AUDNZD",
+              "confluence": 75.7,
+              "dir": "BUY",
+              "health": 56.1,
+              "pattern": "falling_wedge"
+            }
+          ],
+          "picks": [
+            {
+              "symbol": "NZDCAD",
+              "dir": "SELL",
+              "confluence": 85.2
+            },
+            {
+              "symbol": "GBPJPY",
+              "dir": "SELL",
+              "confluence": 81.7
+            },
+            {
+              "symbol": "NZDUSD",
+              "dir": "BUY",
+              "confluence": 76.5
+            },
+            {
+              "symbol": "USDCAD",
+              "dir": "BUY",
+              "confluence": 76.2
+            },
+            {
+              "symbol": "AUDNZD",
+              "dir": "BUY",
+              "confluence": 75.7
+            },
+            {
+              "symbol": "EURCHF",
+              "dir": "SELL",
+              "confluence": 74.8
+            }
+          ],
+          "executions": [
+            {
+              "symbol": "NZDCAD",
+              "status": "blocked",
+              "reason": "consensus: NZDCAD not in allowlist (no backtested edge)"
+            },
+            {
+              "symbol": "GBPJPY",
+              "status": "filled",
+              "side": "SELL",
+              "lots": 0.01,
+              "sl": 210.26896789,
+              "tp": 206.53706422000002,
+              "ticket": 403463489,
+              "error": "",
+              "confluence": 81.7
+            },
+            {
+              "symbol": "NZDUSD",
+              "status": "blocked",
+              "reason": "consensus: NZDUSD not in allowlist (no backtested edge); symbol 'NZDUSD' is on the blocked list; confidence 76% below floor 80%"
+            }
+          ],
+          "elapsed_s": 358.0,
+          "learning": {
+            "min_trades": 8,
+            "setups": {
+              "desk-descending_triangl": {
+                "trades": 1,
+                "win_rate": 100.0,
+                "net_pnl": 1.28,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "autobuy": {
+                "trades": 2,
+                "win_rate": 100.0,
+                "net_pnl": 119.04,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "desk_managed": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -27.93,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "confirm_exec": {
+                "trades": 1,
+                "win_rate": 100.0,
+                "net_pnl": 15.77,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "desk_mtf_confluence": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -26.56,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "double_top_supply": {
+                "trades": 1,
+                "win_rate": 100.0,
+                "net_pnl": 71.66,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "triangle_breakdown_retest": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -37.18,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "bos-demand": {
+                "trades": 1,
+                "win_rate": 100.0,
+                "net_pnl": 71.76,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "boom_crash_spike_drift": {
+                "trades": 5,
+                "win_rate": 80.0,
+                "net_pnl": 168.69,
+                "factor": 1.0,
+                "sample_ok": false
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "trade": {
+        "ticket": 406692180,
+        "symbol": "AUDNZD",
+        "side": "BUY",
+        "open_time_broker": 1791867752,
+        "close_time_broker": 1791886597,
+        "entry": 1.24487,
+        "exit": 1.24403,
+        "net_pnl": -54.17,
+        "deals": [
+          {
+            "ticket": 379057842,
+            "order": 406692180,
+            "time": 1791867752,
+            "time_msc": 1791867752362,
+            "type": 0,
+            "entry": 0,
+            "magic": 20260601,
+            "position_id": 406692180,
+            "reason": 3,
+            "volume": 0.95,
+            "price": 1.24487,
+            "commission": -9.5,
+            "swap": 0.0,
+            "profit": 0.0,
+            "fee": 0.0,
+            "symbol": "AUDNZD",
+            "comment": "desk-double_bottom",
+            "external_id": "rPIcBBoAD2WfpilfI"
+          },
+          {
+            "ticket": 379079732,
+            "order": 406715250,
+            "time": 1791886597,
+            "time_msc": 1791886597231,
+            "type": 1,
+            "entry": 1,
+            "magic": 20260601,
+            "position_id": 406692180,
+            "reason": 3,
+            "volume": 0.95,
+            "price": 1.24403,
+            "commission": 0.0,
+            "swap": 0.0,
+            "profit": -44.67,
+            "fee": 0.0,
+            "symbol": "AUDNZD",
+            "comment": "close",
+            "external_id": "ru2dBBoeb8WfpAD2Wfi9NK"
+          }
+        ]
+      },
+      "journal": {
+        "id": 499,
+        "ticket": 406692180,
+        "symbol": "AUDNZD",
+        "side": "BUY",
+        "setup": "desk:double_bottom",
+        "timeframe": null,
+        "entry": 1.24474,
+        "exit_price": 1.24403,
+        "sl": 1.24319,
+        "tp": 1.2478399999999996,
+        "lots": 0.95,
+        "open_time": "2026-10-13T02:02:32.090009+00:00",
+        "close_time": "2026-10-13T10:16:37+00:00",
+        "pnl": -54.17,
+        "outcome": "loss",
+        "reason": null,
+        "mistakes": null,
+        "lessons": null,
+        "screenshot_path": null,
+        "market_conditions": null,
+        "confidence": 78.0,
+        "trade_score": 78.0,
+        "zone_strength": null,
+        "session_hour": 2,
+        "duration_seconds": null,
+        "rr": 1.9999999999998568,
+        "created_at": "2026-10-13T02:02:32.090009+00:00",
+        "updated_at": "2026-10-13T19:36:16.360273+00:00",
+        "trend_confidence": null,
+        "confirmation_confidence": null,
+        "sl_pips": 15.499999999999403,
+        "separation_atr": null,
+        "mtf_aligned": null,
+        "atr_val": null,
+        "zone_proximity": null,
+        "zone_touches": null
+      },
+      "events": [
+        {
+          "ts": "2026-10-13T02:02:32.112445+00:00",
+          "kind": "execute",
+          "symbol": "AUDNZD",
+          "status": "filled",
+          "side": "BUY",
+          "lots": 0.95,
+          "sl": 1.24319,
+          "tp": 1.2478399999999996,
+          "ticket": 406692180,
+          "error": "",
+          "confluence": 78.0
+        },
+        {
+          "ts": "2026-10-13T07:16:35.765650+00:00",
+          "kind": "early_loss_cut",
+          "ticket": "406692180",
+          "symbol": "AUDNZD",
+          "r_multiple": -0.5,
+          "age_h": 5.2
+        },
+        {
+          "ts": "2026-10-13T19:36:15.726850+00:00",
+          "kind": "position_closed",
+          "ticket": 406692180,
+          "symbol": "AUDNZD",
+          "side": "BUY",
+          "action": "closed",
+          "pnl": -54.17,
+          "entry": 1.24474,
+          "close": 1.24403,
+          "reason": "broker-confirmed close (all deals and costs included)",
+          "outcome": "loss",
+          "close_time": "2026-10-13T10:16:37+00:00"
+        }
+      ],
+      "entry_scan": [
+        {
+          "ts": "2026-10-13T02:02:32.221129+00:00",
+          "kind": "scan",
+          "scanned": 23,
+          "top": [
+            {
+              "symbol": "AUDNZD",
+              "confluence": 78.0,
+              "dir": "BUY",
+              "health": 63.1,
+              "pattern": "double_bottom"
+            },
+            {
+              "symbol": "BTCUSD",
+              "confluence": 76.0,
+              "dir": "SELL",
+              "health": 73.9,
+              "pattern": "descending_triangle"
+            },
+            {
+              "symbol": "ETHUSD",
+              "confluence": 69.5,
+              "dir": "SELL",
+              "health": 76.2,
+              "pattern": "descending_triangle"
+            },
+            {
+              "symbol": "NZDCAD",
+              "confluence": 68.2,
+              "dir": "SELL",
+              "health": 53.8,
+              "pattern": "descending_triangle"
+            },
+            {
+              "symbol": "GBPJPY",
+              "confluence": 66.9,
+              "dir": "SELL",
+              "health": 62.2,
+              "pattern": "rising_wedge"
+            }
+          ],
+          "picks": [
+            {
+              "symbol": "AUDNZD",
+              "dir": "BUY",
+              "confluence": 78.0
+            }
+          ],
+          "executions": [
+            {
+              "symbol": "AUDNZD",
+              "status": "filled",
+              "side": "BUY",
+              "lots": 0.95,
+              "sl": 1.24319,
+              "tp": 1.2478399999999996,
+              "ticket": 406692180,
+              "error": "",
+              "confluence": 78.0
+            }
+          ],
+          "elapsed_s": 16.3,
+          "learning": {
+            "min_trades": 8,
+            "setups": {
+              "desk:rising_channel": {
+                "trades": 6,
+                "win_rate": 16.7,
+                "net_pnl": -52.37,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "boom_crash_spike_drift": {
+                "trades": 71,
+                "win_rate": 45.1,
+                "net_pnl": -662.54,
+                "factor": 1.0,
+                "sample_ok": true
+              },
+              "desk:double_top": {
+                "trades": 1,
+                "win_rate": 100.0,
+                "net_pnl": 40.61,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "desk-descending_triangl": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -11.92,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "desk:falling_wedge": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -5.41,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "reconcile": {
+                "trades": 123,
+                "win_rate": 28.5,
+                "net_pnl": -527.98,
+                "factor": 0.654,
+                "sample_ok": true
+              },
+              "autobuy": {
+                "trades": 2,
+                "win_rate": 100.0,
+                "net_pnl": 119.04,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "confirm_exec": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -50.66,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "desk_managed": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -29.03,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "desk_mtf_confluence": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -26.56,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "double_top_supply": {
+                "trades": 1,
+                "win_rate": 100.0,
+                "net_pnl": 71.66,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "triangle_breakdown_retest": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -39.78,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "bos-demand": {
+                "trades": 1,
+                "win_rate": 100.0,
+                "net_pnl": 70.96,
+                "factor": 1.0,
+                "sample_ok": false
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "trade": {
+        "ticket": 406680536,
+        "symbol": "BTCUSD",
+        "side": "SELL",
+        "open_time_broker": 1791860458,
+        "close_time_broker": 1791873279,
+        "entry": 81845.99,
+        "exit": 83395.86,
+        "net_pnl": -47.48,
+        "deals": [
+          {
+            "ticket": 379046433,
+            "order": 406680536,
+            "time": 1791860458,
+            "time_msc": 1791860458033,
+            "type": 1,
+            "entry": 0,
+            "magic": 20260601,
+            "position_id": 406680536,
+            "reason": 3,
+            "volume": 0.03,
+            "price": 81845.99,
+            "commission": -0.98,
+            "swap": 0.0,
+            "profit": 0.0,
+            "fee": 0.0,
+            "symbol": "BTCUSD",
+            "comment": "desk-double_top",
+            "external_id": "r0cbBBo80yWfpiJ4H"
+          },
+          {
+            "ticket": 379064387,
+            "order": 406698968,
+            "time": 1791873279,
+            "time_msc": 1791873279497,
+            "type": 0,
+            "entry": 1,
+            "magic": 20260601,
+            "position_id": 406680536,
+            "reason": 3,
+            "volume": 0.03,
+            "price": 83395.86,
+            "commission": 0.0,
+            "swap": 0.0,
+            "profit": -46.5,
+            "fee": 0.0,
+            "symbol": "BTCUSD",
+            "comment": "close",
+            "external_id": "r6hcBBoI83Wfp80yWfiP9I"
+          }
+        ]
+      },
+      "journal": {
+        "id": 498,
+        "ticket": 406680536,
+        "symbol": "BTCUSD",
+        "side": "SELL",
+        "setup": "desk:double_top",
+        "timeframe": null,
+        "entry": 81866.41,
+        "exit_price": 83395.86,
+        "sl": 84434.70160774,
+        "tp": 76729.82678452,
+        "lots": 0.03,
+        "open_time": "2026-10-13T00:00:57.948909+00:00",
+        "close_time": "2026-10-13T06:34:39+00:00",
+        "pnl": -47.48,
+        "outcome": "loss",
+        "reason": null,
+        "mistakes": null,
+        "lessons": null,
+        "screenshot_path": null,
+        "market_conditions": null,
+        "confidence": 71.7,
+        "trade_score": 71.7,
+        "zone_strength": null,
+        "session_hour": 0,
+        "duration_seconds": null,
+        "rr": 2.0,
+        "created_at": "2026-10-13T00:00:57.948909+00:00",
+        "updated_at": "2026-10-13T07:13:31.365151+00:00",
+        "trend_confidence": null,
+        "confirmation_confidence": null,
+        "sl_pips": 25682.916077400005,
+        "separation_atr": null,
+        "mtf_aligned": null,
+        "atr_val": null,
+        "zone_proximity": null,
+        "zone_touches": null
+      },
+      "events": [
+        {
+          "ts": "2026-10-13T00:00:58.131934+00:00",
+          "kind": "execute",
+          "symbol": "BTCUSD",
+          "status": "filled",
+          "side": "SELL",
+          "lots": 0.03,
+          "sl": 84434.70160774,
+          "tp": 76729.82678452,
+          "ticket": 406680536,
+          "error": "",
+          "confluence": 71.7
+        },
+        {
+          "ts": "2026-10-13T03:34:39.821576+00:00",
+          "kind": "early_loss_cut",
+          "ticket": "406680536",
+          "symbol": "BTCUSD",
+          "r_multiple": -0.59,
+          "age_h": 3.6
+        },
+        {
+          "ts": "2026-10-13T07:13:29.365780+00:00",
+          "kind": "position_closed",
+          "ticket": 406680536,
+          "symbol": "BTCUSD",
+          "side": "SELL",
+          "action": "closed",
+          "pnl": -47.48,
+          "entry": 81866.41,
+          "close": 83395.86,
+          "reason": "broker-confirmed close (all deals and costs included)",
+          "outcome": "loss",
+          "close_time": "2026-10-13T06:34:39+00:00"
+        }
+      ],
+      "entry_scan": [
+        {
+          "ts": "2026-10-13T00:00:58.815321+00:00",
+          "kind": "scan",
+          "scanned": 23,
+          "top": [
+            {
+              "symbol": "AUDNZD",
+              "confluence": 76.6,
+              "dir": "BUY",
+              "health": 53.6,
+              "pattern": "double_bottom"
+            },
+            {
+              "symbol": "BTCUSD",
+              "confluence": 71.7,
+              "dir": "SELL",
+              "health": 64.4,
+              "pattern": "double_top"
+            },
+            {
+              "symbol": "NZDCAD",
+              "confluence": 67.2,
+              "dir": "SELL",
+              "health": 45.8,
+              "pattern": "descending_triangle"
+            },
+            {
+              "symbol": "SPX500",
+              "confluence": 67.0,
+              "dir": "SELL",
+              "health": 50.5,
+              "pattern": "ascending_triangle"
+            },
+            {
+              "symbol": "GBPJPY",
+              "confluence": 65.7,
+              "dir": "SELL",
+              "health": 53.2,
+              "pattern": "rising_wedge"
+            }
+          ],
+          "picks": [
+            {
+              "symbol": "BTCUSD",
+              "dir": "SELL",
+              "confluence": 71.7
+            }
+          ],
+          "executions": [
+            {
+              "symbol": "BTCUSD",
+              "status": "filled",
+              "side": "SELL",
+              "lots": 0.03,
+              "sl": 84434.70160774,
+              "tp": 76729.82678452,
+              "ticket": 406680536,
+              "error": "",
+              "confluence": 71.7
+            }
+          ],
+          "elapsed_s": 29.3,
+          "learning": {
+            "min_trades": 8,
+            "setups": {
+              "desk:rising_channel": {
+                "trades": 6,
+                "win_rate": 16.7,
+                "net_pnl": -52.37,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "boom_crash_spike_drift": {
+                "trades": 71,
+                "win_rate": 45.1,
+                "net_pnl": -662.54,
+                "factor": 1.0,
+                "sample_ok": true
+              },
+              "desk:double_top": {
+                "trades": 1,
+                "win_rate": 100.0,
+                "net_pnl": 40.61,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "desk-descending_triangl": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -11.92,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "desk:falling_wedge": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -5.41,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "reconcile": {
+                "trades": 123,
+                "win_rate": 28.5,
+                "net_pnl": -527.98,
+                "factor": 0.654,
+                "sample_ok": true
+              },
+              "autobuy": {
+                "trades": 2,
+                "win_rate": 100.0,
+                "net_pnl": 119.04,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "confirm_exec": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -50.66,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "desk_managed": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -29.03,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "desk_mtf_confluence": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -26.56,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "double_top_supply": {
+                "trades": 1,
+                "win_rate": 100.0,
+                "net_pnl": 71.66,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "triangle_breakdown_retest": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -39.78,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "bos-demand": {
+                "trades": 1,
+                "win_rate": 100.0,
+                "net_pnl": 70.96,
+                "factor": 1.0,
+                "sample_ok": false
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "trade": {
+        "ticket": 406643231,
+        "symbol": "AUDNZD",
+        "side": "BUY",
+        "open_time_broker": 1791822250,
+        "close_time_broker": 1791849628,
+        "entry": 1.24516,
+        "exit": 1.24468,
+        "net_pnl": -30.57,
+        "deals": [
+          {
+            "ticket": 379010902,
+            "order": 406643231,
+            "time": 1791822250,
+            "time_msc": 1791822250802,
+            "type": 0,
+            "entry": 0,
+            "magic": 20260601,
+            "position_id": 406643231,
+            "reason": 3,
+            "volume": 0.83,
+            "price": 1.24516,
+            "commission": -8.3,
+            "swap": 0.0,
+            "profit": 0.0,
+            "fee": 0.0,
+            "symbol": "AUDNZD",
+            "comment": "desk-rising_channel",
+            "external_id": "rQwYBBoLblWfpiFIF"
+          },
+          {
+            "ticket": 379042229,
+            "order": 406676064,
+            "time": 1791849628,
+            "time_msc": 1791849628622,
+            "type": 1,
+            "entry": 1,
+            "magic": 20260601,
+            "position_id": 406643231,
+            "reason": 3,
+            "volume": 0.83,
+            "price": 1.24468,
+            "commission": 0.0,
+            "swap": 0.0,
+            "profit": -22.27,
+            "fee": 0.0,
+            "symbol": "AUDNZD",
+            "comment": "close",
+            "external_id": "rfQbBBoYjxWfpLblWfi4qH"
+          }
+        ]
+      },
+      "journal": {
+        "id": 497,
+        "ticket": 406643231,
+        "symbol": "AUDNZD",
+        "side": "BUY",
+        "setup": "desk:rising_channel",
+        "timeframe": null,
+        "entry": 1.24509,
+        "exit_price": 1.24468,
+        "sl": 1.2442078571428572,
+        "tp": 1.2468542857142855,
+        "lots": 0.83,
+        "open_time": "2026-10-12T13:24:11.925043+00:00",
+        "close_time": "2026-10-13T00:00:28+00:00",
+        "pnl": -30.57,
+        "outcome": "loss",
+        "reason": null,
+        "mistakes": null,
+        "lessons": null,
+        "screenshot_path": null,
+        "market_conditions": null,
+        "confidence": 70.1,
+        "trade_score": 70.1,
+        "zone_strength": null,
+        "session_hour": 16,
+        "duration_seconds": 27378,
+        "rr": 1.9999999999997482,
+        "created_at": "2026-10-12T13:24:11.928042+00:00",
+        "updated_at": "2026-10-13T22:47:53.734635+00:00",
+        "trend_confidence": null,
+        "confirmation_confidence": null,
+        "sl_pips": 8.821428571428314,
+        "separation_atr": null,
+        "mtf_aligned": null,
+        "atr_val": null,
+        "zone_proximity": null,
+        "zone_touches": null
+      },
+      "events": [
+        {
+          "ts": "2026-10-12T13:24:11.945448+00:00",
+          "kind": "execute",
+          "symbol": "AUDNZD",
+          "status": "filled",
+          "side": "BUY",
+          "lots": 0.83,
+          "sl": 1.2442078571428572,
+          "tp": 1.2468542857142855,
+          "ticket": 406643231,
+          "error": "",
+          "confluence": 70.1
+        },
+        {
+          "ts": "2026-10-12T21:00:28.463130+00:00",
+          "kind": "early_loss_cut",
+          "ticket": "406643231",
+          "symbol": "AUDNZD",
+          "r_multiple": -0.5,
+          "age_h": 7.6
+        },
+        {
+          "ts": "2026-10-12T21:01:31.638773+00:00",
+          "kind": "position_closed",
+          "ticket": 406643231,
+          "symbol": "AUDNZD",
+          "side": "BUY",
+          "action": "closed",
+          "pnl": 0.0,
+          "entry": 1.24509,
+          "close": 0.0,
+          "reason": "closed (details unavailable)"
+        }
+      ],
+      "entry_scan": [
+        {
+          "ts": "2026-10-12T13:24:12.051288+00:00",
+          "kind": "scan",
+          "scanned": 23,
+          "top": [
+            {
+              "symbol": "AUDNZD",
+              "confluence": 70.1,
+              "dir": "BUY",
+              "health": 58.0,
+              "pattern": "rising_channel"
+            },
+            {
+              "symbol": "SPX500",
+              "confluence": 68.0,
+              "dir": "SELL",
+              "health": 51.3,
+              "pattern": "rising_wedge"
+            },
+            {
+              "symbol": "AUDUSD",
+              "confluence": 62.9,
+              "dir": "SELL",
+              "health": 50.4,
+              "pattern": "ascending_triangle"
+            },
+            {
+              "symbol": "NZDUSD",
+              "confluence": 62.2,
+              "dir": "SELL",
+              "health": 49.3,
+              "pattern": "falling_channel"
+            },
+            {
+              "symbol": "NZDCAD",
+              "confluence": 62.2,
+              "dir": "SELL",
+              "health": 50.6,
+              "pattern": "rising_wedge"
+            }
+          ],
+          "picks": [
+            {
+              "symbol": "AUDNZD",
+              "dir": "BUY",
+              "confluence": 70.1
+            }
+          ],
+          "executions": [
+            {
+              "symbol": "AUDNZD",
+              "status": "filled",
+              "side": "BUY",
+              "lots": 0.83,
+              "sl": 1.2442078571428572,
+              "tp": 1.2468542857142855,
+              "ticket": 406643231,
+              "error": "",
+              "confluence": 70.1
+            }
+          ],
+          "elapsed_s": 72.1,
+          "learning": {
+            "min_trades": 8,
+            "setups": {
+              "desk:rising_channel": {
+                "trades": 5,
+                "win_rate": 20.0,
+                "net_pnl": -52.37,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "boom_crash_spike_drift": {
+                "trades": 71,
+                "win_rate": 45.1,
+                "net_pnl": -662.54,
+                "factor": 1.0,
+                "sample_ok": true
+              },
+              "desk:double_top": {
+                "trades": 1,
+                "win_rate": 100.0,
+                "net_pnl": 40.61,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "desk-descending_triangl": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -11.92,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "desk:falling_wedge": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -5.41,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "reconcile": {
+                "trades": 123,
+                "win_rate": 28.5,
+                "net_pnl": -527.98,
+                "factor": 0.654,
+                "sample_ok": true
+              },
+              "autobuy": {
+                "trades": 2,
+                "win_rate": 100.0,
+                "net_pnl": 119.04,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "confirm_exec": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -50.66,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "desk_managed": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -29.03,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "desk_mtf_confluence": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -26.56,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "double_top_supply": {
+                "trades": 1,
+                "win_rate": 100.0,
+                "net_pnl": 71.66,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "triangle_breakdown_retest": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -39.78,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "bos-demand": {
+                "trades": 1,
+                "win_rate": 100.0,
+                "net_pnl": 70.96,
+                "factor": 1.0,
+                "sample_ok": false
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "trade": {
+        "ticket": 406618147,
+        "symbol": "BTCUSD",
+        "side": "BUY",
+        "open_time_broker": 1791806603,
+        "close_time_broker": 1791822313,
+        "entry": 83626.1,
+        "exit": 82534.66,
+        "net_pnl": -45.0,
+        "deals": [
+          {
+            "ticket": 378987026,
+            "order": 406618147,
+            "time": 1791806603,
+            "time_msc": 1791806603916,
+            "type": 0,
+            "entry": 0,
+            "magic": 20260601,
+            "position_id": 406618147,
+            "reason": 3,
+            "volume": 0.04,
+            "price": 83626.1,
+            "commission": -1.34,
+            "swap": 0.0,
+            "profit": 0.0,
+            "fee": 0.0,
+            "symbol": "BTCUSD",
+            "comment": "desk-rising_channel",
+            "external_id": "rMcWBBoHddWfpiH4C"
+          },
+          {
+            "ticket": 379011007,
+            "order": 406643364,
+            "time": 1791822313,
+            "time_msc": 1791822313722,
+            "type": 1,
+            "entry": 1,
+            "magic": 20260601,
+            "position_id": 406618147,
+            "reason": 4,
+            "volume": 0.04,
+            "price": 82534.66,
+            "commission": 0.0,
+            "swap": 0.0,
+            "profit": -43.66,
+            "fee": 0.0,
+            "symbol": "BTCUSD",
+            "comment": "[sl 82534.66]",
+            "external_id": "r2wYBBoYdlWfpHddWfiqIF"
+          }
+        ]
+      },
+      "journal": {
+        "id": 482,
+        "ticket": 406618147,
+        "symbol": "BTCUSD",
+        "side": "BUY",
+        "setup": "desk:rising_channel",
+        "timeframe": null,
+        "entry": 83544.66,
+        "exit_price": 82534.66,
+        "sl": 82534.66,
+        "tp": 85564.66,
+        "lots": 0.04,
+        "open_time": "2026-10-12T09:04:04.177636+00:00",
+        "close_time": "2026-10-12T16:25:13+00:00",
+        "pnl": -45.0,
+        "outcome": "loss",
+        "reason": null,
+        "mistakes": null,
+        "lessons": null,
+        "screenshot_path": null,
+        "market_conditions": null,
+        "confidence": 73.3,
+        "trade_score": 73.3,
+        "zone_strength": null,
+        "session_hour": 12,
+        "duration_seconds": 15710,
+        "rr": 2.0,
+        "created_at": "2026-10-12T09:04:04.177636+00:00",
+        "updated_at": "2026-10-13T22:47:53.734635+00:00",
+        "trend_confidence": null,
+        "confirmation_confidence": null,
+        "sl_pips": 10100.0,
+        "separation_atr": null,
+        "mtf_aligned": null,
+        "atr_val": null,
+        "zone_proximity": null,
+        "zone_touches": null
+      },
+      "events": [
+        {
+          "ts": "2026-10-12T09:04:20.915436+00:00",
+          "kind": "execute",
+          "symbol": "BTCUSD",
+          "status": "filled",
+          "side": "BUY",
+          "lots": 0.04,
+          "sl": 82534.66,
+          "tp": 85564.66,
+          "ticket": 406618147,
+          "error": "",
+          "confluence": 73.3
+        },
+        {
+          "ts": "2026-10-12T12:13:06.938930+00:00",
+          "kind": "position_closed",
+          "ticket": 406618147,
+          "symbol": "BTCUSD",
+          "side": "BUY",
+          "action": "closed",
+          "pnl": 0.0,
+          "entry": 83544.66,
+          "close": 0.0,
+          "reason": "closed (details unavailable)"
+        }
+      ],
+      "entry_scan": [
+        {
+          "ts": "2026-10-12T09:04:21.061537+00:00",
+          "kind": "scan",
+          "scanned": 23,
+          "top": [
+            {
+              "symbol": "BTCUSD",
+              "confluence": 73.3,
+              "dir": "BUY",
+              "health": 62.5,
+              "pattern": "rising_channel"
+            },
+            {
+              "symbol": "AUDNZD",
+              "confluence": 68.7,
+              "dir": "BUY",
+              "health": 59.7,
+              "pattern": "rising_channel"
+            },
+            {
+              "symbol": "ETHUSD",
+              "confluence": 67.3,
+              "dir": "BUY",
+              "health": 82.8,
+              "pattern": "rising_channel"
+            },
+            {
+              "symbol": "AUDUSD",
+              "confluence": 65.2,
+              "dir": "SELL",
+              "health": 67.3,
+              "pattern": "rising_wedge"
+            },
+            {
+              "symbol": "NZDCAD",
+              "confluence": 62.4,
+              "dir": "SELL",
+              "health": 52.6,
+              "pattern": "symmetrical_triangle"
+            }
+          ],
+          "picks": [
+            {
+              "symbol": "BTCUSD",
+              "dir": "BUY",
+              "confluence": 73.3
+            }
+          ],
+          "executions": [
+            {
+              "symbol": "BTCUSD",
+              "status": "filled",
+              "side": "BUY",
+              "lots": 0.04,
+              "sl": 82534.66,
+              "tp": 85564.66,
+              "ticket": 406618147,
+              "error": "",
+              "confluence": 73.3
+            }
+          ],
+          "elapsed_s": 1030.1,
+          "learning": {
+            "min_trades": 8,
+            "setups": {
+              "boom_crash_spike_drift": {
+                "trades": 54,
+                "win_rate": 44.4,
+                "net_pnl": -660.57,
+                "factor": 1.0,
+                "sample_ok": true
+              },
+              "desk:double_top": {
+                "trades": 1,
+                "win_rate": 100.0,
+                "net_pnl": 40.61,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "desk-descending_triangl": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -11.92,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "desk:falling_wedge": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -5.41,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "desk:rising_channel": {
+                "trades": 4,
+                "win_rate": 25.0,
+                "net_pnl": -52.37,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "reconcile": {
+                "trades": 123,
+                "win_rate": 28.5,
+                "net_pnl": -527.98,
+                "factor": 0.654,
+                "sample_ok": true
+              },
+              "autobuy": {
+                "trades": 2,
+                "win_rate": 100.0,
+                "net_pnl": 119.04,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "confirm_exec": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -50.66,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "desk_managed": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -29.03,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "desk_mtf_confluence": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -26.56,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "double_top_supply": {
+                "trades": 1,
+                "win_rate": 100.0,
+                "net_pnl": 71.66,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "triangle_breakdown_retest": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -39.78,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "bos-demand": {
+                "trades": 1,
+                "win_rate": 100.0,
+                "net_pnl": 70.96,
+                "factor": 1.0,
+                "sample_ok": false
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "trade": {
+        "ticket": 403652923,
+        "symbol": "EURCHF",
+        "side": "SELL",
+        "open_time_broker": 1791519135,
+        "close_time_broker": 1791798872,
+        "entry": 0.93223,
+        "exit": 0.930429090909091,
+        "net_pnl": 68.24,
+        "deals": [
+          {
+            "ticket": 378845420,
+            "order": 403652923,
+            "time": 1791519135,
+            "time_msc": 1791519135757,
+            "type": 1,
+            "entry": 0,
+            "magic": 20260601,
+            "position_id": 403652923,
+            "reason": 3,
+            "volume": 0.33,
+            "price": 0.93223,
+            "commission": -3.3,
+            "swap": 0.0,
+            "profit": 0.0,
+            "fee": 0.0,
+            "symbol": "EURCHF",
+            "comment": "desk-double_top",
+            "external_id": "r1Ke9ov0xIfpiO1fB"
+          },
+          {
+            "ticket": 378928158,
+            "order": 403738187,
+            "time": 1791571313,
+            "time_msc": 1791571313723,
+            "type": 0,
+            "entry": 1,
+            "magic": 20260601,
+            "position_id": 403652923,
+            "reason": 3,
+            "volume": 0.16,
+            "price": 0.92995,
+            "commission": 0.0,
+            "swap": 0.0,
+            "profit": 43.91,
+            "fee": 0.0,
+            "symbol": "EURCHF",
+            "comment": "close",
+            "external_id": "r5Sl9ozdJJfpv0xIfiG9mB"
+          },
+          {
+            "ticket": 378975683,
+            "order": 406606194,
+            "time": 1791798872,
+            "time_msc": 1791798872652,
+            "type": 0,
+            "entry": 1,
+            "magic": 0,
+            "position_id": 403652923,
+            "reason": 0,
+            "volume": 0.17,
+            "price": 0.93088,
+            "commission": 0.0,
+            "swap": 0.0,
+            "profit": 27.63,
+            "fee": 0.0,
+            "symbol": "EURCHF",
+            "comment": "",
+            "external_id": "rAfVBBo6JaWfpv0xIfi_6B"
+          }
+        ]
+      },
+      "journal": {
+        "id": 419,
+        "ticket": 403652923,
+        "symbol": "EURCHF",
+        "side": "SELL",
+        "setup": "desk:double_top",
+        "timeframe": null,
+        "entry": 0.93233,
+        "exit_price": 0.93088,
+        "sl": 0.93450754,
+        "tp": 0.9279749199999999,
+        "lots": 0.33,
+        "open_time": "2026-10-09T01:12:17.167263+00:00",
+        "close_time": "2026-10-12T09:54:32+00:00",
+        "pnl": 68.24,
+        "outcome": "win",
+        "reason": null,
+        "mistakes": null,
+        "lessons": null,
+        "screenshot_path": null,
+        "market_conditions": null,
+        "confidence": 80.8,
+        "trade_score": 80.8,
+        "zone_strength": null,
+        "session_hour": 4,
+        "duration_seconds": 279737,
+        "rr": 2.0,
+        "created_at": "2026-10-09T01:12:17.167263+00:00",
+        "updated_at": "2026-10-13T22:47:53.734635+00:00",
+        "trend_confidence": null,
+        "confirmation_confidence": null,
+        "sl_pips": 21.77540000000033,
+        "separation_atr": null,
+        "mtf_aligned": null,
+        "atr_val": null,
+        "zone_proximity": null,
+        "zone_touches": null
+      },
+      "events": [
+        {
+          "ts": "2026-10-09T01:12:17.179264+00:00",
+          "kind": "execute",
+          "symbol": "EURCHF",
+          "status": "filled",
+          "side": "SELL",
+          "lots": 0.33,
+          "sl": 0.93450754,
+          "tp": 0.9279749199999999,
+          "ticket": 403652923,
+          "error": "",
+          "confluence": 80.8
+        },
+        {
+          "ts": "2026-10-09T15:41:52.616368+00:00",
+          "kind": "partial_exit",
+          "ticket": "403652923",
+          "symbol": "EURCHF",
+          "closed_lots": 0.16,
+          "remaining_lots": 0.17,
+          "r_multiple": 1.01
+        },
+        {
+          "ts": "2026-10-09T15:41:53.999675+00:00",
+          "kind": "breakeven",
+          "ticket": "403652923",
+          "symbol": "EURCHF",
+          "sl": 0.93221,
+          "entry": 0.93223,
+          "r_multiple": 1.01
+        },
+        {
+          "ts": "2026-10-11T01:17:38.880671+00:00",
+          "kind": "position_closed",
+          "ticket": 403652923,
+          "symbol": "EURCHF",
+          "side": "SELL",
+          "action": "closed",
+          "pnl": 0.0,
+          "entry": 0.93233,
+          "close": 0.0,
+          "reason": "closed (details unavailable)"
+        }
+      ],
+      "entry_scan": [
+        {
+          "ts": "2026-10-09T01:12:17.204264+00:00",
+          "kind": "scan",
+          "scanned": 23,
+          "top": [
+            {
+              "symbol": "EURCHF",
+              "confluence": 80.8,
+              "dir": "SELL",
+              "health": 79.5,
+              "pattern": "double_top"
+            },
+            {
+              "symbol": "NZDCAD",
+              "confluence": 77.2,
+              "dir": "SELL",
+              "health": 74.5,
+              "pattern": "descending_triangle"
+            },
+            {
+              "symbol": "USDCAD",
+              "confluence": 70.6,
+              "dir": "SELL",
+              "health": 70.8,
+              "pattern": "falling_channel"
+            },
+            {
+              "symbol": "AUDNZD",
+              "confluence": 64.6,
+              "dir": "SELL",
+              "health": 73.6,
+              "pattern": "ascending_triangle"
+            },
+            {
+              "symbol": "ETHUSD",
+              "confluence": 64.3,
+              "dir": "SELL",
+              "health": 60.8,
+              "pattern": "double_top"
+            }
+          ],
+          "picks": [
+            {
+              "symbol": "EURCHF",
+              "dir": "SELL",
+              "confluence": 80.8
+            },
+            {
+              "symbol": "NZDCAD",
+              "dir": "SELL",
+              "confluence": 77.2
+            },
+            {
+              "symbol": "USDCAD",
+              "dir": "SELL",
+              "confluence": 70.6
+            }
+          ],
+          "executions": [
+            {
+              "symbol": "EURCHF",
+              "status": "filled",
+              "side": "SELL",
+              "lots": 0.33,
+              "sl": 0.93450754,
+              "tp": 0.9279749199999999,
+              "ticket": 403652923,
+              "error": "",
+              "confluence": 80.8
+            }
+          ],
+          "elapsed_s": 3475.4,
+          "learning": {
+            "min_trades": 8,
+            "setups": {
+              "desk-descending_triangl": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -11.92,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "desk:falling_wedge": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -5.41,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "desk:rising_channel": {
+                "trades": 4,
+                "win_rate": 25.0,
+                "net_pnl": -52.37,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "reconcile": {
+                "trades": 123,
+                "win_rate": 28.5,
+                "net_pnl": -527.98,
+                "factor": 0.654,
+                "sample_ok": true
+              },
+              "autobuy": {
+                "trades": 2,
+                "win_rate": 100.0,
+                "net_pnl": 119.04,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "confirm_exec": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -50.66,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "desk_managed": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -29.03,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "desk_mtf_confluence": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -26.56,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "double_top_supply": {
+                "trades": 1,
+                "win_rate": 100.0,
+                "net_pnl": 71.66,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "triangle_breakdown_retest": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -39.78,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "bos-demand": {
+                "trades": 1,
+                "win_rate": 100.0,
+                "net_pnl": 70.96,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "boom_crash_spike_drift": {
+                "trades": 5,
+                "win_rate": 80.0,
+                "net_pnl": 168.69,
+                "factor": 1.0,
+                "sample_ok": false
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "trade": {
+        "ticket": 403651225,
+        "symbol": "USDCAD",
+        "side": "BUY",
+        "open_time_broker": 1791518108,
+        "close_time_broker": 1791797340,
+        "entry": 1.42167,
+        "exit": 1.42464,
+        "net_pnl": 67.48,
+        "deals": [
+          {
+            "ticket": 378843786,
+            "order": 403651225,
+            "time": 1791518108,
+            "time_msc": 1791518108195,
+            "type": 0,
+            "entry": 0,
+            "magic": 20260601,
+            "position_id": 403651225,
+            "reason": 3,
+            "volume": 0.34,
+            "price": 1.42167,
+            "commission": -3.4,
+            "swap": 0.0,
+            "profit": 0.0,
+            "fee": 0.0,
+            "symbol": "USDCAD",
+            "comment": "confirm_exec relaxed",
+            "external_id": "r1Ee9oZUxIfpiPvfB"
+          },
+          {
+            "ticket": 378974173,
+            "order": 406604600,
+            "time": 1791797340,
+            "time_msc": 1791797340333,
+            "type": 1,
+            "entry": 1,
+            "magic": 0,
+            "position_id": 403651225,
+            "reason": 0,
+            "volume": 0.34,
+            "price": 1.42464,
+            "commission": 0.0,
+            "swap": 0.0,
+            "profit": 70.88,
+            "fee": 0.0,
+            "symbol": "USDCAD",
+            "comment": "",
+            "external_id": "rRYVBBoUvZWfpZUxIfiQ0B"
+          }
+        ]
+      },
+      "journal": {
+        "id": 418,
+        "ticket": 403651225,
+        "symbol": "USDCAD",
+        "side": "BUY",
+        "setup": "confirm_exec",
+        "timeframe": "H1",
+        "entry": 1.42189,
+        "exit_price": 1.42464,
+        "sl": 1.41989,
+        "tp": 1.43089,
+        "lots": 0.34,
+        "open_time": "2026-10-09T00:55:15.733786+00:00",
+        "close_time": "2026-10-12T09:29:00+00:00",
+        "pnl": 67.48,
+        "outcome": "win",
+        "reason": "HTF trend bullish (EMA50/200, conf 100%); demand zone 1.42054-1.42326 strength 100/100 touches 3; confirmation: outside_bar (bullish, 54%); RR 4.50 (min 2.0), risk 0.5% = 47.21 USD; MTF confluence: 2/2 timeframes aligned with bullish (+15% bonus)",
+        "mistakes": null,
+        "lessons": null,
+        "screenshot_path": null,
+        "market_conditions": null,
+        "confidence": 91.2,
+        "trade_score": 103.4,
+        "zone_strength": 100.0,
+        "session_hour": 3,
+        "duration_seconds": 279232,
+        "rr": 4.5,
+        "created_at": "2026-10-09T00:55:15.733786+00:00",
+        "updated_at": "2026-10-13T22:47:53.734635+00:00",
+        "trend_confidence": 1.0,
+        "confirmation_confidence": 0.535,
+        "sl_pips": 20.0,
+        "separation_atr": null,
+        "mtf_aligned": null,
+        "atr_val": null,
+        "zone_proximity": null,
+        "zone_touches": null
+      },
+      "events": [],
+      "entry_scan": []
+    },
+    {
+      "trade": {
+        "ticket": 403369520,
+        "symbol": "ETHUSD",
+        "side": "BUY",
+        "open_time_broker": 1791316453,
+        "close_time_broker": 1791349096,
+        "entry": 2697.45,
+        "exit": 2668.36,
+        "net_pnl": -11.92,
+        "deals": [
+          {
+            "ticket": 378571463,
+            "order": 403369520,
+            "time": 1791316453,
+            "time_msc": 1791316453463,
+            "type": 0,
+            "entry": 0,
+            "magic": 20260601,
+            "position_id": 403369520,
+            "reason": 3,
+            "volume": 0.36,
+            "price": 2697.45,
+            "commission": -0.39,
+            "swap": 0.0,
+            "profit": 0.0,
+            "fee": 0.0,
+            "symbol": "ETHUSD",
+            "comment": "desk-descending_triangl",
+            "external_id": "rv-I9oUFbHfpiSnKB"
+          },
+          {
+            "ticket": 378593846,
+            "order": 403392750,
+            "time": 1791349096,
+            "time_msc": 1791349096013,
+            "type": 1,
+            "entry": 1,
+            "magic": 20260601,
+            "position_id": 403369520,
+            "reason": 4,
+            "volume": 0.36,
+            "price": 2668.36,
+            "commission": 0.0,
+            "swap": -1.06,
+            "profit": -10.47,
+            "fee": 0.0,
+            "symbol": "ETHUSD",
+            "comment": "[sl 2668.46]",
+            "external_id": "r3aK9oeghHfpUFbHfiUGMB"
+          }
+        ]
+      },
+      "journal": {
+        "id": 293,
+        "ticket": 403369520,
+        "symbol": "ETHUSD",
+        "side": "BUY",
+        "setup": "desk-descending_triangl",
+        "timeframe": null,
+        "entry": 2697.45,
+        "exit_price": 2668.36,
+        "sl": 2668.46,
+        "tp": 2759.22,
+        "lots": 0.36,
+        "open_time": null,
+        "close_time": "2026-10-07T04:58:16+00:00",
+        "pnl": -11.92,
+        "outcome": "loss",
+        "reason": "close (fill deal not found; pnl from last tick)",
+        "mistakes": null,
+        "lessons": null,
+        "screenshot_path": null,
+        "market_conditions": null,
+        "confidence": null,
+        "trade_score": null,
+        "zone_strength": null,
+        "session_hour": 19,
+        "duration_seconds": 32643,
+        "rr": null,
+        "created_at": "2026-10-06T18:05:19.829095+00:00",
+        "updated_at": "2026-10-11T01:42:37.960620+00:00",
+        "trend_confidence": null,
+        "confirmation_confidence": null,
+        "sl_pips": null,
+        "separation_atr": null,
+        "mtf_aligned": null,
+        "atr_val": null,
+        "zone_proximity": null,
+        "zone_touches": null
+      },
+      "events": [],
+      "entry_scan": []
+    },
+    {
+      "trade": {
+        "ticket": 403326859,
+        "symbol": "BTCUSD",
+        "side": "BUY",
+        "open_time_broker": 1791299874,
+        "close_time_broker": 1791313102,
+        "entry": 86287.53,
+        "exit": 85781.98,
+        "net_pnl": -5.41,
+        "deals": [
+          {
+            "ticket": 378530646,
+            "order": 403326859,
+            "time": 1791299874,
+            "time_msc": 1791299874696,
+            "type": 0,
+            "entry": 0,
+            "magic": 20260601,
+            "position_id": 403326859,
+            "reason": 3,
+            "volume": 0.01,
+            "price": 86287.53,
+            "commission": -0.35,
+            "swap": 0.0,
+            "profit": 0.0,
+            "fee": 0.0,
+            "symbol": "BTCUSD",
+            "comment": "desk-falling_wedge",
+            "external_id": "r-QF9oTOPHfpin8GB"
+          },
+          {
+            "ticket": 378567202,
+            "order": 403365115,
+            "time": 1791313102,
+            "time_msc": 1791313102462,
+            "type": 1,
+            "entry": 1,
+            "magic": 20260601,
+            "position_id": 403326859,
+            "reason": 3,
+            "volume": 0.01,
+            "price": 85781.98,
+            "commission": 0.0,
+            "swap": 0.0,
+            "profit": -5.06,
+            "fee": 0.0,
+            "symbol": "BTCUSD",
+            "comment": "close",
+            "external_id": "rvsI9o73ZHfpTOPHfiSUKB"
+          }
+        ]
+      },
+      "journal": {
+        "id": 292,
+        "ticket": 403326859,
+        "symbol": "BTCUSD",
+        "side": "BUY",
+        "setup": "desk:falling_wedge",
+        "timeframe": null,
+        "entry": 86336.93,
+        "exit_price": 85781.98,
+        "sl": 85326.93,
+        "tp": 88356.93,
+        "lots": 0.01,
+        "open_time": "2026-10-06T12:18:19.773223+00:00",
+        "close_time": "2026-10-06T18:58:22+00:00",
+        "pnl": -5.41,
+        "outcome": "loss",
+        "reason": null,
+        "mistakes": null,
+        "lessons": null,
+        "screenshot_path": null,
+        "market_conditions": null,
+        "confidence": 82.4,
+        "trade_score": 82.4,
+        "zone_strength": null,
+        "session_hour": 15,
+        "duration_seconds": 13228,
+        "rr": 2.0,
+        "created_at": "2026-10-06T12:18:19.774222+00:00",
+        "updated_at": "2026-10-11T01:42:37.960620+00:00",
+        "trend_confidence": null,
+        "confirmation_confidence": null,
+        "sl_pips": 10100.0,
+        "separation_atr": null,
+        "mtf_aligned": null,
+        "atr_val": null,
+        "zone_proximity": null,
+        "zone_touches": null
+      },
+      "events": [
+        {
+          "ts": "2026-10-06T12:18:19.805226+00:00",
+          "kind": "execute",
+          "symbol": "BTCUSD",
+          "status": "filled",
+          "side": "BUY",
+          "lots": 0.01,
+          "sl": 85326.93,
+          "tp": 88356.93,
+          "ticket": 403326859,
+          "error": "",
+          "confluence": 82.4
+        },
+        {
+          "ts": "2026-10-06T15:58:19.725909+00:00",
+          "kind": "early_loss_cut",
+          "ticket": "403326859",
+          "symbol": "BTCUSD",
+          "r_multiple": -0.52,
+          "age_h": 3.7
+        },
+        {
+          "ts": "2026-10-06T15:59:23.319569+00:00",
+          "kind": "position_closed",
+          "ticket": 403326859,
+          "symbol": "BTCUSD",
+          "side": "BUY",
+          "action": "closed",
+          "pnl": 0.0,
+          "entry": 86336.93,
+          "close": 0.0,
+          "reason": "closed (details unavailable)"
+        }
+      ],
+      "entry_scan": [
+        {
+          "ts": "2026-10-06T12:18:22.122274+00:00",
+          "kind": "scan",
+          "scanned": 23,
+          "top": [
+            {
+              "symbol": "BTCUSD",
+              "confluence": 82.4,
+              "dir": "BUY",
+              "health": 74.2,
+              "pattern": "falling_wedge"
+            },
+            {
+              "symbol": "GER40",
+              "confluence": 79.2,
+              "dir": "BUY",
+              "health": 50.0,
+              "pattern": "ascending_triangle"
+            },
+            {
+              "symbol": "NZDUSD",
+              "confluence": 73.0,
+              "dir": "SELL",
+              "health": 61.6,
+              "pattern": "bear_flag"
+            },
+            {
+              "symbol": "SPX500",
+              "confluence": 67.5,
+              "dir": "BUY",
+              "health": 50.0,
+              "pattern": "bull_flag"
+            },
+            {
+              "symbol": "USDCAD",
+              "confluence": 64.3,
+              "dir": "BUY",
+              "health": 68.7,
+              "pattern": "descending_triangle"
+            }
+          ],
+          "picks": [
+            {
+              "symbol": "BTCUSD",
+              "dir": "BUY",
+              "confluence": 82.4
+            },
+            {
+              "symbol": "NZDUSD",
+              "dir": "SELL",
+              "confluence": 73.0
+            }
+          ],
+          "executions": [
+            {
+              "symbol": "BTCUSD",
+              "status": "filled",
+              "side": "BUY",
+              "lots": 0.01,
+              "sl": 85326.93,
+              "tp": 88356.93,
+              "ticket": 403326859,
+              "error": "",
+              "confluence": 82.4
+            },
+            {
+              "symbol": "NZDUSD",
+              "status": "blocked",
+              "reason": "consensus: NZDUSD not in allowlist (no backtested edge); symbol 'NZDUSD' is on the blocked list; confidence 73% below floor 80%"
+            }
+          ],
+          "elapsed_s": 878.7,
+          "learning": {
+            "min_trades": 8,
+            "setups": {
+              "autobuy": {
+                "trades": 2,
+                "win_rate": 100.0,
+                "net_pnl": 119.04,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "desk_managed": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -27.93,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "confirm_exec": {
+                "trades": 1,
+                "win_rate": 100.0,
+                "net_pnl": 15.77,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "desk_mtf_confluence": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -26.56,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "double_top_supply": {
+                "trades": 1,
+                "win_rate": 100.0,
+                "net_pnl": 71.66,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "triangle_breakdown_retest": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -37.18,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "bos-demand": {
+                "trades": 1,
+                "win_rate": 100.0,
+                "net_pnl": 71.76,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "boom_crash_spike_drift": {
+                "trades": 5,
+                "win_rate": 80.0,
+                "net_pnl": 168.69,
+                "factor": 1.0,
+                "sample_ok": false
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "trade": {
+        "ticket": 403147846,
+        "symbol": "ETHUSD",
+        "side": "BUY",
+        "open_time_broker": 1791177504,
+        "close_time_broker": 1791185547,
+        "entry": 2734.3,
+        "exit": 2702.75,
+        "net_pnl": -12.07,
+        "deals": [
+          {
+            "ticket": 378358312,
+            "order": 403147846,
+            "time": 1791177504,
+            "time_msc": 1791177504474,
+            "type": 0,
+            "entry": 0,
+            "magic": 20260601,
+            "position_id": 403147846,
+            "reason": 3,
+            "volume": 0.37,
+            "price": 2734.3,
+            "commission": -0.4,
+            "swap": 0.0,
+            "profit": 0.0,
+            "fee": 0.0,
+            "symbol": "ETHUSD",
+            "comment": "desk-rising_channel",
+            "external_id": "rPY38oyeZGfpihE5"
+          },
+          {
+            "ticket": 378370097,
+            "order": 403159975,
+            "time": 1791185547,
+            "time_msc": 1791185547794,
+            "type": 1,
+            "entry": 1,
+            "magic": 20260601,
+            "position_id": 403147846,
+            "reason": 4,
+            "volume": 0.37,
+            "price": 2702.75,
+            "commission": 0.0,
+            "swap": 0.0,
+            "profit": -11.67,
+            "fee": 0.0,
+            "symbol": "ETHUSD",
+            "comment": "[sl 2704.28]",
+            "external_id": "r8F48o74cGfpyeZGfiNy5"
+          }
+        ]
+      },
+      "journal": {
+        "id": 291,
+        "ticket": 403147846,
+        "symbol": "ETHUSD",
+        "side": "BUY",
+        "setup": "desk:rising_channel",
+        "timeframe": null,
+        "entry": 2733.86,
+        "exit_price": 2702.75,
+        "sl": 2704.27847582,
+        "tp": 2787.8021428571433,
+        "lots": 0.37,
+        "open_time": "2026-10-05T02:18:23.553671+00:00",
+        "close_time": "2026-10-05T07:32:27+00:00",
+        "pnl": -12.07,
+        "outcome": "loss",
+        "reason": null,
+        "mistakes": null,
+        "lessons": null,
+        "screenshot_path": null,
+        "market_conditions": null,
+        "confidence": 86.3,
+        "trade_score": 86.3,
+        "zone_strength": null,
+        "session_hour": 5,
+        "duration_seconds": 8043,
+        "rr": 1.8235078939445977,
+        "created_at": "2026-10-05T02:18:23.553671+00:00",
+        "updated_at": "2026-10-11T01:42:37.960620+00:00",
+        "trend_confidence": null,
+        "confirmation_confidence": null,
+        "sl_pips": 295.8152418000009,
+        "separation_atr": null,
+        "mtf_aligned": null,
+        "atr_val": null,
+        "zone_proximity": null,
+        "zone_touches": null
+      },
+      "events": [
+        {
+          "ts": "2026-10-05T02:18:23.556673+00:00",
+          "kind": "execute",
+          "symbol": "ETHUSD",
+          "status": "filled",
+          "side": "BUY",
+          "lots": 0.37,
+          "sl": 2704.27847582,
+          "tp": 2787.8021428571433,
+          "ticket": 403147846,
+          "error": "",
+          "confluence": 86.3
+        },
+        {
+          "ts": "2026-10-05T04:33:06.587908+00:00",
+          "kind": "position_closed",
+          "ticket": 403147846,
+          "symbol": "ETHUSD",
+          "side": "BUY",
+          "action": "closed",
+          "pnl": 0.0,
+          "entry": 2733.86,
+          "close": 0.0,
+          "reason": "closed (details unavailable)"
+        }
+      ],
+      "entry_scan": [
+        {
+          "ts": "2026-10-05T02:18:23.559670+00:00",
+          "kind": "scan",
+          "scanned": 23,
+          "top": [
+            {
+              "symbol": "ETHUSD",
+              "confluence": 86.3,
+              "dir": "BUY",
+              "health": 63.5,
+              "pattern": "rising_channel"
+            },
+            {
+              "symbol": "BTCUSD",
+              "confluence": 77.3,
+              "dir": "BUY",
+              "health": 77.7,
+              "pattern": "rising_channel"
+            },
+            {
+              "symbol": "USDCAD",
+              "confluence": 63.7,
+              "dir": "BUY",
+              "health": 68.8,
+              "pattern": "rising_channel"
+            },
+            {
+              "symbol": "GER40",
+              "confluence": 60.4,
+              "dir": "BUY",
+              "health": 58.0,
+              "pattern": "rising_channel"
+            },
+            {
+              "symbol": "USDJPY",
+              "confluence": 58.2,
+              "dir": "SELL",
+              "health": 69.0,
+              "pattern": "falling_channel"
+            }
+          ],
+          "picks": [
+            {
+              "symbol": "ETHUSD",
+              "dir": "BUY",
+              "confluence": 86.3
+            }
+          ],
+          "executions": [
+            {
+              "symbol": "ETHUSD",
+              "status": "filled",
+              "side": "BUY",
+              "lots": 0.37,
+              "sl": 2704.27847582,
+              "tp": 2787.8021428571433,
+              "ticket": 403147846,
+              "error": "",
+              "confluence": 86.3
+            }
+          ],
+          "elapsed_s": 6.1,
+          "learning": {
+            "min_trades": 8,
+            "setups": {
+              "autobuy": {
+                "trades": 2,
+                "win_rate": 100.0,
+                "net_pnl": 119.04,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "desk_managed": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -27.93,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "confirm_exec": {
+                "trades": 1,
+                "win_rate": 100.0,
+                "net_pnl": 15.77,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "desk_mtf_confluence": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -26.56,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "double_top_supply": {
+                "trades": 1,
+                "win_rate": 100.0,
+                "net_pnl": 71.66,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "triangle_breakdown_retest": {
+                "trades": 1,
+                "win_rate": 0.0,
+                "net_pnl": -37.18,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "bos-demand": {
+                "trades": 1,
+                "win_rate": 100.0,
+                "net_pnl": 71.76,
+                "factor": 1.0,
+                "sample_ok": false
+              },
+              "boom_crash_spike_drift": {
+                "trades": 5,
+                "win_rate": 80.0,
+                "net_pnl": 168.69,
+                "factor": 1.0,
+                "sample_ok": false
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,226 @@
+{
+  "generated_at": "2026-10-14T05:54:50.201723+00:00",
+  "method": "Offline coverage audit; no runtime imports, account calls, outcome-based tuning or P&L claims.",
+  "desk": {
+    "counts": {
+      "lines": 1371,
+      "scans": 619,
+      "recorded_picks": 845,
+      "executions_recorded": 492,
+      "top_observations": 3095,
+      "fixed_direction_observations": 2078,
+      "fixed_direction_mismatches": 39,
+      "with_analyst_snapshot": 0,
+      "mismatches_also_recorded_as_picks": 0,
+      "unreadable_lines": 0
+    },
+    "first_scan": "2026-09-08T22:27:02.045133+00:00",
+    "last_scan": "2026-10-14T05:42:50.174515+00:00",
+    "mismatched_patterns": {
+      "double_top": 11,
+      "rising_wedge": 5,
+      "falling_wedge": 15,
+      "falling_channel": 6,
+      "double_bottom": 1,
+      "rising_channel": 1
+    },
+    "examples": [
+      {
+        "line": 1,
+        "ts": "2026-09-08T22:27:02.045133+00:00",
+        "symbol": "BTCUSD",
+        "side": "BUY",
+        "pattern": "double_top",
+        "confluence": 58.3,
+        "also_recorded_as_pick": false
+      },
+      {
+        "line": 2,
+        "ts": "2026-09-08T22:35:40.007336+00:00",
+        "symbol": "BTCUSD",
+        "side": "BUY",
+        "pattern": "double_top",
+        "confluence": 58.8,
+        "also_recorded_as_pick": false
+      },
+      {
+        "line": 20,
+        "ts": "2026-09-09T12:02:57.445457+00:00",
+        "symbol": "USOIL",
+        "side": "BUY",
+        "pattern": "double_top",
+        "confluence": 63.6,
+        "also_recorded_as_pick": false
+      },
+      {
+        "line": 33,
+        "ts": "2026-09-09T19:58:59.120626+00:00",
+        "symbol": "USOIL",
+        "side": "BUY",
+        "pattern": "double_top",
+        "confluence": 61.5,
+        "also_recorded_as_pick": false
+      },
+      {
+        "line": 34,
+        "ts": "2026-09-09T20:29:12.789782+00:00",
+        "symbol": "USOIL",
+        "side": "BUY",
+        "pattern": "double_top",
+        "confluence": 61.4,
+        "also_recorded_as_pick": false
+      },
+      {
+        "line": 35,
+        "ts": "2026-09-09T20:59:48.212245+00:00",
+        "symbol": "USOIL",
+        "side": "BUY",
+        "pattern": "double_top",
+        "confluence": 61.3,
+        "also_recorded_as_pick": false
+      },
+      {
+        "line": 119,
+        "ts": "2026-09-12T16:12:45.224104+00:00",
+        "symbol": "ETHUSD",
+        "side": "BUY",
+        "pattern": "rising_wedge",
+        "confluence": 50.2,
+        "also_recorded_as_pick": false
+      },
+      {
+        "line": 143,
+        "ts": "2026-09-13T20:45:50.234603+00:00",
+        "symbol": "USDJPY",
+        "side": "BUY",
+        "pattern": "rising_wedge",
+        "confluence": 62.7,
+        "also_recorded_as_pick": false
+      },
+      {
+        "line": 193,
+        "ts": "2026-09-24T01:46:51.249839+00:00",
+        "symbol": "NZDUSD",
+        "side": "SELL",
+        "pattern": "falling_wedge",
+        "confluence": 65.1,
+        "also_recorded_as_pick": false
+      },
+      {
+        "line": 196,
+        "ts": "2026-09-24T02:17:12.576060+00:00",
+        "symbol": "NZDUSD",
+        "side": "SELL",
+        "pattern": "falling_wedge",
+        "confluence": 65.9,
+        "also_recorded_as_pick": false
+      }
+    ]
+  },
+  "paper": {
+    "candidates": 700,
+    "qualified": 0,
+    "status_counts": {
+      "missed": 257,
+      "observed": 350,
+      "closed": 69,
+      "open": 24
+    },
+    "fixed_direction_mismatches": 61,
+    "mismatches_by_setup": {
+      "desk:falling_wedge": 12,
+      "desk:double_top": 7,
+      "desk:rising_wedge": 4,
+      "desk:rising_channel": 5,
+      "desk:falling_channel": 19,
+      "desk:double_bottom": 14
+    },
+    "reason_counts": {
+      "paper: confidence below floor": 683,
+      "quality: H1/H4 direction does not agree with entry": 673,
+      "quality: price outside a fresh entry zone": 673,
+      "desk: below selection threshold": 585,
+      "paper: outside allowed trading hours": 491,
+      "quality: no closed-entry-candle confirmation": 490,
+      "quality: no confirmed closed-H1 setup": 409,
+      "quality: selected desk setup is not confirmed": 409,
+      "desk: below health threshold": 347,
+      "quality: entry moved beyond permitted ATR drift": 149,
+      "quality: current RR 1.98 below 2.00": 32,
+      "quality: current RR 2.00 below 2.00": 28,
+      "quality: current RR 1.96 below 2.00": 26,
+      "quality: current RR 1.97 below 2.00": 26,
+      "quality: current RR 1.99 below 2.00": 25,
+      "quality: evidence unavailable (fresh quote unavailable)": 19,
+      "quality: current RR 1.95 below 2.00": 16,
+      "quality: current RR 1.94 below 2.00": 13,
+      "quality: current RR 1.93 below 2.00": 11,
+      "quality: current RR 1.89 below 2.00": 9,
+      "quality: current RR 1.91 below 2.00": 8,
+      "quality: current RR 1.92 below 2.00": 8,
+      "quality: current RR 1.83 below 2.00": 6,
+      "quality: current RR 1.90 below 2.00": 6,
+      "quality: current RR 1.77 below 2.00": 4,
+      "quality: current RR 1.81 below 2.00": 4,
+      "quality: current RR 1.78 below 2.00": 4,
+      "quality: current RR 1.84 below 2.00": 4,
+      "quality: current RR 1.87 below 2.00": 4,
+      "quality: current RR 1.82 below 2.00": 4,
+      "quality: current RR 1.88 below 2.00": 4,
+      "quality: current RR 1.86 below 2.00": 3,
+      "quality: current RR 1.74 below 2.00": 3,
+      "quality: current RR 1.58 below 2.00": 3,
+      "quality: current RR 1.76 below 2.00": 3,
+      "quality: entry candles are stale relative to broker quote": 3,
+      "quality: current RR 1.85 below 2.00": 2,
+      "quality: current RR 1.68 below 2.00": 2,
+      "quality: current RR 1.34 below 2.00": 2,
+      "quality: current RR 1.56 below 2.00": 2,
+      "quality: current RR 1.80 below 2.00": 2,
+      "quality: current RR 1.65 below 2.00": 1,
+      "quality: current RR 1.66 below 2.00": 1,
+      "quality: current RR 1.33 below 2.00": 1,
+      "quality: current RR 1.64 below 2.00": 1,
+      "quality: current RR 1.29 below 2.00": 1,
+      "quality: current RR 1.62 below 2.00": 1,
+      "quality: current RR 1.52 below 2.00": 1,
+      "quality: current RR 1.72 below 2.00": 1,
+      "quality: current RR 1.39 below 2.00": 1,
+      "quality: current RR 1.54 below 2.00": 1,
+      "quality: current RR 1.79 below 2.00": 1,
+      "quality: current RR 1.53 below 2.00": 1,
+      "quality: current RR 1.70 below 2.00": 1,
+      "quality: current RR 1.71 below 2.00": 1,
+      "quality: current RR 1.36 below 2.00": 1,
+      "quality: current RR 1.51 below 2.00": 1
+    },
+    "first_created": "2026-10-13T03:48:41.420992+00:00",
+    "last_created": "2026-10-14T05:42:50.041049+00:00"
+  },
+  "journal": {
+    "trades": {
+      "rows": 324,
+      "unattributed": 225,
+      "with_confidence": 94,
+      "with_score": 15
+    },
+    "signals": {
+      "rows": 3246,
+      "marked_filled": 83,
+      "with_close_time": 1,
+      "with_r_multiple": 0
+    }
+  },
+  "before_after_replay": {
+    "available": false,
+    "reason": "Historical top/pick rows lack full analyst scores/directions, pattern geometry, zone state, executable quotes and historical policy/state.",
+    "measurable_effect": "Recorded fixed-pattern direction mismatches fail the new same-direction requirement. Counts describe repeated observations, not independent trades or prevented losses."
+  },
+  "limits": [
+    "Top-five scan observations omit lower-ranked alternatives and may repeatedly describe the same setup.",
+    "Fixed-pattern direction is inferred from explicit detector semantics; dynamic triangle/range directions are not inferred from names.",
+    "Historical policy changed. Recorded picks are not fills, and these counts do not measure the marginal effect under today's strict gates.",
+    "No historical analyst scores, geometry, spread/quote, learning factors or state are fabricated to replay changes.",
+    "Each SQLite read uses a consistent read-only transaction; event/DB snapshots are separate and runtime writers may continue."
+  ]
+}

@@ -1,0 +1,29 @@
+{
+  "timestamp": "2026-10-17T19:38:29.986772+00:00",
+  "performance": {
+    "total_trades": 72,
+    "win_rate": 41.7,
+    "consecutive_losses": 4,
+    "hours_since_last_trade": 105.3,
+    "avg_pnl": -12.12,
+    "profit_factor": 0.72
+  },
+  "adjustments": {
+    "zone_score": 1.0,
+    "trade_score": 1.0,
+    "confidence": 1.0,
+    "risk_reward": 1.0
+  },
+  "base": {
+    "zone_score": 60.0,
+    "trade_score": 60.0,
+    "confidence": 80.0,
+    "risk_reward": 2.0
+  },
+  "adapted": {
+    "min_zone_score": 60.0,
+    "min_trade_score": 60.0,
+    "min_confidence_percent": 80.0,
+    "min_risk_reward": 2.0
+  }
+}

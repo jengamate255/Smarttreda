@@ -1,7 +1,7 @@
 """Adaptive thresholds — adjusts strategy parameters based on recent performance.
 
 The system learns from its own trading history:
-- No recent trades → relax thresholds to encourage entries
+- No recent trades → maintain thresholds and wait for an edge
 - Good win rate → maintain or slightly tighten
 - Poor performance → tighten thresholds to reduce risk
 - Consecutive losses → significant tightening (something's wrong)
@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import json
 import logging
-import sqlite3
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -46,27 +45,10 @@ def _save_state(state: dict) -> None:
 
 def _query_journal(days: int = 7) -> list[dict]:
     """Get recent trades from journal."""
-    if not JOURNAL_PATH.exists():
-        return []
-
     try:
-        conn = sqlite3.connect(str(JOURNAL_PATH))
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        from mt5_mcp.learning_loop import _closed_rows, _completed
 
-        since = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat()
-        cursor.execute(
-            """
-            SELECT symbol, side, pnl, open_time, close_time, setup
-            FROM trades
-            WHERE close_time >= ?
-            ORDER BY close_time DESC
-            """,
-            (since,),
-        )
-        rows = [dict(r) for r in cursor.fetchall()]
-        conn.close()
-        return rows
+        return _completed(_closed_rows(), datetime.now(timezone.utc), days=days)
     except Exception as exc:
         logger.warning("journal query failed: %s", exc)
         return []
@@ -101,6 +83,8 @@ def _analyze_performance(trades: list[dict]) -> dict[str, Any]:
     if last_trade_time:
         try:
             last_dt = datetime.fromisoformat(last_trade_time.replace("Z", "+00:00"))
+            if last_dt.tzinfo is None:
+                last_dt = last_dt.replace(tzinfo=timezone.utc)
             hours_since_last = (datetime.now(timezone.utc) - last_dt).total_seconds() / 3600
         except Exception:
             pass
@@ -138,24 +122,20 @@ def _calculate_adjustments(perf: dict[str, Any]) -> dict[str, float]:
     consec_losses = perf.get("consecutive_losses", 0)
     hours_since = perf.get("hours_since_last_trade", 999)
 
-    # No recent trades: relax thresholds to encourage entries
+    # Inactivity is not evidence of an edge; it must never lower entry floors.
     if total == 0 or hours_since > 48:
-        adjustments["zone_score"] = 0.85  # relax by 15%
-        adjustments["trade_score"] = 0.85
-        adjustments["confidence"] = 0.80  # relax by 20%
-        adjustments["risk_reward"] = 0.80
-        logger.info("adaptive: no recent trades, relaxing thresholds 15-20%%")
+        logger.info("adaptive: inactive, maintaining entry thresholds")
 
     # Good performance: maintain or slightly tighten
     elif win_rate >= 60 and consec_losses == 0:
         adjustments["zone_score"] = 1.0  # maintain
         adjustments["trade_score"] = 1.0
-        adjustments["confidence"] = 0.95  # slight tighten
+        adjustments["confidence"] = 1.0
         adjustments["risk_reward"] = 1.0
         logger.info("adaptive: good win rate %.1f%%, maintaining thresholds", win_rate)
 
     # Poor performance: tighten thresholds
-    elif win_rate < 40 or consec_losses >= 3:
+    elif consec_losses >= 3 or (total >= 8 and perf.get("avg_pnl", 0) < 0 and perf.get("profit_factor", 0) < 1):
         adjustments["zone_score"] = 1.15  # tighten by 15%
         adjustments["trade_score"] = 1.15
         adjustments["confidence"] = 1.20  # tighten by 20%
@@ -165,14 +145,6 @@ def _calculate_adjustments(perf: dict[str, Any]) -> dict[str, float]:
             win_rate,
             consec_losses,
         )
-
-    # Mediocre performance: slight relaxation
-    elif win_rate < 55:
-        adjustments["zone_score"] = 0.95
-        adjustments["trade_score"] = 0.95
-        adjustments["confidence"] = 0.95
-        adjustments["risk_reward"] = 0.95
-        logger.info("adaptive: mediocre win rate %.1f%%, slight relaxation", win_rate)
 
     return adjustments
 
@@ -208,10 +180,10 @@ def get_adaptive_thresholds(days: int = 7) -> dict[str, Any]:
     }
 
     # Clamp to reasonable bounds
-    adapted["min_zone_score"] = max(40, min(90, adapted["min_zone_score"]))
-    adapted["min_trade_score"] = max(40, min(90, adapted["min_trade_score"]))
-    adapted["min_confidence_percent"] = max(30, min(95, adapted["min_confidence_percent"]))
-    adapted["min_risk_reward"] = max(1.5, min(5.0, adapted["min_risk_reward"]))
+    adapted["min_zone_score"] = max(base_zone, min(90, adapted["min_zone_score"]))
+    adapted["min_trade_score"] = max(base_trade, min(90, adapted["min_trade_score"]))
+    adapted["min_confidence_percent"] = max(base_conf, min(95, adapted["min_confidence_percent"]))
+    adapted["min_risk_reward"] = max(base_rr, min(5.0, adapted["min_risk_reward"]))
 
     # Save state for diagnostics
     state = {

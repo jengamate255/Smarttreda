@@ -262,11 +262,23 @@ def _calc_lots(
     volume_min = float(info.get("volume_min", 0.01) or 0.01)
     volume_step = float(info.get("volume_step", 0.01) or 0.01)
     volume_max = float(info.get("volume_max", 100.0) or 100.0)
-    lots = round_to_step(lots, volume_step, floor=volume_min, ceil=volume_max)
+    import math
+    if not all(math.isfinite(v) and v > 0 for v in (risk_amount,volume_step,volume_min,volume_max)):
+        return None,risk_amount,["invalid risk budget or broker volume limits"]
+    lots = round(math.floor(min(lots,volume_max)/volume_step+1e-10)*volume_step,8)
     if lots < volume_min:
         warnings.append("lot size below broker minimum; no trade")
         return None, risk_amount, warnings
+    if lots*sl_pips*pip_value > risk_amount+1e-8:
+        return None,risk_amount,["rounded lot risk exceeds budget"]
     return lots, risk_amount, warnings
+
+
+def _strategy_rates(client, symbol: str, timeframe: str, count: int):
+    from mt5_mcp.entry_quality import closed_frame, enabled
+
+    frame = client.rates(symbol, timeframe, count)
+    return closed_frame(frame) if enabled() else frame
 
 
 def evaluate_strategy(
@@ -295,6 +307,7 @@ def evaluate_strategy(
 
     adaptive_cfg = get_adaptive_thresholds() if adaptive else {}
 
+    risk_was_explicit = risk_percent is not None
     risk_percent = (
         risk_percent if risk_percent is not None else risk.default_risk_percent
     )
@@ -334,6 +347,11 @@ def evaluate_strategy(
     try:
         client = get_client()
         client.ensure_connected()
+        from mt5_mcp import performance_risk
+        if performance_risk.enabled():
+            policy_percent = performance_risk.effective_percent(client,risk_percent)
+            risk_percent = min(risk_percent,policy_percent) if risk_was_explicit else policy_percent
+            plan.risk_percent = risk_percent
         info = client.symbol_info(symbol)
         tick = client.tick(symbol)
     except Exception as exc:
@@ -353,7 +371,7 @@ def evaluate_strategy(
     ask = float(tick.get("ask", bid))
 
     try:
-        trend_frame = client.rates(symbol, trend_tf, max(candles, 300))
+        trend_frame = _strategy_rates(client, symbol, trend_tf, max(candles, 300))
     except Exception as exc:
         plan.errors.append(f"no {trend_tf} data: {exc}")
         plan.reason = "; ".join(plan.errors)
@@ -369,15 +387,17 @@ def evaluate_strategy(
     mtf_aligned = 0
     mtf_total = 0
     mtf_trend = trend.direction
+    extra_trends: dict[str, object] = {}
     for extra_tf in ["H1", "H4", "D1"]:
         if extra_tf.upper() == trend_tf.upper():
             continue  # already counted
         try:
-            extra_frame = client.rates(symbol, extra_tf, max(candles, 200))
+            extra_frame = _strategy_rates(client, symbol, extra_tf, max(candles, 200))
             extra_trend = analyze_trend(
                 extra_frame, strategy_cfg.trend_fast_ema, strategy_cfg.trend_slow_ema
             )
             mtf_total += 1
+            extra_trends[extra_tf.upper()] = extra_trend
             if extra_trend.direction == mtf_trend and mtf_trend in ("bullish", "bearish"):
                 mtf_aligned += 1
         except Exception:
@@ -408,10 +428,36 @@ def evaluate_strategy(
         )
         return plan
 
+    # Advisory only (never blocks): flag higher-timeframe disagreement
+    # with the action at >=70% confidence.  The 2026-10-02 review lost on
+    # a W1-bullish/D1-bearish two-sided read.  Recorded as a plan warning
+    # for the forward-test log; the enforcing gate stays behind
+    # settings.strategy.require_mtf_alignment (false during the test).
+    adv_trends = dict(extra_trends)
+    if "W1" not in adv_trends and trend_tf.upper() != "W1":
+        try:
+            w1_frame = _strategy_rates(client, symbol, "W1", max(candles, 200))
+            adv_trends["W1"] = analyze_trend(
+                w1_frame, strategy_cfg.trend_fast_ema, strategy_cfg.trend_slow_ema
+            )
+        except Exception:
+            pass
+    for adv_tf, adv_trend in adv_trends.items():
+        adv_action = {"bullish": "BUY", "bearish": "SELL"}.get(
+            getattr(adv_trend, "direction", "")
+        )
+        adv_conf = float(getattr(adv_trend, "confidence", 0.0) or 0.0)
+        if adv_action and adv_action != action and adv_conf >= 0.70:
+            plan.warnings.append(
+                f"HTF conflict (advisory): {adv_tf} "
+                f"{getattr(adv_trend, 'direction', '')} {adv_conf * 100:.0f}% "
+                f"vs {action}"
+            )
+
     zone_frames: dict[str, tuple[pd.DataFrame, float]] = {}
     for tf in zone_tfs:
         try:
-            frame = client.rates(symbol, tf, candles)
+            frame = _strategy_rates(client, symbol, tf, candles)
             zone_frames[tf] = (frame, float(atr(frame).iloc[-1]) or 1e-9)
         except Exception as exc:
             plan.warnings.append(f"no {tf} data: {exc}")
@@ -449,7 +495,7 @@ def evaluate_strategy(
     plan.zone_lower = best_zone.lower
 
     try:
-        confirm_frame = client.rates(symbol, confirm_tf, 300)
+        confirm_frame = _strategy_rates(client, symbol, confirm_tf, 300)
     except Exception as exc:
         plan.errors.append(f"no {confirm_tf} data: {exc}")
         plan.reason = "; ".join(plan.errors)
@@ -457,7 +503,8 @@ def evaluate_strategy(
 
     # Automation should evaluate only completed candles. Keep the default
     # behaviour unchanged for existing dashboard/MCP callers.
-    if closed_confirmation and len(confirm_frame) > 1:
+    from mt5_mcp.entry_quality import enabled as quality_enabled
+    if closed_confirmation and not quality_enabled() and len(confirm_frame) > 1:
         confirm_frame = confirm_frame.iloc[:-1].reset_index(drop=True)
 
     patterns = detect_patterns(confirm_frame)
@@ -527,6 +574,7 @@ def evaluate_strategy(
     plan.risk_reward = round(risk_reward, 2)
     plan.confirmation = f"{confirmation.pattern} ({confirmation.direction}, conf {confirmation.confidence:.2f})"
     plan.confirmation_confidence = round(confirmation.confidence, 3)
+    plan.trend_confidence = round(trend.confidence, 3)
     plan.lots = lots
     plan.risk_amount = round(risk_amount, 2)
     plan.trade_score = round(trade_score, 1)
@@ -545,6 +593,8 @@ def evaluate_strategy(
     if _ML_AVAILABLE:
         try:
             model = load_model()
+            separation_atr = trend.detail.get("separation_atr", 0.0) if trend.detail else 0.0
+            atr_val = trend.detail.get("atr", 0.0) if trend.detail else 0.0
             plan.ml_score = round(
                 rank_signal(
                     trend.confidence,
@@ -553,11 +603,16 @@ def evaluate_strategy(
                     risk_reward,
                     sl_pips,
                     float(datetime.now(timezone.utc).hour),
+                    separation_atr=separation_atr,
+                    mtf_aligned=float(mtf_aligned),
+                    atr_val=atr_val,
+                    zone_proximity=best_proximity,
+                    zone_touches=float(best_zone.touches),
                 ),
                 3,
             )
             plan.ml_note = (
-                f"ML ranker AUC {model.get('cv_auc', 0.0):.2f} on "
+                f"ML ranker ({'purged validation' if model.get('validation_method') == 'purged_walk_forward' else 'unvalidated legacy'}) AUC {model.get('cv_auc', 0.0):.2f} on "
                 f"{model.get('n_trades', 0)} backtest trades"
             )
         except Exception as exc:  # noqa: BLE001
@@ -565,14 +620,8 @@ def evaluate_strategy(
     else:
         plan.ml_note = "ML ranker not installed"
 
-    # ML filter: reject low-probability signals
-    ml_filter_threshold = 0.40  # below this = likely loser
-    if _ML_AVAILABLE and plan.ml_score > 0 and plan.ml_score < ml_filter_threshold:
-        plan.valid = False
-        plan.warnings.append(
-            f"ML filter: score {plan.ml_score:.3f} < {ml_filter_threshold} (likely loser)"
-        )
-    elif trade_score < min_trade_score or confidence_pct < min_confidence:
+    # Scores stay advisory until an independently validated economic threshold exists.
+    if trade_score < min_trade_score or confidence_pct < min_confidence:
         plan.valid = False
         plan.warnings.append(
             f"below thresholds (score {trade_score:.0f} < {min_trade_score:.0f}, confidence {confidence_pct:.0f}% < {min_confidence:.0f}%)"

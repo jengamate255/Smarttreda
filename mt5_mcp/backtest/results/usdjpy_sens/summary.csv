@@ -1,0 +1,2 @@
+symbol,trend_tf,zone_tfs,min_zone_score,min_rr,tp_min,tp_max,trades,win_rate,profit_factor,net_pnl,total_return_pct,max_drawdown_pct,expectancy,avg_rr,start,end
+USDJPY,H4,H1+H4,40.0,3.0,80.0,100.0,2,50.0,0.747,-13.94,-0.14,0.55,-6.97,3.41,2026-03-27T04:00:00,2026-09-24T12:00:00

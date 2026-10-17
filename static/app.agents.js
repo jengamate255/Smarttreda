@@ -755,18 +755,28 @@ function renderComparison(results) {
 /* ---------- Live trade events (watcher fills/closes/trails) ---------- */
 const EVENTS_KEY = "mt5dash.eventsCursor";
 let eventsCursor = parseInt(localStorage.getItem(EVENTS_KEY) || "0", 10) || 0;
+let eventsPolling = false;
 async function pollEvents() {
+  if (eventsPolling) return;
+  eventsPolling = true;
   try {
     const r = await api(`/api/events?since=${eventsCursor}`);
     if (r.events && r.events.length) {
+      const history = new Map((state.alertEvents || []).map(event => [event.id, event]));
+      r.events.forEach(event => history.set(event.id, event));
+      state.alertEvents = [...history.values()].sort((a, b) => Number(b.id) - Number(a.id)).slice(0, 100);
+      renderAlertEvents();
       for (const ev of r.events) {
+        if (typeof TradeSound !== "undefined") TradeSound.onEvent(ev);
         eventsCursor = Math.max(eventsCursor, ev.id);
-        const kind = ev.kind === "filled" || ev.kind === "closed" ? "down"
+        const filled = ev.kind === "fill" || ev.kind === "filled";
+        const closed = ev.kind === "close" || ev.kind === "closed";
+        const kind = filled || closed ? "down"
           : ev.kind === "trail" ? "warning" : "info";
         const isAuto = String(ev.message || "").toLowerCase().includes("auto") ||
                        String(ev.account || "").toLowerCase().includes("auto");
-        const title = ev.kind === "filled" ? "Trade Filled"
-          : ev.kind === "closed" ? "Trade Closed"
+        const title = filled ? "Trade Filled"
+          : closed ? "Trade Closed"
           : ev.kind === "trail" ? "Trailing Update"
           : isAuto ? "Auto Trader" : "Market Event";
         toast(`${String(ev.account || "?").toUpperCase()} \u00b7 ${ev.message}`, kind, { timeout: 7000, title });
@@ -776,6 +786,7 @@ async function pollEvents() {
       eventsCursor = r.latest_id;
     }
   } catch (e) { if (!window._evtWarnAt || Date.now() - window._evtWarnAt > 60000) { window._evtWarnAt = Date.now(); console.warn('events poll failed:', e); } }
+  finally { eventsPolling = false; }
 }
 
 /* ---------- Peer dashboard (dual-account view) ---------- */
@@ -831,6 +842,10 @@ function initSidebar() {
 }
 
 function init() {
+  if (window.dashboardStarted) return;
+  window.dashboardStarted = true;
+  Navigation.init();
+  Operations.init();
   loadPrefs();
   if (!state.watchlist.length) state.watchlist = [...DEFAULT_WATCH];
 
@@ -858,59 +873,28 @@ function init() {
   loadChart();
   loadSymbols();
   loadHealth();
-  loadEquity();
-  loadJournal();
-  loadJournalEquity();
-  loadJournalDistribution();
-  loadRisk();
-  loadCompliance();
-  loadAutoTrader();
-  loadSessionHeatmap();
-  loadForexBreakout();
-  loadSessions();
   loadNews();
-  loadBacktests();
-  loadMarketIntel();
-  loadResearch();
-  loadCoach();
-  loadBoomCrash();
-  loadAiDetection();
   pollEvents();
-  loadPeer();
+  renderWatchlist();
+  pollWatchQuotes();
+  loadAlerts();
 
   const tick = (fn) => () => { if (!document.hidden) fn(); };
 
-  // Fast tier (5s): lightweight real-time data
-  setInterval(tick(pollEvents), POLL_MS);
-  setInterval(tick(loadPeer), POLL_MS);
-
-  // Medium tier (15s): health + chart refresh
+  // Refresh visible live panels only. Research panels load on their own tab.
+  // Trade sounds should continue when another tab is selected.
+  setInterval(pollEvents, POLL_MS);
+  setInterval(tick(pollWatchQuotes), POLL_MS);
+  setInterval(tick(() => {
+    loadAlerts();
+    if (!$("section-alerts")?.classList.contains("hidden")) loadAlertEvents();
+  }), 30000);
   setInterval(tick(loadHealth), 15000);
-  setInterval(tick(loadChart), CHART_MS);
-
-  // Slow tier (60s): heavier data, staggered with offsets
-  let slowIdx = 0;
-  const slowFns = [loadPlan, loadEquity, loadJournal, loadBoomCrash, loadRisk, loadCompliance, loadAutoTrader];
-  setInterval(() => {
-    if (document.hidden) return;
-    slowFns[slowIdx % slowFns.length]();
-    slowIdx++;
-  }, SLOW_MS);
-
-  // Very slow tier (120s): expensive scans
-  let vslowIdx = 0;
-  const vslowFns = [loadForexBreakout, loadSessions, loadAiDetection];
-  setInterval(() => {
-    if (document.hidden) return;
-    vslowFns[vslowIdx % vslowFns.length]();
-    vslowIdx++;
-  }, SLOW_MS * 2);
-
-  // News tier (5min)
+  setInterval(tick(() => loadChart({ background: true })), CHART_MS);
+  setInterval(tick(loadPlan), SLOW_MS);
   setInterval(tick(loadNews), NEWS_MS);
-
-  // WS fallback: only poll summary if WS is dead
   setInterval(tick(loadSummary), POLL_MS);
+
 }
 
 /* ---------- Walk-Forward Validation ---------- */

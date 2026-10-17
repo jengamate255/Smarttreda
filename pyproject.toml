@@ -35,6 +35,11 @@ target-version = "py310"
 
 [tool.pytest.ini_options]
 testpaths = ["mt5_mcp/tests", "tests"]
+# tests/ and mt5_mcp/tests/ both contain test_backtest.py; without a package
+# __init__.py pytest aborts with "import file mismatch" under the default
+# prepend import mode.
+addopts = "--import-mode=importlib"
+asyncio_default_fixture_loop_scope = "function"
 filterwarnings = [
   "ignore:Using `httpx` with `starlette.testclient` is deprecated",
 ]

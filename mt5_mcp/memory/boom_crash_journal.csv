@@ -1,0 +1,4 @@
+date,time,symbol,action,lots,entry_price,sl_price,tp_price,sl_pips,tp_pips,rr_ratio,risk_amount,pnl,pnl_pips,exit_time,exit_price,exit_reason,setup,session,h1_trend,h1_rsi,spike_detected,confirmation,notes
+2026-09-15,14:30,CRASH500,BUY,0.05,5800,5750,5950,50,150,3.0,25.00,0.00,0,,
+2026-09-15,15:00,BOOM300,SELL,0.05,1200,1250,1100,50,100,2.0,25.00,0.00,0,,
+2026-09-16,21:23,ETHUSD,BUY,0.92,2409.89,2361.66,2567.23,51.4,154.2,3.0,47.15,,,,,,boom_crash_spike_drift,UTC evening,bullish,,,bullish_engulfing,"Demand zone 2370-2427, H4 bullish trend, compliance passed"

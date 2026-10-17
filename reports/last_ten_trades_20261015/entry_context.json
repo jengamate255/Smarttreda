@@ -1,0 +1,232 @@
+[
+  {
+    "ticket": 403463489,
+    "symbol": "GBPJPY",
+    "trends": {
+      "H1": {
+        "direction": "bullish",
+        "confidence": 0.775,
+        "last_closed_bar_broker": 1791385200,
+        "bars": 400
+      },
+      "H4": {
+        "direction": "bearish",
+        "confidence": 0.857,
+        "last_closed_bar_broker": 1791374400,
+        "bars": 250
+      }
+    },
+    "initial_sl": 210.269,
+    "initial_tp": 206.537,
+    "initial_price_risk": 1.233000000000004,
+    "actual_initial_rr": 2.026763990267629,
+    "realized_price_r": -1.000811030008114
+  },
+  {
+    "ticket": 406692180,
+    "symbol": "AUDNZD",
+    "trends": {
+      "H1": {
+        "direction": "bullish",
+        "confidence": 0.834,
+        "last_closed_bar_broker": 1791864000,
+        "bars": 400
+      },
+      "H4": {
+        "direction": "bullish",
+        "confidence": 0.968,
+        "last_closed_bar_broker": 1791849600,
+        "bars": 250
+      }
+    },
+    "initial_sl": 1.24319,
+    "initial_tp": 1.24784,
+    "initial_price_risk": 0.0016799999999999038,
+    "actual_initial_rr": 1.7678571428573269,
+    "realized_price_r": -0.5
+  },
+  {
+    "ticket": 406680536,
+    "symbol": "BTCUSD",
+    "trends": {
+      "H1": {
+        "direction": "sideways",
+        "confidence": 0.557,
+        "last_closed_bar_broker": 1791856800,
+        "bars": 400
+      },
+      "H4": {
+        "direction": "bullish",
+        "confidence": 0.779,
+        "last_closed_bar_broker": 1791835200,
+        "bars": 250
+      }
+    },
+    "initial_sl": 84434.7,
+    "initial_tp": 76729.83,
+    "initial_price_risk": 2588.709999999992,
+    "actual_initial_rr": 1.9763357038834088,
+    "realized_price_r": -0.598703601407651
+  },
+  {
+    "ticket": 406643231,
+    "symbol": "AUDNZD",
+    "trends": {
+      "H1": {
+        "direction": "sideways",
+        "confidence": 0.649,
+        "last_closed_bar_broker": 1791817200,
+        "bars": 400
+      },
+      "H4": {
+        "direction": "bullish",
+        "confidence": 0.951,
+        "last_closed_bar_broker": 1791806400,
+        "bars": 250
+      }
+    },
+    "initial_sl": 1.24421,
+    "initial_tp": 1.24685,
+    "initial_price_risk": 0.0009500000000000064,
+    "actual_initial_rr": 1.7789473684210084,
+    "realized_price_r": -0.5052631578947713
+  },
+  {
+    "ticket": 406618147,
+    "symbol": "BTCUSD",
+    "trends": {
+      "H1": {
+        "direction": "sideways",
+        "confidence": 0.537,
+        "last_closed_bar_broker": 1791802800,
+        "bars": 400
+      },
+      "H4": {
+        "direction": "bullish",
+        "confidence": 0.79,
+        "last_closed_bar_broker": 1791792000,
+        "bars": 250
+      }
+    },
+    "initial_sl": 82534.66,
+    "initial_tp": 85564.66,
+    "initial_price_risk": 1091.4400000000023,
+    "actual_initial_rr": 1.776148940848781,
+    "realized_price_r": -1.0
+  },
+  {
+    "ticket": 403652923,
+    "symbol": "EURCHF",
+    "trends": {
+      "H1": {
+        "direction": "sideways",
+        "confidence": 0.735,
+        "last_closed_bar_broker": 1791514800,
+        "bars": 400
+      },
+      "H4": {
+        "direction": "sideways",
+        "confidence": 0.588,
+        "last_closed_bar_broker": 1791504000,
+        "bars": 250
+      }
+    },
+    "initial_sl": 0.93451,
+    "initial_tp": 0.92797,
+    "initial_price_risk": 0.0022799999999999487,
+    "actual_initial_rr": 1.8684210526316392,
+    "realized_price_r": 0.7898724082934475
+  },
+  {
+    "ticket": 403651225,
+    "symbol": "USDCAD",
+    "trends": {
+      "H1": {
+        "direction": "bullish",
+        "confidence": 0.823,
+        "last_closed_bar_broker": 1791511200,
+        "bars": 400
+      },
+      "H4": {
+        "direction": "bullish",
+        "confidence": 1.0,
+        "last_closed_bar_broker": 1791489600,
+        "bars": 250
+      }
+    },
+    "initial_sl": 1.41989,
+    "initial_tp": 1.43089,
+    "initial_price_risk": 0.0017799999999998928,
+    "actual_initial_rr": 5.179775280899192,
+    "realized_price_r": 1.6685393258427506
+  },
+  {
+    "ticket": 403369520,
+    "symbol": "ETHUSD",
+    "trends": {
+      "H1": {
+        "direction": "bullish",
+        "confidence": 0.747,
+        "last_closed_bar_broker": 1791309600,
+        "bars": 400
+      },
+      "H4": {
+        "direction": "bullish",
+        "confidence": 0.922,
+        "last_closed_bar_broker": 1791288000,
+        "bars": 250
+      }
+    },
+    "initial_sl": 2668.46,
+    "initial_tp": 2759.22,
+    "initial_price_risk": 28.98999999999978,
+    "actual_initial_rr": 2.1307347361159175,
+    "realized_price_r": -1.0034494653328703
+  },
+  {
+    "ticket": 403326859,
+    "symbol": "BTCUSD",
+    "trends": {
+      "H1": {
+        "direction": "bullish",
+        "confidence": 0.821,
+        "last_closed_bar_broker": 1791295200,
+        "bars": 400
+      },
+      "H4": {
+        "direction": "bullish",
+        "confidence": 0.958,
+        "last_closed_bar_broker": 1791273600,
+        "bars": 250
+      }
+    },
+    "initial_sl": 85326.93,
+    "initial_tp": 88356.93,
+    "initial_price_risk": 960.6000000000058,
+    "actual_initial_rr": 2.1542785758900496,
+    "realized_price_r": -0.5262856547990837
+  },
+  {
+    "ticket": 403147846,
+    "symbol": "ETHUSD",
+    "trends": {
+      "H1": {
+        "direction": "bullish",
+        "confidence": 0.758,
+        "last_closed_bar_broker": 1791172800,
+        "bars": 400
+      },
+      "H4": {
+        "direction": "bullish",
+        "confidence": 1.0,
+        "last_closed_bar_broker": 1791158400,
+        "bars": 250
+      }
+    },
+    "initial_sl": 2704.28,
+    "initial_tp": 2787.8,
+    "initial_price_risk": 30.019999999999982,
+    "actual_initial_rr": 1.7821452365089951,
+    "realized_price_r": -1.0509660226515722
+  }
+]

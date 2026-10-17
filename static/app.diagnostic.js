@@ -18,7 +18,7 @@ const Diagnostic = {
       this.data = { summary, config, symbols, consensus };
       this.render();
     } catch (e) {
-      container.innerHTML = `<div style="color:var(--error);padding:20px">Error loading diagnostic: ${e.message || e}</div>`;
+      container.innerHTML = `<div style="color:var(--error);padding:20px">Error loading diagnostic: ${esc(e.message || e)}</div>`;
     }
   },
 
@@ -52,12 +52,12 @@ const Diagnostic = {
               <div style="font-size:24px;font-weight:600;color:var(--text-primary)">${sym.tradable || 0}/${sym.total_engine || 0}</div>
             </div>
             <div class="diag-stat" style="padding:16px;background:var(--bg-secondary);border-radius:8px">
-              <div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px">Would Trade Now</div>
+              <div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px">Strategy Candidates</div>
               <div style="font-size:24px;font-weight:600;color:var(--accent)">${symbols.tradable_now || 0}</div>
             </div>
             <div class="diag-stat" style="padding:16px;background:var(--bg-secondary);border-radius:8px">
               <div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px">Consensus Votes</div>
-              <div style="font-size:24px;font-weight:600;color:var(--text-primary)">${consensus.fresh_votes || 0} fresh</div>
+              <div style="font-size:24px;font-weight:600;color:var(--text-primary)">${summary.consensus?.fresh_votes ?? 0} fresh</div>
             </div>
           </div>
         </div>
@@ -70,7 +70,7 @@ const Diagnostic = {
         <div class="diag-section" style="background:var(--card-bg);border-radius:12px;padding:20px;margin-bottom:20px;border-left:3px solid var(--error)">
           <h3 style="margin:0 0 12px 0;color:var(--error)">⚠ Configuration Issues</h3>
           <ul style="margin:0;padding-left:20px;color:var(--text-primary);line-height:1.8">
-            ${issues.map(i => `<li>${i}</li>`).join('')}
+            ${issues.map(i => `<li>${esc(i)}</li>`).join('')}
           </ul>
         </div>
       `;
@@ -109,7 +109,7 @@ const Diagnostic = {
                 <th style="text-align:center;padding:8px;color:var(--text-secondary)">Consensus</th>
                 <th style="text-align:center;padding:8px;color:var(--text-secondary)">MT5</th>
                 <th style="text-align:center;padding:8px;color:var(--text-secondary)">Strategy</th>
-                <th style="text-align:left;padding:8px;color:var(--text-secondary)">Reason / Action</th>
+                <th style="text-align:left;padding:8px;color:var(--text-secondary)">Reason / Action (preflight)</th>
               </tr>
             </thead>
             <tbody>
@@ -144,13 +144,13 @@ const Diagnostic = {
 
       html += `
         <tr style="border-bottom:1px solid var(--border)">
-          <td style="padding:8px;font-weight:600">${s.symbol}</td>
+          <td style="padding:8px;font-weight:600">${esc(s.symbol)}</td>
           <td style="padding:8px;text-align:center;font-size:11px">${(s.engines || []).join(', ')}</td>
           <td style="padding:8px;text-align:center">${compStatus}</td>
           <td style="padding:8px;text-align:center">${consStatus}</td>
           <td style="padding:8px;text-align:center">${mt5Status}</td>
           <td style="padding:8px;text-align:center">${stratStatus}</td>
-          <td style="padding:8px;font-size:12px;color:var(--text-secondary);max-width:300px;overflow:hidden;text-overflow:ellipsis">${reason}</td>
+          <td style="padding:8px;font-size:12px;color:var(--text-secondary);max-width:300px;overflow:hidden;text-overflow:ellipsis">${esc(reason)}</td>
         </tr>
       `;
     }

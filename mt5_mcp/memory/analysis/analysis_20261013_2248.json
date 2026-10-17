@@ -1,0 +1,709 @@
+{
+  "at": "2026-10-13T22:48:57.954152+00:00",
+  "cycle": 2946,
+  "compliance_mode": "halted",
+  "results": [
+    {
+      "symbol": "EURUSD",
+      "bar": "2026-10-14 00:00:00",
+      "health_score": 76.2,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "strategy_source": "trend_zone",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 100.0,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong supply zone being revisited"
+      },
+      "available": false,
+      "reasons": [
+        "No strong supply zone being revisited",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "sydney",
+        "active": [
+          "sydney"
+        ],
+        "hour_utc": 22
+      }
+    },
+    {
+      "symbol": "GBPUSD",
+      "bar": "2026-10-14 00:00:00",
+      "health_score": 59.2,
+      "verdict": "cautious",
+      "regime": "transition",
+      "strategy_source": "trend_zone",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 99.4,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 75.4,
+        "confirmation": "",
+        "reason": "no bearish confirmation candle found"
+      },
+      "available": false,
+      "reasons": [
+        "no bearish confirmation candle found",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "sydney",
+        "active": [
+          "sydney"
+        ],
+        "hour_utc": 22
+      }
+    },
+    {
+      "symbol": "USDCHF",
+      "bar": "2026-10-14 00:00:00",
+      "health_score": 71.6,
+      "verdict": "tradeable",
+      "regime": "trending_bullish",
+      "strategy_source": "trend_zone",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 100.0,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong demand zone being revisited"
+      },
+      "available": false,
+      "reasons": [
+        "No strong demand zone being revisited",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "sydney",
+        "active": [
+          "sydney"
+        ],
+        "hour_utc": 22
+      }
+    },
+    {
+      "symbol": "USDCAD",
+      "bar": "2026-10-14 00:00:00",
+      "health_score": 63.0,
+      "verdict": "cautious",
+      "regime": "transition",
+      "strategy_source": "momentum_breakout",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 0.0,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "no breakout (close 1.42183 within 1.42039-1.42720)"
+      },
+      "available": false,
+      "reasons": [
+        "no breakout (close 1.42183 within 1.42039-1.42720)",
+        "no executable direction",
+        "confidence 0.0 < 75",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "sydney",
+        "active": [
+          "sydney"
+        ],
+        "hour_utc": 22
+      }
+    },
+    {
+      "symbol": "AUDUSD",
+      "bar": "2026-10-14 00:00:00",
+      "health_score": 60.5,
+      "verdict": "cautious",
+      "regime": "ranging",
+      "strategy_source": "trend_zone",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 79.5,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "HTF trend is sideways; strategy waits for a directional trend"
+      },
+      "available": false,
+      "reasons": [
+        "HTF trend is sideways; strategy waits for a directional trend",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "sydney",
+        "active": [
+          "sydney"
+        ],
+        "hour_utc": 22
+      }
+    },
+    {
+      "symbol": "NZDUSD",
+      "bar": "2026-10-14 00:00:00",
+      "health_score": 72.7,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "strategy_source": "trend_zone",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 100.0,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong supply zone being revisited"
+      },
+      "available": false,
+      "reasons": [
+        "No strong supply zone being revisited",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "sydney",
+        "active": [
+          "sydney"
+        ],
+        "hour_utc": 22
+      }
+    },
+    {
+      "symbol": "CHFJPY",
+      "bar": "2026-10-14 00:00:00",
+      "health_score": 60.7,
+      "verdict": "cautious",
+      "regime": "transition",
+      "strategy_source": "trend_zone",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 69.5,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "HTF trend is sideways; strategy waits for a directional trend"
+      },
+      "available": false,
+      "reasons": [
+        "HTF trend is sideways; strategy waits for a directional trend",
+        "no executable direction",
+        "confidence 69.5 < 75",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "sydney",
+        "active": [
+          "sydney"
+        ],
+        "hour_utc": 22
+      }
+    },
+    {
+      "symbol": "EURJPY",
+      "bar": "2026-10-14 00:00:00",
+      "health_score": 72.4,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "strategy_source": "trend_zone",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 99.7,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 75.6,
+        "confirmation": "",
+        "reason": "SKIPPED: SL 139.8 pips exceeds max 30.0"
+      },
+      "available": false,
+      "reasons": [
+        "SKIPPED: SL 139.8 pips exceeds max 30.0",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "sydney",
+        "active": [
+          "sydney"
+        ],
+        "hour_utc": 22
+      }
+    },
+    {
+      "symbol": "GBPJPY",
+      "bar": "2026-10-14 00:00:00",
+      "health_score": 71.2,
+      "verdict": "tradeable",
+      "regime": "trending_bullish",
+      "strategy_source": "trend_zone",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 62.9,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "HTF trend is sideways; strategy waits for a directional trend"
+      },
+      "available": false,
+      "reasons": [
+        "HTF trend is sideways; strategy waits for a directional trend",
+        "no executable direction",
+        "confidence 62.9 < 75",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "sydney",
+        "active": [
+          "sydney"
+        ],
+        "hour_utc": 22
+      }
+    },
+    {
+      "symbol": "NZDJPY",
+      "bar": "2026-10-14 00:00:00",
+      "health_score": 61.5,
+      "verdict": "cautious",
+      "regime": "ranging",
+      "strategy_source": "trend_zone",
+      "plan": {
+        "action": "SELL",
+        "valid": false,
+        "confidence": 91.3,
+        "trade_score": 92.8,
+        "entry": 88.862,
+        "sl": 89.062,
+        "tp": 87.962,
+        "sl_pips": 20.0,
+        "tp_pips": 90.0,
+        "risk_reward": 4.5,
+        "zone_strength": 90.27601478011032,
+        "confirmation": "shooting_star (bearish, conf 0.85)",
+        "reason": "HTF trend bearish (EMA50/200, conf 100%); supply zone 88.82100-88.93300 strength 90/100 touches 25; confirmation: shooting_star (bearish, 85%); RR 4.50 (min 2.2), risk 0.1% = 9.40 USD; MTF confluence: 0/2 timeframes aligned with bearish (+0% bonus)"
+      },
+      "available": false,
+      "reasons": [
+        "HTF trend bearish (EMA50/200, conf 100%); supply zone 88.82100-88.93300 strength 90/100 touches 25; confirmation: shooting_star (bearish, 85%); RR 4.50 (min 2.2), risk 0.1% = 9.40 USD; MTF confluence: 0/2 timeframes aligned with bearish (+0% bonus)"
+      ],
+      "session": {
+        "primary": "sydney",
+        "active": [
+          "sydney"
+        ],
+        "hour_utc": 22
+      }
+    },
+    {
+      "symbol": "GBPCHF",
+      "bar": "2026-10-14 00:00:00",
+      "health_score": 72.1,
+      "verdict": "tradeable",
+      "regime": "trending_bullish",
+      "strategy_source": "trend_zone",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 77.0,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong demand zone being revisited"
+      },
+      "available": false,
+      "reasons": [
+        "No strong demand zone being revisited",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "sydney",
+        "active": [
+          "sydney"
+        ],
+        "hour_utc": 22
+      }
+    },
+    {
+      "symbol": "NZDCAD",
+      "bar": "2026-10-14 00:00:00",
+      "health_score": 65.5,
+      "verdict": "cautious",
+      "regime": "transition",
+      "strategy_source": "trend_zone",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 92.4,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong supply zone being revisited"
+      },
+      "available": false,
+      "reasons": [
+        "No strong supply zone being revisited",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "sydney",
+        "active": [
+          "sydney"
+        ],
+        "hour_utc": 22
+      }
+    },
+    {
+      "symbol": "AUDNZD",
+      "bar": "2026-10-14 00:00:00",
+      "health_score": 73.4,
+      "verdict": "tradeable",
+      "regime": "trending_bullish",
+      "strategy_source": "trend_zone",
+      "plan": {
+        "action": "BUY",
+        "valid": true,
+        "confidence": 96.0,
+        "trade_score": 106.5,
+        "entry": 1.24432,
+        "sl": 1.24232,
+        "tp": 1.25332,
+        "sl_pips": 20.0,
+        "tp_pips": 90.0,
+        "risk_reward": 4.5,
+        "zone_strength": 97.54901153074755,
+        "confirmation": "bullish_engulfing (bullish, conf 0.71)",
+        "reason": "HTF trend bullish (EMA50/200, conf 99%); demand zone 1.24297-1.24464 strength 98/100 touches 10; confirmation: bullish_engulfing (bullish, 71%); RR 4.50 (min 2.2), risk 0.1% = 9.40 USD; MTF confluence: 2/2 timeframes aligned with bullish (+15% bonus)"
+      },
+      "available": true,
+      "reasons": [],
+      "session": {
+        "primary": "sydney",
+        "active": [
+          "sydney"
+        ],
+        "hour_utc": 22
+      }
+    },
+    {
+      "symbol": "EURAUD",
+      "bar": "2026-10-14 00:00:00",
+      "health_score": 74.1,
+      "verdict": "tradeable",
+      "regime": "trending_bearish",
+      "strategy_source": "trend_zone",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 86.8,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 79.7,
+        "confirmation": "",
+        "reason": "SKIPPED: SL 86.7 pips exceeds max 30.0"
+      },
+      "available": false,
+      "reasons": [
+        "SKIPPED: SL 86.7 pips exceeds max 30.0",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "sydney",
+        "active": [
+          "sydney"
+        ],
+        "hour_utc": 22
+      }
+    },
+    {
+      "symbol": "EURCHF",
+      "bar": "2026-10-14 00:00:00",
+      "health_score": 69.3,
+      "verdict": "cautious",
+      "regime": "trending_bearish",
+      "strategy_source": "trend_zone",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 66.3,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "HTF trend is sideways; strategy waits for a directional trend"
+      },
+      "available": false,
+      "reasons": [
+        "HTF trend is sideways; strategy waits for a directional trend",
+        "no executable direction",
+        "confidence 66.3 < 75",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "sydney",
+        "active": [
+          "sydney"
+        ],
+        "hour_utc": 22
+      }
+    },
+    {
+      "symbol": "XAUUSD",
+      "bar": "2026-10-13 23:00:00",
+      "health_score": 54.9,
+      "verdict": "cautious",
+      "regime": "ranging",
+      "strategy_source": "trend_zone",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 92.1,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong supply zone being revisited"
+      },
+      "available": false,
+      "reasons": [
+        "No strong supply zone being revisited",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0",
+        "health 55 < 55"
+      ],
+      "session": {
+        "primary": "sydney",
+        "active": [
+          "sydney"
+        ],
+        "hour_utc": 22
+      }
+    },
+    {
+      "symbol": "XAGUSD",
+      "bar": "2026-10-13 23:00:00",
+      "health_score": 64.9,
+      "verdict": "cautious",
+      "regime": "trending_bearish",
+      "strategy_source": "trend_zone",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 91.7,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong supply zone being revisited"
+      },
+      "available": false,
+      "reasons": [
+        "No strong supply zone being revisited",
+        "no executable direction",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "sydney",
+        "active": [
+          "sydney"
+        ],
+        "hour_utc": 22
+      }
+    },
+    {
+      "symbol": "USOIL",
+      "bar": "2026-10-13 23:00:00",
+      "health_score": 63.3,
+      "verdict": "cautious",
+      "regime": "trending_bullish",
+      "strategy_source": "trend_zone",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 72.2,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "No strong demand zone being revisited"
+      },
+      "available": false,
+      "reasons": [
+        "No strong demand zone being revisited",
+        "no executable direction",
+        "confidence 72.2 < 75",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "sydney",
+        "active": [
+          "sydney"
+        ],
+        "hour_utc": 22
+      }
+    },
+    {
+      "symbol": "JP225",
+      "bar": "2026-10-12 05:00:00",
+      "health_score": 63.2,
+      "verdict": "cautious",
+      "regime": "trending_bullish",
+      "strategy_source": "trend_zone",
+      "plan": {
+        "action": "NONE",
+        "valid": false,
+        "confidence": 69.9,
+        "trade_score": 0.0,
+        "entry": null,
+        "sl": null,
+        "tp": null,
+        "sl_pips": null,
+        "tp_pips": null,
+        "risk_reward": null,
+        "zone_strength": 0.0,
+        "confirmation": "",
+        "reason": "HTF trend is sideways; strategy waits for a directional trend"
+      },
+      "available": false,
+      "reasons": [
+        "HTF trend is sideways; strategy waits for a directional trend",
+        "no executable direction",
+        "confidence 69.9 < 75",
+        "score 0.0 < 70",
+        "RR None < 3.0"
+      ],
+      "session": {
+        "primary": "sydney",
+        "active": [
+          "sydney"
+        ],
+        "hour_utc": 22
+      }
+    }
+  ]
+}

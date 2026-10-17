@@ -36,14 +36,24 @@ DEFAULT_RR = 1.5
 # Minimum spike size (as a multiple of ATR) to qualify as a valid spike
 MIN_SPIKE_ATR = 5.0
 
-# Fibonacci retracement levels for entries
-RET_LEVELS = (0.382, 0.5)  # primary 38.2%, secondary 50%
+# Spike quality bands (2026-10-11 edge improvement)
+# Reject spikes outside these bounds: too small = noise, too large = overextended
+SPIKE_MAGNITUDE_MIN_ATR = 1.5  # Below this = noise, reject
+SPIKE_MAGNITUDE_MAX_ATR = 5.0  # Above this = overextended, reject
+SPIKE_QUALITY_SWEET_SPOT = (2.5, 4.0)  # Optimal range for confidence boost
+
+# Fibonacci retracement levels for entries (expanded 2026-10-11)
+# Dynamic selection: pick level closest to current price for better fill rate
+RET_LEVELS = (0.382, 0.5, 0.618, 0.786)  # 38.2%, 50%, 61.8%, 78.6%
 
 # Stop-loss distance beyond the spike extreme, in ATR units
+# Volatility-regime aware (2026-10-11): high-freq indices use tighter SL
 SL_ATR_BUFFER = 2.0
+SL_ATR_BUFFER_HIGH_FREQ = 1.5  # For BOOM/CRASH 1000/500/300 (lower ATR, tighter stops)
+SL_ATR_BUFFER_LOW_FREQ = 2.5   # For BOOM/CRASH 50/99/100/150/200 (higher ATR, wider stops)
 
 # How far (in ATR units) the current price may be from the entry level
-ENTRY_BUFFER_ATRS = 1.5
+ENTRY_BUFFER_ATRS = 5.0
 
 # Spike window length in M1 bars
 LOOKBACK_BARS = 30
@@ -64,6 +74,33 @@ PARTIAL_EXIT_FRACTION = 0.5
 
 
 # ---- Symbol mapping -----------------------------------------------------
+
+# Volatility regimes (2026-10-11 edge improvement)
+# High-freq: frequent small spikes, lower ATR (~0.5-2.0), tighter SL/TP
+# Low-freq: infrequent large spikes, higher ATR (~5-7), wider SL/TP
+HIGH_FREQ_SYMBOLS = {"BOOM1000", "BOOM500", "BOOM300", "CRASH1000", "CRASH500", "CRASH300"}
+LOW_FREQ_SYMBOLS = {"BOOM200", "BOOM150", "BOOM100", "BOOM99", "BOOM50",
+                    "CRASH200", "CRASH150", "CRASH100", "CRASH99", "CRASH50"}
+
+
+def get_volatility_regime(symbol: str) -> str:
+    """Classify symbol into volatility regime: 'high_freq' or 'low_freq'."""
+    norm = (symbol or "").upper().replace(" ", "")
+    if norm.startswith("BOOM"):
+        key = "BOOM" + norm[4:].lstrip("0")
+    elif norm.startswith("CRASH"):
+        key = "CRASH" + norm[5:].lstrip("0")
+    else:
+        return "low_freq"  # default to conservative
+    if key in HIGH_FREQ_SYMBOLS:
+        return "high_freq"
+    return "low_freq"
+
+
+def _sl_buffer_for(symbol: str) -> float:
+    """Return regime-appropriate SL ATR buffer."""
+    return SL_ATR_BUFFER_HIGH_FREQ if get_volatility_regime(symbol) == "high_freq" else SL_ATR_BUFFER_LOW_FREQ
+
 
 def _build_symbol_map() -> dict[str, str]:
     mapping: dict[str, str] = {}
@@ -231,30 +268,45 @@ def detect_spike(
     current_price = closes[-1]
 
     # Determine whether the spike was a new high or new low by comparing
-    # the absolute distance from the current close.  The larger move
-    # decides the fade direction (the opposite extreme is traded).
+    # the absolute distance from the pre-spike close (not current price,
+    # which may have partially recovered). The larger move decides the
+    # fade direction (the opposite extreme is traded).
     max_high = max(highs)
     min_low = min(lows)
-    high_dist = abs(max_high - current_price)
-    low_dist = abs(current_price - min_low)
+    max_high_idx = int(max(range(lookback), key=lambda i: highs[i]))
+    min_low_idx = int(min(range(lookback), key=lambda i: lows[i]))
+    # Use the close before the spike candle as the reference.
+    pre_spike_close = (
+        closes[max_high_idx - 1]
+        if abs(max_high - closes[0]) > abs(closes[0] - min_low)
+        else closes[min_low_idx - 1]
+    ) if (max_high_idx > 0 or min_low_idx > 0) else closes[0]
+    high_dist = abs(max_high - pre_spike_close)
+    low_dist = abs(pre_spike_close - min_low)
     spike_up_expected = high_dist > low_dist
     # spike_up_expected=True  → spike was a new high → fade short
     # spike_up_expected=False → spike was a new low  → fade long
 
     if spike_up_expected:
-        max_high_idx = int(max(range(lookback), key=lambda i: highs[i]))
         spike_high = highs[max_high_idx]
         spike_low = min(lows[: max_high_idx + 1]) if max_high_idx > 0 else lows[0]
         direction = "short"
         drift_direction = "down"
     else:
-        min_low_idx = int(min(range(lookback), key=lambda i: lows[i]))
         spike_low = lows[min_low_idx]
         spike_high = max(highs[: min_low_idx + 1]) if min_low_idx > 0 else highs[0]
         direction = "long"
         drift_direction = "up"
 
     spike_size = spike_high - spike_low
+    spike_atr_ratio = spike_size / current_atr_val
+
+    # Spike quality filter (2026-10-11): reject noise and overextended spikes
+    if spike_atr_ratio < SPIKE_MAGNITUDE_MIN_ATR:
+        return None  # noise: spike too small
+    if spike_atr_ratio > SPIKE_MAGNITUDE_MAX_ATR:
+        return None  # overextended: spike too large, mean reversion unlikely
+
     if spike_size < spike_threshold_atr * current_atr_val:
         return None
     if spike_size < min_spike_ticks * 0.01:
@@ -266,22 +318,19 @@ def detect_spike(
     spike_time = datetime.fromtimestamp(times[extreme_idx], tz=timezone.utc)
 
     # ---- Entry / SL / TP (mirrors backtest_boom_crash.detect_spike_at_index)
+    # Dynamic entry zones (2026-10-11): test all Fib levels, pick closest to price
     sign = -1.0 if spike_up_expected else 1.0
-    if spike_up_expected:
-        entry_38 = spike_high - spike_size * RET_LEVELS[0]
-        entry_50 = spike_high - spike_size * RET_LEVELS[1]
-        sl_price = spike_high + current_atr_val * SL_ATR_BUFFER
-    else:
-        entry_38 = spike_low + spike_size * RET_LEVELS[0]
-        entry_50 = spike_low + spike_size * RET_LEVELS[1]
-        sl_price = spike_low - current_atr_val * SL_ATR_BUFFER
+    sl_buffer = _sl_buffer_for(symbol)  # regime-aware SL buffer
 
-    # Pick the retracement level closest to the current price.
-    level = entry_38
-    retracement = RET_LEVELS[0]
-    if abs(current_price - entry_50) < abs(current_price - entry_38):
-        level = entry_50
-        retracement = RET_LEVELS[1]
+    if spike_up_expected:
+        entry_levels = [(spike_high - spike_size * lvl, lvl) for lvl in RET_LEVELS]
+        sl_price = spike_high + current_atr_val * sl_buffer
+    else:
+        entry_levels = [(spike_low + spike_size * lvl, lvl) for lvl in RET_LEVELS]
+        sl_price = spike_low - current_atr_val * sl_buffer
+
+    # Pick the retracement level closest to the current price (best fill probability)
+    level, retracement = min(entry_levels, key=lambda x: abs(current_price - x[0]))
 
     risk = abs(sl_price - level)
     rr = rr_override if rr_override is not None else DEFAULT_RR
@@ -311,8 +360,19 @@ def detect_spike(
     )
 
     # Confidence: base 60 scaled by spike strength + confluence factors.
-    # Factors: spike size, RSI extreme, spike age, trend alignment.
+    # Factors: spike size, RSI extreme, spike age, trend alignment, spike quality.
     spike_score = min((spike_size / current_atr_val) * 3.0, 15.0)  # max +15
+
+    # Spike quality score (2026-10-11): bonus for sweet-spot magnitude
+    quality_score = 0.0
+    if SPIKE_QUALITY_SWEET_SPOT[0] <= spike_atr_ratio <= SPIKE_QUALITY_SWEET_SPOT[1]:
+        quality_score = 8.0  # optimal spike size
+    elif spike_atr_ratio < SPIKE_QUALITY_SWEET_SPOT[0]:
+        quality_score = max(0.0, (spike_atr_ratio - SPIKE_MAGNITUDE_MIN_ATR) /
+                           (SPIKE_QUALITY_SWEET_SPOT[0] - SPIKE_MAGNITUDE_MIN_ATR) * 8.0)
+    else:  # above sweet spot but below max
+        quality_score = max(0.0, (SPIKE_MAGNITUDE_MAX_ATR - spike_atr_ratio) /
+                           (SPIKE_MAGNITUDE_MAX_ATR - SPIKE_QUALITY_SWEET_SPOT[1]) * 8.0)
 
     # RSI extreme: spikes into overbought/oversold increase confidence
     rsi_val = 50.0
@@ -345,7 +405,7 @@ def detect_spike(
     )
     trend_score = 5.0 if trend_aligned else 0.0
 
-    confidence = 60.0 + spike_score + rsi_score + age_score + trend_score
+    confidence = 60.0 + spike_score + rsi_score + age_score + trend_score + quality_score
     confidence = min(confidence, 95.0)
 
     if broken:
@@ -358,10 +418,13 @@ def detect_spike(
         reason = "watch-only: price outside entry buffer"
 
     else:
+        regime = get_volatility_regime(symbol)
+        quality_label = "optimal" if quality_score >= 7 else ("decent" if quality_score >= 4 else "marginal")
         reason = (
             f"{direction.upper()} after {spike_age_candles} bar "
             f"{'up' if spike_up_expected else 'down'} spike, "
-            f"retrace {retracement:.0%}, ATR {current_atr_val:.3f}"
+            f"retrace {retracement:.0%}, ATR {current_atr_val:.3f}, "
+            f"spike {spike_atr_ratio:.1f}xATR ({quality_label}), {regime}"
         )
 
     return SpikeSignal(

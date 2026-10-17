@@ -34,9 +34,21 @@ from mt5_mcp.common import (
     pip_value_per_lot,
     round_to_step,
 )
-from mt5_mcp.config import get_settings
+from mt5_mcp.config import get_settings, rejections_enabled
 
 MAGIC = int(os.getenv("MT5_MCP_MAGIC", "20260601"))
+
+# Slippage allowance, in points, sent as ``deviation`` on market orders. The
+# broker's ``trade_stops_level`` is the *minimum stop distance*, not a slippage
+# budget -- for XAUUSD it is 0, and sending deviation=0 means "fill at this
+# exact price or reject", which surfaces as retcode 10004 (requote) whenever
+# price ticks between our quote and the broker's fill.
+MIN_DEVIATION_POINTS = int(os.getenv("MT5_MCP_MIN_DEVIATION", "20"))
+
+
+def _deviation(info: dict) -> int:
+    """Slippage tolerance for a market order on ``info``."""
+    return max(MIN_DEVIATION_POINTS, int(info.get("trade_stops_level", 0) or 0))
 
 
 class OrderRejected(Exception):
@@ -87,10 +99,17 @@ def _preflight(
             or relative_spread <= settings.max_spread_relative
         )
     if not spread_ok:
-        raise OrderRejected(
-            f"spread {spread_points:.0f} points ({relative_spread * 100:.3f}%) exceeds limit {settings.max_spread_points:.0f} points"
+        msg = (
+            f"spread {spread_points:.0f} points "
+            f"({relative_spread * 100:.3f}%) exceeds limit "
+            f"{settings.max_spread_points:.0f} points"
         )
-    checks.append(f"spread {spread_points:.0f} points within limit")
+        if rejections_enabled():
+            raise OrderRejected(msg)
+        # Forward-test log mode: record and send anyway (broker decides).
+        checks.append(f"WARNING: {msg} (log-mode, not enforced)")
+    else:
+        checks.append(f"spread {spread_points:.0f} points within limit")
 
     if side == "BUY":
         if ask > entry * 1.0000001:
@@ -136,8 +155,12 @@ def _preflight(
 
     positions = client.positions()
     if settings.max_positions and len(positions) >= settings.max_positions:
-        raise OrderRejected(f"max open positions ({settings.max_positions}) reached")
-    checks.append(f"position count {len(positions)} < {settings.max_positions}")
+        if not is_synthetic_symbol(symbol):
+            raise OrderRejected(f"max open positions ({settings.max_positions}) reached")
+        else:
+            checks.append(f"position count {len(positions)} (Deriv synthetic, limit bypassed)")
+    else:
+        checks.append(f"position count {len(positions)} < {settings.max_positions}")
 
     action = TRADE_ACTION_DEAL
     try:
@@ -215,7 +238,7 @@ def open_market(
             "price": pre["entry"],
             "sl": sl if sl is not None else 0.0,
             "tp": tp if tp is not None else 0.0,
-            "deviation": int(pre.get("info", {}).get("trade_stops_level", 20)),
+            "deviation": _deviation(pre.get("info", {})),
             "magic": MAGIC,
             "comment": comment[:30] or "mt5-mcp",
             "type_time": ORDER_TIME_DAY,
@@ -365,7 +388,7 @@ def close_position(ticket: int, volume: float | None = None) -> TradeResult:
             "type": close_type,
             "position": ticket,
             "price": price,
-            "deviation": int(info.get("trade_stops_level", 20)),
+            "deviation": _deviation(info),
             "magic": MAGIC,
             "comment": "close",
             "type_time": ORDER_TIME_DAY,

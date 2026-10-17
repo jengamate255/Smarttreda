@@ -24,23 +24,43 @@ def _setup(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, settings: dict) -> P
 
 
 def _good_settings() -> dict:
-    return {
-        "risk": {
-            "max_spread_points": 0,
-            "confidence_floor_percent": 80,
-            "max_trades_per_day": 2,
-            "max_daily_loss_percent": 4.0,
-            "max_risk_percent": 1.0,
-        },
-        "consensus": {"allowed_symbols": list(sg.ALLOWLIST)},
-        "other": {"kept": True},
-    }
+    """A settings dict that passes the guard as written.
+
+    Critical values are taken from ``sg.CRITICAL`` so retuning the live
+    baseline (allowlist, risk, spread cap) cannot silently turn these tests
+    into restore-instead-of-rebaseline cases.
+    """
+    settings: dict = {"other": {"kept": True}}
+    for (section, key), expected in sg.CRITICAL.items():
+        settings.setdefault(section, {})[key] = (
+            list(expected) if isinstance(expected, list) else expected
+        )
+    return settings
 
 
 def test_baseline_and_ok(tmp_path, monkeypatch):
     _setup(tmp_path, monkeypatch, _good_settings())
     assert sg.verify_settings() == "baselined"
     assert sg.verify_settings() == "ok"
+
+
+def test_old_log_mode_good_copy_cannot_restore(tmp_path, monkeypatch):
+    path = _setup(tmp_path, monkeypatch, _good_settings())
+    assert sg.verify_settings() == "baselined"
+    old = _good_settings()
+    old["risk"]["reject_orders"] = False
+    sg.GOOD_COPY.write_text(json.dumps(old), encoding="utf-8")
+    path.write_text("{broken", encoding="utf-8")
+    assert sg.verify_settings() == "unreadable"
+    assert path.read_text() == "{broken"
+
+
+def test_bad_first_baseline_is_not_trusted(tmp_path, monkeypatch):
+    bad = _good_settings()
+    bad["risk"]["reject_orders"] = False
+    _setup(tmp_path, monkeypatch, bad)
+    assert sg.verify_settings() == "unreadable"
+    assert not sg.GOOD_COPY.exists()
 
 
 def test_benign_change_rebaselines_and_alerts(tmp_path, monkeypatch):

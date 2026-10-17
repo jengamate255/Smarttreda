@@ -1,5 +1,209 @@
 # AGENTS.md — Read This First
 
+## Read-only interim paper coverage report (2026-10-17)
+
+- Added standalone `scripts/report_forward_paper_interim.py`. It reads only saved
+  manifest/state, measurement observations/trades and archived bars/ticks; it does
+  not import the runner or trading modules, connect to MT5, notify, or change tasks.
+  Default output is stdout; `--output-directory` must be new and outside the input
+  tree. JSON evidence hashes and Markdown are saved separately in
+  `reports/forward_paper_interim_20261017/` for this interim snapshot.
+- Reports symbol/strategy observation and entry/exit counts, shared timeframe bar
+  coverage, overlapping-history versus distinct in-window bars, tick quote/request
+  coverage and request gaps, retained scan/settlement exceptions and plan errors.
+  Warmup is excluded. Calendar gaps are not presumed feed failures; recovery ticks
+  do not establish continuous prospective signal collection. Saved errors are a
+  truncated tail, not lifetime totals; floating estimates are omitted.
+- Four synthetic offline tests passed, including unchanged input hashes, overlap,
+  broker-time normalization, warmup exclusion, state/ledger deduplication, corrupt
+  archives/partial appends, stale-state warning and output-path protections. All
+  nine current frozen source/model hashes match the active manifest. Frozen test
+  inputs/runner, live configuration, orders, notifications and services/tasks were
+  untouched. Inspect report read warnings before interpreting interim counts.
+- Snapshot captured October 17 21:04 Nairobi: 1,083 observations, seven paper
+  entries, five exits, two open; 104 retained exceptions (partial-run state can
+  exceed the normal 100 tail). One ETHUSD tick archive was only four bytes when
+  read (`ETHUSD_1792269743490_1792270293516.parquet`), so 691 archives were readable
+  and tick coverage remains incomplete/unverified. The file was not repaired or
+  changed; its read hash and warning are preserved in the separate summary.
+
+## Prospective paper strategy comparison (2026-10-15)
+
+- October 17 08:21 Nairobi monitor verified collection resumed (saved scan 08:17,
+  status running). AUDUSD paper-position audit checked 152 archived tick files /
+  68,967 rows, no request-cursor gaps and no stop/target crossings, covering its
+  saved cursor. Archived recovery requests include the prior ~100-minute stall.
+  This supports settlement continuity for that open position, not continuous signal
+  collection: missed prospective entries during scanner interruptions remain unknown.
+  Weekend stale-quote scan errors on noncrypto symbols persist; no new source,
+  settings, service or task changes were made. End-of-test coverage review required.
+
+- October 16 monitor at ~21:14 Nairobi detected stale capture: last saved scan
+  19:52:37 Nairobi (16:52:37 UTC), over 80 minutes old. Scheduled paper task
+  reported Running with latest launch 21:12; its Python forwarding pair existed,
+  but fresh state/tick capture was not yet verified. Treat floating figures as
+  stale and review the interruption before drawing conclusions. No live actions
+  or source/policy/hash changes were made by this monitor.
+
+- User requested forward testing to measure earnings rather than infer loss causes.
+  Default seven-day PAPER comparison selected after offering 7/30 days or live-limit
+  discussion; no live execution authorized or enabled. Six current allowed symbols
+  crossed with six coded families (trend_zone, mean_reversion, momentum_breakout,
+  btc_trend_following, ema_crossover, bb_mr_fade), separate research books.
+- Runner `scripts/forward_strategy_paper.py`; frozen manifest/state/report in
+  `reports/forward_paper_20261015_7d/`. Window October 15 02:00 to October 22 02:00
+  Nairobi; independent reference balance $9,393.87, fixed low risk 0.1% (~$9.39).
+  Source/model hashes pause on changes. Base thresholds fixed, adaptive writes off.
+  29 offline regression tests passed. Warmup attempts preserved; no warmup entries.
+- Initial full measurement scan completed: 36 strategy/symbol observations, zero
+  errors, zero entries. Scheduled task verified Running at October 15 02:02 EAT;
+  next trigger 02:07. Heartbeat creation verified active.
+- Scheduled task `MT5 Paper Forward 20261015`: every five minutes, InteractiveToken,
+  IgnoreNew, eight-minute execution limit, finite seven-day-plus-grace trigger.
+  Separate heartbeat `seven-day-strategy-paper-test` checks every six hours, quiet
+  when healthy; reports meaningful failures/final results and pauses on completion.
+- Read-only broker facade, account identity checked, closed bars, fresh bid/ask
+  paper entries, tick-history exits with adverse stop gaps and TP capped at target.
+  Separate journal/bars/ticks confined to the report directory. Initial broker history
+  calls were slow; W1 advisory omitted (signal timeframes preserved). Review feed
+  coverage/errors before interpreting results. C: ~0.2 GB and E: ~2.1 GB free.
+- Research signals may fail live admission; reasons logged. This is not the full
+  desk/prop/news/consensus/portfolio executor. Stops/targets only, no desk early cuts,
+  partials or trailing. Additional costs use assumed 0.05R reserve, not measured
+  future commission/swap. Do not sum independent strategy books or promise returns.
+- No broker orders, live trading config/journal/model changes, Telegram sends,
+  account switching or trading executor restarts. Only this paper task was added.
+
+## Last-ten loss review (2026-10-15)
+
+- User requested analysis of last ten trades. Read-only attached existing FundingPips
+  terminal, verified login/server; aggregated broker position legs, matched entry/exit
+  volumes and excluded open positions. Journal alone mixes Deriv and incomplete rows.
+- Latest ten FundingPips closures: 2 wins / 8 losses, net -$78.79; winners +$135.72,
+  losers -$214.51, PF 0.633. Price P&L -$49.67 plus costs -$29.12. Four stop-outs
+  -$76.88, four early-loss-cut exits -$137.63. Latest closure includes GBPJPY
+  #403463489, absent from the journal-only latest-ten ordering.
+- Latest four desk scores 70.1–78, below today's 80 floor, net -$177.22; historical
+  effective executor policy not captured, so bypass attribution remains unresolved.
+  Several actual-fill RR values ~1.77–1.78 vs quoted 2R. Pre-entry closed-bar current
+  code reconstruction shows some sideways/conflicting H1/H4; other aligned trades
+  also lost. Triangle labels have suspicious side combinations, original full pattern
+  snapshots unavailable. No proof that wider stops/removing early cuts helps.
+- Evidence/report: `reports/last_ten_trades_20261015/report.md`, broker/journal/event
+  snapshots, entry-context parquet files and evidence hashes. Broker data supersedes
+  quoted journal entry prices and legacy missing/zero close details. No journal/config
+  writes, orders, notifications, account switching, service actions or restarts.
+
+## Three-month entry backtest (2026-10-15)
+
+- User requested last three months. Frozen UTC period July 15 00:00 to October 14
+  22:35:36 (October 15 01:35:36 Nairobi); six current allowed symbols, M5/H1/H4,
+  fresh read-only broker history/metadata, chronological 70/30 holdout.
+- Current and previous price-rule branches both produced zero trades, including
+  holdout. Funnel: 5,804 allowed-hour observations with usable data, 2,550 H1/H4
+  aligned, one fresh-zone proximity pass (USOIL), zero entry confirmations.
+  No win rate, profit factor or edge established; this is not a full live desk replay.
+- Independent integrity verification passed for all 18 history files, zero actual
+  fills to verify; 20 offline regression tests passed. Artifacts and reproduction:
+  `reports/entry_backtest_3months_20261015/report.md`, manifest/results/verification.
+- No orders, notifications, live journal/model/config changes, service/task actions
+  or executor restarts. Existing desk setup blocks remain configured.
+
+## Entry backtest verification (2026-10-14)
+
+- User authorized backtesting/verification. Read-only broker history/metadata
+  capture: six current allowed symbols, M5/H1/H4, 298,006 candles in 18 hashed
+  parquet files. Frozen UTC window April 1–October 14; chronological 70/30 holdout.
+  Cached price-rule comparison and repeat produced zero trades in both previous
+  and updated branches, including holdout. No edge or return improvement verified.
+- Shared funnel: 12,011 allowed-hour observations had usable data; 5,910 H1/H4
+  aligned, eight passed fresh-zone proximity, two passed entry confirmation, zero
+  had the required confirmed H1 pattern. New structural checks were not exercised
+  by real-data candidates. Existing desk setup blocks independently still forbid
+  desk entries; price-rule replay is a paper counterfactual, not full live desk.
+- Independent verification passed: 18 history files/row counts/timestamps/OHLC
+  checked, no errors; zero actual fills to verify. 20 regression tests pass, including
+  gap/ambiguous fills, wrong P&L, lookahead, tampered files, missing symbols and
+  exact production/accelerated pivot comparison. Offline process uses a faster
+  equivalent pivot count; production strategy files were not changed for speed.
+- Artifacts/reproduction: `reports/entry_backtest_20261014/report.md`, manifest,
+  results and verification JSON; `scripts/backtest_entry_selection.py --cached`,
+  `scripts/verify_entry_backtest.py`, `scripts/report_entry_backtest.py`.
+- No trades/notifications, live journal/model writes, risk/settings/.env/guard-copy,
+  allowlist/routing changes or service/task actions. No promotion or executor restart.
+
+## Entry selection improvements (2026-10-14)
+
+- User requested better trade selection and fewer weak entries. Quality-mode desk
+  ranking now excludes exhausted/invalidated/unconfirmed patterns, applies learned
+  trust before ranking, excludes nonfresh/broken zones, and requires selected
+  pattern/zone/H1/H4 to agree with entry. Opposing analyst scores no longer boost
+  conviction. Weights and selection/risk floors are unchanged.
+- Shared `entry_quality.pattern_entry_check` verifies directional structure at
+  executable ask/bid or pending price and remaining reward against the actual stop.
+  Desk preserves stop floors and caps TP at structural target; insufficient RR or
+  missing measured ATR produces no entry plan. Final quality gate matches the
+  selected desk family and rejects targets beyond its supporting pattern target.
+- Scans now log a versioned bounded `selection` snapshot for all candidates,
+  including plan, analyst evidence, eligibility, rejection reasons and chosen flag.
+  Offline audit CLI: `python scripts/review_entry_selection.py --output reports/entry_selection_20261014/audit.json`.
+- Audit: 619 scans / 3,095 top observations, 39 direction mismatches (none logged as
+  picks); 700 paper candidates, 61 direction mismatches, zero qualified. Repeated
+  observations are not trades or avoided losses. Historical analyst/geometry/quote
+  snapshots are missing; no profit improvement or deployable edge is claimed.
+- 183 focused tests pass. No trades/account queries, service/task actions, settings,
+  .env, guard-copy, model, routing or allowlist changes. Saved locally; long-running
+  executors have not been restarted. Detail: `reports/entry_selection_20261014.md`.
+
+## Dashboard started (2026-10-14)
+
+- User requested server startup after the local baseline-recovery implementation.
+  Started existing `MT5 Prop Dashboard` scheduled task; stopped the earlier stalled
+  dashboard pair (5304/18048). One scheduled dashboard instance now listens on
+  127.0.0.1:8050 (forwarding parent 16708, listener child 6128).
+- Verified HTTP 200 for `/` and `/static/app.operations.js`; dashboard includes the
+  updated baseline-recovery UI. A console diagnostic launch lost the bind race to
+  the scheduled instance and exited; it is not another running server.
+- Dashboard startup connected to MT5 through its normal startup path. No trades
+  were submitted, settings/risk limits were not edited, and trading executors were
+  not restarted. The earlier local-only implementation notes below describe that
+  earlier stage, not this user-authorized server startup.
+
+## Prop baseline recovery (2026-10-14)
+
+- Local implementation only; no account calls, trades, service/task actions, settings,
+  .env, guard-copy, model, routing or allowlist changes in this session.
+- `prop_risk.snapshot` now requires a flat account (no positions or pending entries)
+  before reconstructing a missing daily baseline. It requests full broker history
+  from epoch 0, requires the configured initial funding, verifies all position legs
+  close and booked cashflows reconcile to balance, and checks identity/balance,
+  exposure and reset again before saving. Recovery serializes with native admissions;
+  uncertain-order latches are never cleared. Current equity is never a baseline.
+- Complete history showing overnight exposure at today's reset still blocks today:
+  closing it does not reveal reset floating equity. Remain flat through a later reset
+  and refresh to reconstruct that day's baseline. Existing verified daily baselines,
+  daily/overall floors, stop reservations, safety margin and exit paths are preserved.
+- Dashboard risk panel shows entry admission, baseline/recovery status, reasons,
+  reset times and Recheck baseline evidence. Prop pause disables entry preflight even
+  under record-only compliance. No recovery action sends an order.
+- Trace, recovery procedure and validation: `reports/prop_baseline_recovery_20261014.md`.
+
+## Forward-test measurement/rollback review (2026-10-14)
+
+- Local-only review of Oct 9 send-everything comments and Oct 12 atlas (216 runs:
+  0 PROMOTE/10 PAPER/206 FAIL). Existing Oct 13 strict policies preserved.
+- Optional named UTC forward_test window (maximum7 days); absent/expired window
+  enforces. `memory/forward_test.stop` restores enforcement per gate call without
+  cached-config reload once this code is deployed. Does not recall in-flight sends.
+- Final gate audits clean and violating opening attempts (schema2); send_permitted
+  is permission, not a fill. Log-mode audit failure blocks. Offline report/rollback
+  candidate CLI: `python -m mt5_mcp.forward_test_review`. Outcome linking remains
+  manual. Guard refuses unsafe initial baselines and outdated good copies.
+- No settings/.env/guard-copy edits, service/task actions, account calls or model/
+  routing/allowlist changes. Deployment/manual steps: `reports/forward_test_review_20261014.md`.
+- Validation:50 focused tests pass; offline Oct9–12 review found1812 legacy gate
+  rows, insufficient for fill counts/profit attribution.
+
 Project: MT5 trading stack (`E:\Project\Mt5 Ea`) — EA/dashboard/backtest/Telegram research.
 This file is the AI handoff context. Update it whenever state changes (services, config, decisions).
 
@@ -35,6 +239,16 @@ This file is the AI handoff context. Update it whenever state changes (services,
   **`MT5R_DiskGuard`** (added 2026-10-02): daily 04:30 cache cleanup, action
   `C:\Users\Dave\run_disk_guard.bat` (no-space launcher copy; repo bat
   `run_disk_guard.bat` redirects to `logs/disk_guard.log`) — see Trading hardening.
+  **`MT5R_WeeklyReport`** (added 2026-10-03): weekly performance report, Sun 20:00 —
+  `run_weekly_report.py` queries journal for last 7 days, calculates P&L / win rate /
+  per-strategy breakdown, sends HTML Telegram card via `notify("weekly_report", force=True)`.
+  Logs to `logs/weekly_report.log`. Recreate:
+  `schtasks /Create /TN "MT5R_WeeklyReport" /TR "C:\Users\Dave\run_weekly_report.bat" /SC WEEKLY /D SUN /ST 20:00 /IT /F`
+  **Divergence monitor** (`mt5_mcp/divergence_monitor.py`): compares live win rate / PF
+  (last 30 journal trades) vs backtest expectations (`BACKTEST_PF`). Telegram alert when
+  live < backtest * 0.8. `check_divergence()` callable from analysis_agent or scheduled task.
+  **Strategy performance API** (`/api/strategy_performance`): added to `web_dashboard.py` —
+  per-strategy trades / win rate / P&L / PF / avg RR with rolling 30/60/90-day windows.
 - Dashboards: 8080, 8082 (telegram health), 8050/8051, 8060. 8050/8060 have flapped (watchdog respawn vs MT5 IPC).
 - Accounts: Prop FundingPips2-SIM login 11911448 (`C:\Program Files\MetaTrader 5 Terminal\terminal64.exe`);
   Deriv-Demo 41204968 (`MT5_MCP_ACCOUNT=DERIV` routes here). Balance ~9642.
@@ -427,3 +641,216 @@ Modules added to fix zero-trade diagnosis and improve signal quality:
 - Backtest verdict: lowering conf/score floors degrades quality (report:
   `mt5_mcp/backtest/results/lowconf_exp/report.json`) — production floors stay, but adaptive
   thresholds can temporarily relax them based on performance (safe: clamped to min bounds).
+
+## Dashboard improvements (2026-10-12)
+
+- Main dashboard remains http://127.0.0.1:8050, launched through `MT5 Prop Dashboard`
+  (`service.vbs prop`). Restarted this dashboard only; trading services and settings untouched.
+- Replaced sample account/plan values with live data and explicit loading/unavailable states.
+  Added account freshness, refresh control, runtime policy/consensus status, risk budget and
+  decision trace. Engine vote timestamps are publications, not process health checks.
+- Added sanitized `/api/diagnostic/runtime` in `web_diagnostic.py`. It reports this dashboard
+  process's cached compliance settings, hot consensus settings and critical-key disk drift.
+  Executors can retain different cached settings until restarted. Live inspection found
+  record-only compliance and a conservative 0.25% cap; configuration was not changed.
+- Single split-script bootstrap now replaces duplicate inline/monolithic initialization.
+  Portfolio loads on demand; mobile navigation includes Risk and a More menu for Diagnostic/Dojo.
+  WebSocket compliance evaluation runs in a worker thread to keep the event loop responsive.
+- Chart ignores invalid/duplicate candle timestamps, orders valid markers, uses supported
+  arrow shapes, and creates timeframe controls once. API timeouts show a readable error.
+- Validation: runtime/WebSocket pytest checks 3 passed; decision UI checks 12 cases plus
+  single-bootstrap and chart-marker checks passed. JavaScript syntax checked. Live desktop
+  account/position rendering verified; intermittent broker/API timeouts remain visible.
+- Original edited dashboard assets backed up in `tmp/dashboard_before_20261012/`.
+
+### Alerts follow-up (2026-10-12)
+
+- Alerts tab now shows the latest 100 stored trade events independently of the popup cursor,
+  newest first, plus saved price alerts and a working creation form. Recorded data at review:
+  555 events and 5 configured price alerts. Failures retain loaded data and show retry guidance.
+- Entering the tab refreshes both lists; incoming events and visible-tab polling update history.
+  Triggered price alerts are labelled explicitly. Refresh and creation controls are bound once.
+- `/api/alerts?include_prices=false` reads stored alerts without synchronous broker quote calls;
+  existing callers retain live-price annotation by default. Dashboard task restarted to deploy.
+- Validation: dedicated alerts UI regression checks passed, broker-independent listing pytest
+  1 passed, existing dashboard UI regression checks passed. No test alerts or Telegram messages
+  sent, and trading services/settings unchanged.
+- Live browser verification loaded all 5 saved price alerts and 100 recent events; mobile
+  activity rendering verified. Event history scrolls within its panel so the form stays reachable.
+
+### Trade sounds (2026-10-12)
+
+- `static/app.sound.js` adds a local three-note Web Audio chime, enabled by default,
+  persistent mute toggle and Test sound control in Operations. Browser audio requires a user
+  interaction; controls show Enable sound / Sound on / Sound off / unsupported status.
+- New `fill`/`filled` events and newly observed position tickets sound; initial position
+  snapshots, account switches, old event history and pending orders do not. Position snapshots
+  cover desk trades that do not emit the shared trade event. Accepted dashboard orders chime too.
+- Repeated event IDs/tickets do not replay. The same-symbol fill reported by different sources
+  within 30 seconds is coalesced to avoid duplicate sounds. Same-source separate fills still sound.
+- Event polling continues in background tabs with an overlap guard. Browser throttling or
+  suspension can delay alerts; the page/browser must remain open. No trading processes changed.
+- Service-worker cache bumped to v5. Sound regression checks and existing UI checks passed;
+  live-browser Test sound activation verified Sound on. No live order submitted for testing.
+
+## Chart and responsiveness fixes (2026-10-13)
+
+- Dashboard :8050 restarted through `MT5 Prop Dashboard`; MT5 connection verified.
+  Only the dashboard process pair was restarted. Trading settings and executors unchanged.
+- `_fetch_rates_raw` now converts pandas datetime columns to epoch seconds explicitly
+  (ns/us/ms/s storage tested); the old integer cast produced incorrect chart dates.
+- Candles render before optional bot/signals/overlay requests. Refreshes preserve zoom,
+  retain loaded candles with a warning on failure, skip overlapping background loads,
+  and ignore superseded analysis/quotes. Quote updates retain intrabar highs/lows.
+- Corrected leading-# element lookup, chart crosshair arguments and empty-pane checks,
+  double-click price-scale reset, hidden indicator panes and tooltip visibility/position.
+- Breakout snapshots run in a worker thread so broker scans cannot block HTTP's event loop.
+- Grid tracks and chart toolbar now shrink/wrap on mobile; service-worker cache is v6.
+  Supply/demand overlay series are excluded from autoscaling so distant zones cannot
+  flatten the visible candles.
+  Rates include broker digits/point, used for price and MACD axis precision.
+- Validation: 11 focused backend tests, existing 12 dashboard smoke tests, chart/operations/
+  alerts/sound JS regression checks and JS syntax checks passed. Live browser loaded 206
+  EURUSD H1 candles (Sep 30-Oct 13), RSI/MACD rendered, double-click interaction had no
+  errors, and the 390px mobile viewport had no horizontal overflow. Screenshots:
+  `tmp/dashboard_chart_verified_20261013.png`, `tmp/dashboard_mobile_verified_20261013.png`.
+- Current consensus report differs from older configuration notes: enabled, six-symbol
+  allowlist (AUDUSD/BTCUSD/ETHUSD/SPX500/USOIL/XAUUSD), risk cap 0.5%, desk publications
+  only at inspection. Configuration was not retuned.
+
+## Outcome learning (2026-10-13)
+
+- `learning_loop.py` now uses completed, attributable outcomes scoped to symbol/setup/side
+  over 30 days, refreshing on SQLite/WAL changes (15-second fallback). Desk prefixes are
+  normalized and pattern trust is symbol-specific; net-losing setups cannot be boosted.
+- At least 8 outcomes are required. Three consecutive losses pause entries for 6 hours;
+  negative net and PF <0.8 pause for 24 hours. Timers start at the last close. Insufficient
+  evidence leaves existing entry checks in charge. This is not a prediction of profitability.
+- Pipeline/final execution gate enforce learned pauses and unavailable learning evidence
+  even in forward-test log mode. Exits, SL/TP changes and cancels stay executable. The
+  Boom/Crash raw market fallback now calls the final gate with its stable setup label.
+- Adaptive thresholds no longer fall below configured floors due to inactivity/mediocre
+  win rate. No risk limits, allowlists, spread settings or production model files changed.
+- Journal fixes: no invented close times on open records; existing-ticket updates commit;
+  partial exits are not completed outcomes. Desk closures record outcome, close time and
+  net P&L across all deal legs/costs. Missing history retains tracking for retry.
+- ML promotion now requires deduped, ordered, purged forward validation, >=20 held-out
+  outcomes, both classes and AUC >=0.55 plus the validated baseline check. Publications
+  are atomic; inference reloads changed model files. Legacy scores are labelled unvalidated.
+  Read-only candidate: 622 usable/515 held-out trades, AUC 0.474; NOT published.
+- Replay using only closes known before entry: 73 trades, 30 wins/43 losses, net -877.43,
+  PF 0.710; final rules skipped zero entries. No accuracy/profit improvement demonstrated.
+  Preliminary 3-loss-only rule skipped 2 winners/1 loser and was rejected. Current pauses:
+  Boom 100 Index SELL (8 trades, -468.50, PF 0.160), Crash 99 Index SELL (8, -660.54, PF 0).
+- Restarted only the running MT5 Trade Desk/Gateway/Prop Dashboard service pairs through
+  existing tasks. Live dashboard connected=True, learning available=True. Disabled MT5R
+  Analysis/Confirm/Watch/Watchdog/Telegram tasks were not enabled. No test orders submitted.
+- Validation: 90 learning/ranker/strategy/journal/gate tests + 19 desk management tests pass;
+  syntax checks pass. Partial-close tests now use recent dates to avoid unrelated time exits.
+  Read-only telemetry: `/api/diagnostic/learning`; detailed evidence/limitations:
+  `reports/outcome_learning_20261013.md`.
+
+## Quality Mode (2026-10-13)
+
+- Production `quality.enabled=true`; `risk.reject_orders=true` is enforced even
+  if an environment flag requests log mode. Risk caps, hours, six-symbol allowlist
+  and blocked symbols/setups were preserved. Existing `desk-`/`desk:` blocks mean
+  desk setups are now PAPER ONLY, not live-unblocked by learning recovery.
+- Per user spread policy, both hard spread caps are 0. Spread-aware sizing stays;
+  execution RR still uses actual bid/ask. No .env edits or model promotion.
+- Shared `entry_quality.py` rechecks closed H1/H4 alignment, confirmed pattern,
+  closed M5 confirmation, fresh zone, quote/candle freshness, 0.25ATR entry drift,
+  stop/target geometry and current configured RR. Entries fail closed on missing
+  evidence; exits/SLTP/cancels remain executable. ML is advisory rather than vetoing
+  entries from an unvalidated arbitrary probability threshold.
+- `paper_learning.py` stores deduplicated rejected-entry snapshots and outcomes
+  in separate `memory/entry_shadow.db`. Future full-bar entries, spread + assumed
+  0.05R extra costs, adverse stop-gap fills, 72-bar timeout. Ambiguous bars are
+  conservative losses and cannot qualify; missing history cannot invent wins.
+- Losing cohorts persist beyond cooldown/lookback expiry. Recovery: >=20 fresh
+  qualified independent paper closes, PF >=1.2, mean net R >=0.1, approximate mean
+  lower bound >0. Neither these results nor recovery override compliance blocks.
+  Old/future/unqualified/ambiguous outcomes are excluded. Two existing losing
+  synthetic cohorts were quarantined from the shared journal, not newly traded.
+  A new real loss during an active quarantine resets the paper evidence window.
+- Fixed broker-clock history freshness: `_rates_newest` anchors to tick epoch,
+  not UTC now. FundingPips2-SIM explicit offset +10800 sec; M5 quote-to-bar lag
+  verified ~106 sec (previously >3h). Unknown clock offsets fail quality closed.
+  Broker fetches also use native MT5 timeframe IDs (not minute counts); duration
+  math stays in minutes. This avoids large M5 fallback downloads for supported TFs.
+- Dashboard `/api/diagnostic/quality` and expandable Entry quality section show
+  paper status/reasons/recovery on desktop/mobile. Feed timestamps are persisted
+  across processes; background replay starts before scans and after management.
+  Slow W1/D1 cache TTLs retained; H1/H4 quality cache is tighter. Font CSS is
+  parser-nonblocking; SW cache v8. Live desktop/390px mobile quality-panel checks
+  passed (no JS errors or horizontal overflow); snapshots in `output/playwright/`.
+- Restarted only active Gateway/Desk/Prop Dashboard task-managed process pairs.
+  Disabled MT5R Analysis/Confirm/Watch/Watchdog/Telegram stayed disabled. Settings
+  fingerprint confirmed all unrelated values unchanged; guard hash/good copy
+  rebaselined. Guard's regular analysis_agent invocation is currently disabled.
+  Transient journal read error cleared; quick_check=ok, no WAL/SHM removal.
+- Verification: 180 focused Python tests pass, one skip; JS operations regressions,
+  syntax and diff checks pass. Live API connected=True, strict=True, spread limits0,
+  ML advisory. No test orders. No accuracy/profit improvement is yet demonstrated;
+  forward evidence is required. Details: `reports/quality_mode_20261013.md`.
+
+## Prop Risk And Edge Review (2026-10-13)
+
+- Completed the six-symbol, nine-variant baseline atlas using history from 2021:
+  **54 runs, 0 PROMOTE / 3 PAPER / 51 FAIL**. SPX500 EMA: full PF1.213 (429),
+  holdout PF1.343 (122), below full-window promotion floor. BTCUSD BTC trend:
+  full PF1.040, holdout0.583. No routing/allowlist/model promotion. Full quality
+  executor edge remains unconfirmed. The separate six-month price-rule replay
+  was stopped without results; do not cite it as validation. Report:
+  `reports/risk_edge_review_20261013.md`; atlas under `reports/quality_baseline_20261013/`.
+- Activated `performance_risk`: rolling20 completed attributable broker-account
+  positions (90-day lookback), minimum20, net>0 and PF>=1.2 to use 1%; losing,
+  insufficient/unavailable evidence or >=3 consecutive losses uses **0.1%**.
+  These are equity-risk ceilings at the stop, not fixed lots. All deal costs
+  count; partial/reversal/incomplete histories do not qualify. Current-account
+  audit: last20 net -164.34, PF0.572, three losses => low-risk regime.
+- `risk.max_risk_percent=1`, conservative0.1, consensus1. Existing daily4%,
+  overall8%, total-open3%, base daily2+green1, hours, setup blocks, six-symbol
+  allowlist and spread caps0 retained. The desk fixed-dollar `.env` setting is
+  ignored under outcome sizing. All volume rounding is down; broker minimum
+  over budget means skip. Drawdown/consistency reductions cannot increase size.
+- Added account-scoped `prop_risk.py`: verified initial funding **10000**, login
+  11911448 / FundingPips2-SIM, static internal overall floor9200, UTC+3 midnight
+  daily reset and additional10 operational buffer. Daily baseline reconstructed
+  only with complete history and no overnight exposure, or retained from a
+  previously verified same-day baseline. Missing/corrupt/other-account evidence
+  blocks new entries. Current two overnight positions prevent reconstructing
+  today's opening equity, so new entries remain paused; management continues.
+  Do not initialize the daily baseline from current equity. Existing project
+  policy assumes the purchased 5%-daily plan; a 3% add-on requires a lower profile.
+- Prop budget reserves current-mark-to-stop exposure and pending risk, includes
+  floating losses and costs, and caps each new entry against daily/overall room.
+  Missing positions/orders or contract data cannot become zero exposure.
+  Complete unfiltered broker history is exposed through `account_deals_since`.
+  Pending entries must fit losing-mode0.1%; stop removal/widening and pending
+  repricing/volume changes are blocked. Tightening stops/exits/cancels remain usable.
+- Native and raw-watcher entries share a SQLite admission latch at
+  `memory/prop_risk_state.db`. Concurrent sends are rejected. An uncertain broker
+  reply or process death leaves a durable latch: reconcile actual broker history
+  and exposure before clearing it. Account daily state is separately atomic at
+  `memory/prop_risk_state.json`. No test orders were sent.
+- Desk plans now capture bid/ask and use saved ask for BUY / bid for SELL, without
+  chasing execution prices. Final pending gates receive the requested entry price.
+- Settings fingerprint verified all unrelated fields including credentials unchanged;
+  guard criticals/hash/good copy updated. Only active Gateway/Desk/Prop Dashboard
+  restarted through their existing tasks. Disabled MT5R tasks stayed disabled.
+- Verification: 154 focused Python tests passed, one skip; 19 desk-management tests
+  passed separately; JS operations regression/syntax checks passed. The legacy
+  `test_trade_desk_partial_close.py` inserts global stubs during collection and must
+  run separately from entry-quality/learning tests. Service-worker cache is v9.
+  Live API/browser verification is pending completion of this deployment.
+
+## Interim reporter publication (2026-10-17)
+
+- User authorized pushing the completed report code to https://github.com/jengamate255/Smarttrader.git.
+- Published reporter, synthetic tests and usage README on codex/paper-interim-report;
+  remote verified at fa2cac438dd68b33e409d0da9322bbf7a4ba5f22. Four tests passed;
+  publication copies matched tested source hashes and staged whitespace checks passed.
+- Isolated publication repo: .cache/publish_paper_interim_20261017/. Source checkout
+  origin (Superbot-) and working history preserved. Private/active paper artifacts
+  and unrelated local changes were excluded. No live trading/service changes.

@@ -21,31 +21,25 @@ compliance gate (which also enforces prop-style daily limits).
 from __future__ import annotations
 
 import argparse
-import logging
 import sys
-import time
 from datetime import datetime, timezone
-from logging.handlers import RotatingFileHandler
 from pathlib import Path
+
+import pandas as pd
 
 ROOT = Path(__file__).resolve().parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from mt5_mcp.client import get_client, reset_client
-from mt5_mcp.common import pip_size, pip_value_per_lot, round_to_step
-from mt5_mcp.config import get_settings
 from mt5_mcp.consensus import (
     check as consensus_check,
     publish as consensus_publish,
     risk_cap as consensus_risk_cap,
 )
 from mt5_mcp.memory.trade_journal import get_journal
+from mt5_mcp.pipeline import run_gates
 from mt5_mcp.tools.supply_demand import detect_zones as detect_sd_zones
-from mt5_mcp.tools.trades import open_market, pending_order
-from mt5_mcp.telegram_alerts import send_telegram
-from mt5_mcp.trade_events import emit as emit_event
-from mt5_mcp.visual_notify import popup
+from mt5_mcp.watcher_base import BaseWatcher, Signal
 
 FOREX_SYMBOLS: tuple[str, ...] = (
     "EURUSD",
@@ -60,59 +54,21 @@ FOREX_SYMBOLS: tuple[str, ...] = (
 SETUP = "forex_zone_breakout"
 
 
-def _logger(log_path: Path | None) -> logging.Logger:
-    logger = logging.getLogger("forex_breakout_watcher")
-    logger.setLevel(logging.INFO)
-    logger.propagate = False
-    if logger.handlers:
-        return logger
-    formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
-    stream = logging.StreamHandler()
-    stream.setFormatter(formatter)
-    logger.addHandler(stream)
-    if log_path:
-        log_path.parent.mkdir(parents=True, exist_ok=True)
-        handler = RotatingFileHandler(
-            log_path, maxBytes=2_000_000, backupCount=3, encoding="utf-8"
-        )
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
-    return logger
-
-
-def _args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--live", action="store_true", help="submit accepted signals")
-    parser.add_argument("--once", action="store_true", help="scan once and exit")
-    parser.add_argument("--interval", type=float, default=60.0, help="seconds between scans")
+def _parse_args() -> argparse.Namespace:
+    parser = BaseWatcher.base_arg_parser("Forex range breakout watcher")
     parser.add_argument("--confidence-floor", type=float, default=65.0)
-    parser.add_argument("--range-bars", type=int, default=24, help="bars in the M15 range window")
-    parser.add_argument("--min-rr", type=float, default=1.2, help="skip breakouts offering less R:R")
-    parser.add_argument("--rr", type=float, default=1.5, help="take-profit distance in R multiples")
-    parser.add_argument("--risk-percent", type=float, default=0.5, help="% of equity risked per trade")
-    parser.add_argument("--symbols", type=str, default="", help="comma-separated override (default: all majors)")
-    parser.add_argument("--trend-tf", type=str, default="H1", help="trend filter timeframe")
+    parser.add_argument("--range-bars", type=int, default=24)
+    parser.add_argument("--min-rr", type=float, default=1.2)
+    parser.add_argument("--rr", type=float, default=1.5)
+    parser.add_argument("--symbols", type=str, default="")
+    parser.add_argument("--trend-tf", type=str, default="H1")
     parser.add_argument("--lookback", type=int, default=400)
-    parser.add_argument(
-        "--log-file",
-        type=Path,
-        default=ROOT / "logs" / "forex_breakout.log",
-    )
+    parser.set_defaults(log_file=str(ROOT / "logs" / "forex_breakout.log"))
+    parser.set_defaults(risk_percent=0.5)
     return parser.parse_args()
 
 
-def _has_exposure(client, symbol: str) -> bool:
-    positions = client.positions(symbol) or []
-    orders = client.pending_orders(symbol) or []
-    return bool(positions or orders)
-
-
 def _ema200_direction(client, symbol: str, timeframe: str) -> tuple[str, float | None]:
-    """Return ('bull'|'bear'|'flat', ema200) for the trend timeframe.
-
-    The SIM terminal serves thin history (gappy bars), so request a large
-    count and use the last 200 closes actually returned.
-    """
     frame = client.rates(symbol, timeframe, 1000)
     if frame is None or len(frame) < 220:
         return "flat", None
@@ -128,76 +84,17 @@ def _ema200_direction(client, symbol: str, timeframe: str) -> tuple[str, float |
 
 
 def _atr(frame, period: int = 14) -> float:
-    import pandas as pd
-
     high = frame["high"].astype(float)
     low = frame["low"].astype(float)
     close = frame["close"].astype(float)
     tr = pd.concat(
-        [
-            high - low,
-            (high - close.shift(1)).abs(),
-            (low - close.shift(1)).abs(),
-        ],
+        [high - low, (high - close.shift(1)).abs(), (low - close.shift(1)).abs()],
         axis=1,
     ).max(axis=1)
     return float(tr.ewm(alpha=1 / period, adjust=False).mean().iloc[-1])
 
 
-def _lot_size(client, symbol: str, entry: float, sl: float, budget: float) -> float:
-    info = client.symbol_info(symbol)
-    pip = pip_size(info)
-    pip_value = pip_value_per_lot(info)
-    loss_per_lot = abs(entry - sl) / pip * pip_value if pip and pip_value else 0.0
-    minimum = float(info.get("volume_min", 0.01) or 0.01)
-    maximum = float(info.get("volume_max", 100.0) or 100.0)
-    step = float(info.get("volume_step", 0.01) or 0.01)
-    raw = budget / loss_per_lot if loss_per_lot > 0 else minimum
-    return round_to_step(raw, step, floor=minimum, ceil=maximum)
-
-
-def _record_order(
-    *,
-    ticket: int,
-    symbol: str,
-    side: str,
-    entry: float,
-    sl: float,
-    tp: float,
-    lots: float,
-    confidence: float,
-    setup: dict,
-) -> None:
-    risk = abs(entry - sl)
-    rr = abs(tp - entry) / risk if risk and tp is not None else None
-    get_journal().record_trade(
-        ticket=ticket,
-        symbol=symbol,
-        side=side,
-        setup=SETUP,
-        entry=entry,
-        sl=sl,
-        tp=tp,
-        lots=lots,
-        open_time=datetime.now(timezone.utc).isoformat(),
-        reason=(
-            f"{symbol} range breakout {side} "
-            f"range {setup['range_low']:.5f}-{setup['range_high']:.5f}"
-        ),
-        market_conditions=(
-            f"range_height={setup['range_high'] - setup['range_low']:.5f};"
-            f"atr={setup.get('atr', 0):.5f};overshoot={setup.get('overshoot', 0):.5f}"
-        ),
-        confidence=confidence,
-        rr=rr,
-    )
-
-
-def _find_breakout(client, logger: logging.Logger, args, symbol: str) -> dict | None:
-    """Look for a tradable range breakout on one symbol.
-
-    Returns a dict describing the trade or None.
-    """
+def _find_breakout(client, logger, args, symbol: str) -> dict | None:
     info = client.symbol_info(symbol)
     if not info:
         logger.warning("%s: no symbol info (possibly not subscribed)", symbol)
@@ -210,7 +107,6 @@ def _find_breakout(client, logger: logging.Logger, args, symbol: str) -> dict | 
     if atr <= 0:
         return None
 
-    # Donchian range over the trailing window (exclude the forming bar).
     window = frame.iloc[-args.range_bars - 1 : -1]
     range_high = float(window["high"].max())
     range_low = float(window["low"].min())
@@ -221,7 +117,6 @@ def _find_breakout(client, logger: logging.Logger, args, symbol: str) -> dict | 
     bid = float(tick.get("bid", 0.0))
     ask = float(tick.get("ask", bid))
 
-    # Zones hugging the range edges act as confirmation.
     zone_bonus = 0.0
     try:
         zones = detect_sd_zones(frame, lookback=args.lookback)
@@ -245,17 +140,11 @@ def _find_breakout(client, logger: logging.Logger, args, symbol: str) -> dict | 
             risk_buy = entry_buy - sl_buy
             if risk_buy > 0:
                 tp_buy = entry_buy + args.rr * risk_buy
-                candidates.append(
-                    {
-                        "side": "BUY",
-                        "entry": entry_buy,
-                        "sl": sl_buy,
-                        "tp": tp_buy,
-                        "rr": args.rr,
-                        "overshoot": overshoot_buy,
-                        "bonus": zone_bonus if zone_bonus else 0.0,
-                    }
-                )
+                candidates.append({
+                    "side": "BUY", "entry": entry_buy, "sl": sl_buy,
+                    "tp": tp_buy, "rr": args.rr, "overshoot": overshoot_buy,
+                    "bonus": zone_bonus,
+                })
     if trend != "bull":
         entry_sell = range_low - buffer
         overshoot_sell = range_low - bid
@@ -264,22 +153,14 @@ def _find_breakout(client, logger: logging.Logger, args, symbol: str) -> dict | 
             risk_sell = sl_sell - entry_sell
             if risk_sell > 0:
                 tp_sell = entry_sell - args.rr * risk_sell
-                candidates.append(
-                    {
-                        "side": "SELL",
-                        "entry": entry_sell,
-                        "sl": sl_sell,
-                        "tp": tp_sell,
-                        "rr": args.rr,
-                        "overshoot": overshoot_sell,
-                        "bonus": zone_bonus if zone_bonus else 0.0,
-                    }
-                )
+                candidates.append({
+                    "side": "SELL", "entry": entry_sell, "sl": sl_sell,
+                    "tp": tp_sell, "rr": args.rr, "overshoot": overshoot_sell,
+                    "bonus": zone_bonus,
+                })
     if not candidates:
         return None
 
-    # Confidence: range compactness (tight ranges break better), trend
-    # alignment, and zone confirmation.
     compactness = min(100.0, 2.0 * atr / range_height * 100.0) if range_height > 0 else 50.0
     for cand in candidates:
         trend_align = (
@@ -299,165 +180,167 @@ def _find_breakout(client, logger: logging.Logger, args, symbol: str) -> dict | 
     if best["confidence"] < args.confidence_floor:
         logger.info(
             "%s: range %.5f-%.5f atr=%.6f trend=%s best=%s conf=%.1f below floor %.1f",
-            symbol,
-            range_low,
-            range_high,
-            atr,
-            trend,
-            best["side"],
-            best["confidence"],
-            args.confidence_floor,
+            symbol, range_low, range_high, atr, trend,
+            best["side"], best["confidence"], args.confidence_floor,
         )
         return None
     return best
 
 
-def scan_once(args: argparse.Namespace, logger: logging.Logger, client) -> bool:
-    account = client.account_info()
-    equity = float(account.get("equity", account.get("balance", 0.0)) or 0.0)
-    # unified consensus risk cap (engine default may be higher)
-    budget = equity * min(args.risk_percent, consensus_risk_cap()) / 100.0
+def _resolve_symbols(args: argparse.Namespace) -> list[str]:
+    if args.symbols:
+        return [s.strip().upper() for s in args.symbols.split(",") if s.strip()]
+    return list(FOREX_SYMBOLS)
 
-    symbols = [s.strip().upper() for s in args.symbols.split(",") if s.strip()]
-    if not symbols:
-        symbols = list(FOREX_SYMBOLS)
 
-    for symbol in symbols:
+class ForexBreakoutWatcher(BaseWatcher):
+    SETUP = SETUP
+    LOGGER_NAME = "forex_breakout_watcher"
+
+    def symbols(self) -> list[str]:
+        return _resolve_symbols(self.args)
+
+    def client_key(self) -> str | None:
+        return None
+
+    def detect_signal(self, symbol: str) -> Signal | None:
+        setup = _find_breakout(self._client, self.logger, self.args, symbol)
+        if setup is None:
+            return None
+        return Signal(
+            symbol=symbol,
+            side=setup["side"],
+            entry=setup["entry"],
+            sl=setup["sl"],
+            tp=setup["tp"],
+            confidence=setup["confidence"],
+            rr=setup["rr"],
+            metadata=setup,
+        )
+
+    def compliance_gate(self, symbol: str, signal: Signal) -> tuple[bool, list[str]]:
+        consensus_publish("breakout", symbol, signal.side, signal.confidence)
+        cver = consensus_check(symbol, signal.side, "breakout", score=signal.confidence)
+        if not cver.get("allowed"):
+            return False, cver.get("violations", [])
+        gate = run_gates(
+            symbol=symbol, side=signal.side, lots=signal.lots or 0.01,
+            sl_price=signal.sl, confidence=signal.confidence,
+            source=SETUP, score=signal.confidence,
+        )
+        return gate.allowed, gate.violations
+
+    def build_order(self, signal: Signal) -> tuple[str, float, float, float | None, float]:
+        order_type = "buy_stop" if signal.side == "BUY" else "sell_stop"
+        return order_type, signal.entry, signal.sl, signal.tp, signal.lots or 0.0
+
+    def scan_once(self, client, dry_run: bool = False) -> int:
         try:
-            if _has_exposure(client, symbol):
-                continue
-            setup = _find_breakout(client, logger, args, symbol)
-            if setup is None:
-                continue
-            entry, sl, tp = setup["entry"], setup["sl"], setup["tp"]
-            lots = _lot_size(client, symbol, entry, sl, budget)
-            logger.info(
-                "%s qualifying: %s conf=%.1f entry=%.5f sl=%.5f tp=%.5f rr=%.2f lots=%.2f range=%.5f-%.5f",
-                symbol,
-                setup["side"],
-                setup["confidence"],
-                entry,
-                sl,
-                tp,
-                setup["rr"],
-                lots,
-                setup["range_low"],
-                setup["range_high"],
-            )
+            equity = float(client.account_info().get("equity", 0))
+        except Exception:
+            equity = 0.0
+        budget = equity * min(self.args.risk_percent, consensus_risk_cap()) / 100.0
 
-            # consensus layer: board stance + allowlist + cross-engine veto
-            consensus_publish("breakout", symbol, setup["side"], setup["confidence"])
-            cver = consensus_check(symbol, setup["side"], "breakout",
-                                   score=float(setup["confidence"]))
-            if not cver.get("allowed"):
-                logger.warning("%s consensus rejected: %s", symbol,
-                               "; ".join(cver.get("violations", [])))
-                continue
+        for symbol in self.symbols():
+            try:
+                if self._has_exposure(client, symbol):
+                    continue
 
-            if not args.live:
-                logger.info("%s dry-run: no order submitted", symbol)
-                return False
+                signal = self.detect_signal(symbol)
+                if signal is None:
+                    continue
 
-            tick = client.tick(symbol)
-            bid = float(tick.get("bid", 0.0))
-            ask = float(tick.get("ask", bid))
-            crossed = (setup["side"] == "BUY" and entry <= ask) or (
-                setup["side"] == "SELL" and entry >= bid
-            )
-            if crossed:
-                result = open_market(
-                    symbol,
-                    setup["side"],
-                    lots,
-                    sl=sl,
-                    tp=tp,
-                    comment=f"{symbol} range breakout",
-                    confidence=setup["confidence"],
+                lots = self._lot_size(client, symbol, signal.entry, signal.sl,
+                                      risk_percent=min(self.args.risk_percent, consensus_risk_cap()))
+                if lots is None:
+                    continue
+                signal.lots = lots
+
+                setup = signal.metadata
+                self.logger.info(
+                    "%s qualifying: %s conf=%.1f entry=%.5f sl=%.5f tp=%.5f rr=%.2f lots=%.2f range=%.5f-%.5f",
+                    symbol, signal.side, signal.confidence, signal.entry, signal.sl,
+                    signal.tp or 0, signal.rr, lots, setup["range_low"], setup["range_high"],
                 )
-            else:
-                order_type = "buy_stop" if setup["side"] == "BUY" else "sell_stop"
-                result = pending_order(
-                    symbol,
-                    order_type,
-                    lots,
-                    price=entry,
-                    sl=sl,
-                    tp=tp,
-                    comment=f"{symbol} range breakout",
+
+                allowed, violations = self.compliance_gate(symbol, signal)
+                if not allowed:
+                    self.logger.warning("%s blocked: %s", symbol, "; ".join(violations))
+                    continue
+
+                if dry_run:
+                    self.logger.info("%s dry-run: no order submitted", symbol)
+                    return 0
+
+                tick = client.tick(symbol)
+                bid = float(tick.get("bid", 0.0))
+                ask = float(tick.get("ask", bid))
+                crossed = (signal.side == "BUY" and signal.entry <= ask) or (
+                    signal.side == "SELL" and signal.entry >= bid
                 )
-            if result.accepted:
-                if result.ticket:
-                    _record_order(
-                        ticket=int(result.ticket),
-                        symbol=symbol,
-                        side=setup["side"],
-                        entry=float(getattr(result, "entry", entry) or entry),
-                        sl=sl,
-                        tp=tp,
-                        lots=lots,
-                        confidence=setup["confidence"],
-                        setup=setup,
+
+                if crossed:
+                    from mt5_mcp.tools.trades import open_market
+                    result = open_market(
+                        symbol, signal.side, lots, sl=signal.sl, tp=signal.tp,
+                        comment=f"{symbol} range breakout", confidence=signal.confidence,
                     )
-                logger.info(
-                    "%s order placed: ticket=%s retcode=%s",
-                    symbol,
-                    result.ticket,
-                    result.retcode,
-                )
-                popup(
-                    f"[PROP] {setup['side']} {symbol} breakout order",
-                    f"ticket #{result.ticket}\n"
-                    f"lots={lots:.2f} at {entry:.5f}\n"
-                    f"SL={sl:.5f} TP={tp:.5f} RR={setup['rr']:.1f}\n"
-                    f"conf={setup['confidence']:.0f}% range {setup['range_low']:.5f}-{setup['range_high']:.5f}",
-                )
-                send_telegram(
-                    f"<b>🚀 {setup['side']} {symbol} BREAKOUT ORDER</b>\n"
-                    f"ticket #{result.ticket} | lots={lots:.2f}\n"
-                    f"entry={entry:.5f} | SL={sl:.5f} | TP={tp:.5f}\n"
-                    f"RR={setup['rr']:.1f} | conf={setup['confidence']:.0f}%\n"
+                else:
+                    from mt5_mcp.tools.trades import pending_order
+                    order_type = "buy_stop" if signal.side == "BUY" else "sell_stop"
+                    result = pending_order(
+                        symbol, order_type, lots, price=signal.entry,
+                        sl=signal.sl, tp=signal.tp,
+                        comment=f"{symbol} range breakout",
+                    )
+
+                if result.accepted:
+                    self._record_order(result, signal)
+                    self.logger.info("%s order placed: ticket=%s", symbol, result.ticket)
+                    self._notify_order(result, signal)
+                    return 1
+                self.logger.warning("%s order rejected: %s", symbol, result.error)
+            except Exception as exc:
+                self.logger.warning("%s scan error: %s", symbol, exc)
+        return 0
+
+    def _record_order(self, result, signal: Signal) -> None:
+        setup = signal.metadata
+        ticket = int(result.ticket) if result.ticket else None
+        if not ticket:
+            return
+        risk = abs(signal.entry - signal.sl)
+        rr = abs(signal.tp - signal.entry) / risk if risk and signal.tp else None
+        try:
+            get_journal().record_trade(
+                ticket=ticket,
+                symbol=signal.symbol,
+                side=signal.side,
+                setup=SETUP,
+                entry=signal.entry,
+                sl=signal.sl,
+                tp=signal.tp,
+                lots=signal.lots,
+                open_time=datetime.now(timezone.utc).isoformat(),
+                reason=(
+                    f"{signal.symbol} range breakout {signal.side} "
                     f"range {setup['range_low']:.5f}-{setup['range_high']:.5f}"
-                )
-                emit_event(
-                    "prop", "order", symbol,
-                    f"BREAKOUT ORDER {setup['side']} {symbol} #{result.ticket} lots={lots:.2f} "
-                    f"@ {entry:.5f} conf={setup['confidence']:.0f}%",
-                )
-                return True
-            logger.warning("%s order rejected: %s", symbol, result.error)
+                ),
+                market_conditions=(
+                    f"range_height={setup['range_high'] - setup['range_low']:.5f};"
+                    f"atr={setup.get('atr', 0):.5f};overshoot={setup.get('overshoot', 0):.5f}"
+                ),
+                confidence=signal.confidence,
+                rr=rr,
+            )
         except Exception as exc:
-            logger.warning("%s scan error: %s", symbol, exc)
-    return False
+            self.logger.warning("journal record failed: %s", exc)
 
 
 def main() -> int:
-    args = _args()
-    logger = _logger(args.log_file)
-    reset_client()
-    client = get_client()
-    logger.info(
-        "forex breakout watcher started mode=%s interval=%.0fs conf>=%.1f rr>=%.1f range_bars=%s",
-        "LIVE" if args.live else "DRY-RUN",
-        args.interval,
-        args.confidence_floor,
-        args.min_rr,
-        args.range_bars,
-    )
-    try:
-        while True:
-            try:
-                client.ensure_connected()
-                placed = scan_once(args, logger, client)
-                if placed:
-                    logger.info("order submitted; waiting for the next scan cycle")
-            except Exception as exc:
-                logger.exception("watch cycle failed: %s", exc)
-            if args.once:
-                return 0
-            time.sleep(max(1.0, args.interval))
-    except KeyboardInterrupt:
-        logger.info("watcher stopped")
-        return 0
+    args = _parse_args()
+    watcher = ForexBreakoutWatcher(args)
+    return watcher.run()
 
 
 if __name__ == "__main__":

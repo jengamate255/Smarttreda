@@ -19,7 +19,9 @@ window.Risk = (function () {
   /*  Helpers                                                            */
   /* ------------------------------------------------------------------ */
 
-  const $ = (sel, ctx) => (ctx || document).querySelector(sel);
+  const _noOpHandler = { get(_, prop) { if (prop === Symbol.toPrimitive) return () => ""; if (prop === "classList") return { add() {}, remove() {}, toggle() {}, contains() { return false; } }; if (prop === "dataset") return {}; if (prop === "style") return {}; if (prop === "getBoundingClientRect") return () => ({ width: 0, height: 0, top: 0, left: 0, right: 0, bottom: 0, x: 0, y: 0 }); if (prop === "getAttribute") return () => ""; if (prop === "hasAttribute") return () => false; if (prop === "querySelector") return () => null; if (prop === "querySelectorAll") return () => []; if (prop === "closest") return () => null; if (typeof prop === "string") { if (prop.startsWith("on")) return () => {}; if (/^(addEventListener|removeEventListener|click|focus|blur|appendChild|append|prepend|before|after|remove|replaceWith|insertBefore|replaceChild|removeChild|cloneNode|setAttribute|removeAttribute|toggleAttribute|scrollIntoView|scrollTo|scrollBy|dispatchEvent)$/.test(prop)) return () => {}; return ""; } return undefined; }, set() { return true; } };
+  const _safeEl = () => new Proxy({}, _noOpHandler);
+  const $ = (sel, ctx) => (ctx || document).querySelector(sel) || _safeEl();
   const $$ = (sel, ctx) => [...(ctx || document).querySelectorAll(sel)];
 
   function token() {

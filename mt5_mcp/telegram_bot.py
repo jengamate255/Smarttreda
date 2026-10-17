@@ -740,32 +740,340 @@ RULES:
     # ==================== Merged Features from Original Bot ====================
 
     def _render_chart_png(self, df, title: str) -> bytes:
-        """Minimal candlestick + EMA50/200 render -> PNG bytes."""
+        """Ultra-detailed institutional-grade chart with volume profile, Fib, ATR."""
         import matplotlib
         matplotlib.use("Agg")
         import matplotlib.pyplot as plt
+        import matplotlib.patches as patches
+        from matplotlib.patches import FancyBboxPatch
+        import pandas as pd
+        import numpy as np
 
-        closes = df["close"]
-        ema50 = closes.ewm(span=50, adjust=False).mean()
-        ema200 = closes.ewm(span=min(200, max(len(closes) - 1, 2)), adjust=False).mean()
+        chart_df = df[['open', 'high', 'low', 'close']].copy()
+        if 'tick_volume' in df.columns:
+            chart_df['volume'] = df['tick_volume'].astype(float)
+        elif 'volume' in df.columns:
+            chart_df['volume'] = df['volume'].astype(float)
+        else:
+            chart_df['volume'] = 0.0
 
-        fig, ax = plt.subplots(figsize=(10, 5.5), dpi=110)
-        xs = range(len(df))
-        w = 0.6
-        for i in xs:
-            o, h, l, c = df["open"][i], df["high"][i], df["low"][i], df["close"][i]
-            color = "#26a69a" if c >= o else "#ef5350"
-            ax.plot([i, i], [l, h], color=color, linewidth=0.7)
-            ax.plot([i - w / 2, i + w / 2], [o, o], color=color, linewidth=1.4)
-            ax.plot([i - w / 2, i + w / 2], [c, c], color=color, linewidth=1.4)
-        ax.plot(xs, ema50, color="#f39c12", linewidth=1.1, label="EMA50")
-        ax.plot(xs, ema200, color="#2962ff", linewidth=1.1, label="EMA200")
-        ax.set_title(title, fontsize=11)
-        ax.legend(loc="upper left", fontsize=8)
-        ax.grid(alpha=0.2)
-        fig.tight_layout()
+        if 'spread' in df.columns:
+            avg_spread = float(df['spread'].mean())
+        else:
+            avg_spread = 0.0
+
+        if 'time' in df.columns:
+            chart_df.index = pd.to_datetime(df['time'])
+        else:
+            chart_df.index = range(len(chart_df))
+
+        closes = chart_df['close'].values
+        highs = chart_df['high'].values
+        lows = chart_df['low'].values
+        opens = chart_df['open'].values
+        volumes = chart_df['volume'].values
+        n = len(chart_df)
+        xs = np.arange(n)
+
+        last_close = float(closes[-1])
+        prev_close = float(closes[-2]) if n > 1 else last_close
+        change = last_close - prev_close
+        change_pct = (change / prev_close * 100) if prev_close else 0
+        is_up = change >= 0
+
+        ema20 = pd.Series(closes).ewm(span=20, adjust=False).mean().values
+        ema50 = pd.Series(closes).ewm(span=50, adjust=False).mean().values
+        span200 = min(200, max(n - 1, 2))
+        ema200 = pd.Series(closes).ewm(span=span200, adjust=False).mean().values
+
+        bb_len = min(20, n)
+        bb_mid = pd.Series(closes).rolling(bb_len).mean().values
+        bb_std = pd.Series(closes).rolling(bb_len).std().values
+        bb_upper = bb_mid + 2 * bb_std
+        bb_lower = bb_mid - 2 * bb_std
+
+        atr_period = min(14, n - 1)
+        if atr_period >= 2:
+            tr = np.maximum(highs[1:] - lows[1:],
+                           np.maximum(abs(highs[1:] - closes[:-1]),
+                                     abs(lows[1:] - closes[:-1])))
+            tr = np.insert(tr, 0, highs[0] - lows[0])
+            atr = pd.Series(tr).ewm(span=atr_period, adjust=False).mean().values
+        else:
+            atr = np.zeros(n)
+
+        rsi_period = min(14, n - 1)
+        if rsi_period >= 2:
+            delta = np.diff(closes, prepend=closes[0])
+            gain = np.where(delta > 0, delta, 0)
+            loss = np.where(delta < 0, -delta, 0)
+            avg_gain = pd.Series(gain).ewm(alpha=1/rsi_period, adjust=False).mean().values
+            avg_loss = pd.Series(loss).ewm(alpha=1/rsi_period, adjust=False).mean().values
+            rs = np.divide(avg_gain, avg_loss, out=np.ones_like(avg_gain), where=avg_loss != 0)
+            rsi = 100 - (100 / (1 + rs))
+        else:
+            rsi = np.full(n, 50.0)
+
+        macd_fast = pd.Series(closes).ewm(span=12, adjust=False).mean().values
+        macd_slow = pd.Series(closes).ewm(span=26, adjust=False).mean().values
+        macd_line = macd_fast - macd_slow
+        signal_line = pd.Series(macd_line).ewm(span=9, adjust=False).mean().values
+        macd_hist = macd_line - signal_line
+
+        swing_lookback = min(50, n)
+        swing_high_idx = np.argmax(highs[-swing_lookback:]) + (n - swing_lookback)
+        swing_low_idx = np.argmin(lows[-swing_lookback:]) + (n - swing_lookback)
+        swing_high = float(highs[swing_high_idx])
+        swing_low = float(lows[swing_low_idx])
+
+        fib_levels = [0, 0.236, 0.382, 0.5, 0.618, 0.786, 1.0]
+        fib_prices = []
+        if swing_high > swing_low:
+            for level in fib_levels:
+                if swing_high_idx > swing_low_idx:
+                    fib_prices.append(swing_low + (swing_high - swing_low) * level)
+                else:
+                    fib_prices.append(swing_high - (swing_high - swing_low) * level)
+
+        price_range = swing_high - swing_low
+        num_bins = 20
+        bin_size = price_range / num_bins if price_range > 0 else 1
+        volume_profile = np.zeros(num_bins)
+        price_bins = np.linspace(swing_low, swing_high, num_bins + 1)
+
+        for i in range(max(0, n - 100), n):
+            price_avg = (opens[i] + closes[i]) / 2
+            for j in range(num_bins):
+                if price_bins[j] <= price_avg < price_bins[j+1]:
+                    volume_profile[j] += volumes[i]
+                    break
+
+        sd_zones = []
+        for i in range(3, min(80, n) - 3):
+            idx = n - 1 - i
+            atr_val = float(atr[idx]) if atr[idx] > 0 else 1.0
+
+            rally_len = 0
+            rally_strength = 0.0
+            for j in range(idx, min(n, idx + 5)):
+                if closes[j] > opens[j] and (closes[j] - opens[j]) > atr_val * 0.5:
+                    rally_len += 1
+                    rally_strength += (closes[j] - opens[j])
+                else:
+                    break
+
+            drop_len = 0
+            drop_strength = 0.0
+            for j in range(idx, min(n, idx + 5)):
+                if closes[j] < opens[j] and (opens[j] - closes[j]) > atr_val * 0.5:
+                    drop_len += 1
+                    drop_strength += (opens[j] - closes[j])
+                else:
+                    break
+
+            if rally_len >= 2 and rally_strength > atr_val * 1.5:
+                base_high = float(highs[idx])
+                base_low = float(min(opens[idx], closes[idx]))
+                sd_zones.append({'type': 'demand', 'top': base_high,
+                                'bottom': base_low, 'start': idx,
+                                'strength': rally_strength / atr_val})
+
+            elif drop_len >= 2 and drop_strength > atr_val * 1.5:
+                base_high = float(max(opens[idx], closes[idx]))
+                base_low = float(lows[idx])
+                sd_zones.append({'type': 'supply', 'top': base_high,
+                                'bottom': base_low, 'start': idx,
+                                'strength': drop_strength / atr_val})
+
+        merged_zones = []
+        for zone in sorted(sd_zones, key=lambda z: z['start']):
+            found = False
+            for existing in merged_zones:
+                if (existing['type'] == zone['type']
+                        and abs(zone['start'] - existing['start']) <= 3
+                        and zone['bottom'] <= existing['top'] * 1.003
+                        and zone['top'] >= existing['bottom'] * 0.997):
+                    existing['top'] = max(existing['top'], zone['top'])
+                    existing['bottom'] = min(existing['bottom'], zone['bottom'])
+                    existing['strength'] = max(existing['strength'], zone['strength'])
+                    found = True
+                    break
+            if not found:
+                merged_zones.append(dict(zone))
+
+        for zone in merged_zones:
+            zone_end = min(n, zone['start'] + 40)
+            touched = 0
+            for j in range(zone['start'] + 1, zone_end):
+                if zone['type'] == 'demand' and lows[j] <= zone['bottom']:
+                    touched += 1
+                if zone['type'] == 'supply' and highs[j] >= zone['top']:
+                    touched += 1
+            zone['touches'] = touched
+            zone['fresh'] = touched == 0
+
+        sd_zones = [z for z in merged_zones if z.get('fresh', True)][-6:]
+
+        parts = title.rsplit(' ', 1)
+        sym = parts[0] if parts else title
+        tf = parts[1] if len(parts) > 1 else ''
+
+        fig = plt.figure(figsize=(15, 10), facecolor='#0d1117', dpi=140)
+
+        gs_main = fig.add_gridspec(2, 1, height_ratios=[4, 1], hspace=0.08)
+        gs_top = gs_main[0].subgridspec(1, 2, width_ratios=[4, 1], wspace=0.02)
+        gs_bottom = gs_main[1].subgridspec(4, 1, hspace=0.15)
+
+        ax_price = fig.add_subplot(gs_top[0, 0])
+        ax_vol_profile = fig.add_subplot(gs_top[0, 1])
+        ax_vol = fig.add_subplot(gs_bottom[0, 0])
+        ax_rsi = fig.add_subplot(gs_bottom[1, 0])
+        ax_macd = fig.add_subplot(gs_bottom[2, 0])
+        ax_atr = fig.add_subplot(gs_bottom[3, 0])
+
+        for ax in [ax_price, ax_vol, ax_rsi, ax_macd, ax_atr, ax_vol_profile]:
+            ax.set_facecolor('#0d1117')
+            ax.tick_params(colors='#8b949e', labelsize=7)
+            ax.grid(True, color='#21262d', linestyle=':', linewidth=0.5, alpha=0.7)
+            for spine in ax.spines.values():
+                spine.set_edgecolor('#30363d')
+                spine.set_linewidth(0.8)
+
+        for zone in sd_zones:
+            color = '#3fb950' if zone['type'] == 'demand' else '#f85149'
+            width = n - zone['start'] + 2
+            rect = patches.Rectangle(
+                (zone['start'] - 0.5, zone['bottom']),
+                width, zone['top'] - zone['bottom'],
+                facecolor=color, alpha=0.12, edgecolor=color,
+                linewidth=1.0, linestyle='--'
+            )
+            ax_price.add_patch(rect)
+            mid_y = (zone['top'] + zone['bottom']) / 2
+            label = 'D' if zone['type'] == 'demand' else 'S'
+            ax_price.text(n + 3, mid_y, label, fontsize=6, color=color,
+                         va='center', fontweight='bold', alpha=0.8)
+
+        candle_width = 0.75
+        for i in range(n):
+            o, h, l, c = opens[i], highs[i], lows[i], closes[i]
+            color = '#3fb950' if c >= o else '#f85149'
+            ax_price.plot([i, i], [l, h], color=color, linewidth=0.9, alpha=0.95)
+            body_bottom = min(o, c)
+            body_height = abs(c - o) if abs(c - o) > 0 else 0.0001
+            rect = patches.Rectangle((i - candle_width/2, body_bottom), candle_width, body_height,
+                                     facecolor=color, edgecolor=color, linewidth=0.6, alpha=0.95)
+            ax_price.add_patch(rect)
+
+        ax_price.plot(xs, ema20, color='#f0883e', linewidth=1.0, label='EMA20', alpha=0.85)
+        ax_price.plot(xs, ema50, color='#f39c12', linewidth=1.3, label='EMA50', alpha=0.9)
+        ax_price.plot(xs, ema200, color='#2f81f7', linewidth=1.3, label='EMA200', alpha=0.9)
+        ax_price.plot(xs, bb_upper, color='#6e7681', linewidth=0.8, linestyle='--', alpha=0.6)
+        ax_price.plot(xs, bb_lower, color='#6e7681', linewidth=0.8, linestyle='--', alpha=0.6)
+        ax_price.fill_between(xs, bb_upper, bb_lower, alpha=0.04, color='#6e7681')
+
+        for i, fib_price in enumerate(fib_prices):
+            if 0 < fib_levels[i] < 1:
+                ax_price.axhline(fib_price, color='#8b949e', linestyle=':',
+                               linewidth=0.6, alpha=0.4)
+                ax_price.text(n + 3, fib_price, f'{fib_levels[i]:.3f}',
+                            va='center', fontsize=6, color='#8b949e', alpha=0.7)
+
+        ax_price.plot(swing_high_idx, swing_high, 'v', color='#f85149',
+                     markersize=8, markeredgecolor='#f85149', markerfacecolor='none', linewidth=1.5)
+        ax_price.plot(swing_low_idx, swing_low, '^', color='#3fb950',
+                     markersize=8, markeredgecolor='#3fb950', markerfacecolor='none', linewidth=1.5)
+
+        ax_price.axhline(last_close, color='#3fb950' if is_up else '#f85149',
+                        linestyle='--', linewidth=1.0, alpha=0.7)
+        ax_price.text(n + 2, last_close, f' {last_close:.5g}',
+                     va='center', ha='left', fontsize=7, fontweight='bold',
+                     color='white',
+                     bbox=dict(boxstyle='round,pad=0.35',
+                              facecolor='#3fb950' if is_up else '#f85149',
+                              edgecolor='white', linewidth=0.5, alpha=0.98))
+
+        max_vol = np.max(volume_profile) if np.max(volume_profile) > 0 else 1
+        for i in range(num_bins):
+            if volume_profile[i] > 0:
+                price_mid = (price_bins[i] + price_bins[i+1]) / 2
+                bar_width = (volume_profile[i] / max_vol) * 1.0
+                color = '#3fb950' if price_mid > last_close else '#f85149'
+                ax_vol_profile.barh(price_mid, bar_width, height=bin_size*0.85,
+                                   left=0, color=color, alpha=0.6, edgecolor=color, linewidth=0.5)
+
+        ax_price.set_xlim(-2, n + 20)
+        ax_price.set_ylim(swing_low - price_range*0.1, swing_high + price_range*0.1)
+        ax_price.set_ylabel('Price', color='#8b949e', fontsize=8, fontweight='bold')
+        ax_price.legend(loc='upper left', fontsize=7, facecolor='#161b22',
+                       edgecolor='#30363d', labelcolor='#c9d1d9', framealpha=0.95)
+
+        ax_vol_profile.set_ylim(ax_price.get_ylim())
+        ax_vol_profile.set_xlim(0, 1.2)
+        ax_vol_profile.set_xticks([])
+        ax_vol_profile.set_yticks([])
+        ax_vol_profile.set_ylabel('Volume Profile', color='#8b949e', fontsize=7, rotation=90)
+
+        vol_colors = ['#3fb950' if closes[i] >= opens[i] else '#f85149' for i in range(n)]
+        ax_vol.bar(xs, volumes, width=candle_width, color=vol_colors, alpha=0.65)
+        ax_vol.set_xlim(-2, n + 20)
+        ax_vol.set_ylabel('Volume', color='#8b949e', fontsize=7)
+
+        ax_rsi.plot(xs, rsi, color='#a371f7', linewidth=1.1)
+        ax_rsi.axhline(70, color='#f85149', linewidth=0.7, linestyle='--', alpha=0.6)
+        ax_rsi.axhline(30, color='#3fb950', linewidth=0.7, linestyle='--', alpha=0.6)
+        ax_rsi.axhline(50, color='#30363d', linewidth=0.5)
+        ax_rsi.fill_between(xs, 70, 100, alpha=0.08, color='#f85149')
+        ax_rsi.fill_between(xs, 0, 30, alpha=0.08, color='#3fb950')
+        ax_rsi.set_ylim(0, 100)
+        ax_rsi.set_xlim(-2, n + 20)
+        ax_rsi.set_ylabel('RSI(14)', color='#8b949e', fontsize=7)
+        ax_rsi.text(n + 2, rsi[-1], f'{rsi[-1]:.1f}',
+                   va='center', fontsize=6, color='#a371f7', fontweight='bold')
+
+        macd_colors = ['#3fb950' if macd_hist[i] >= 0 else '#f85149' for i in range(n)]
+        ax_macd.bar(xs, macd_hist, width=candle_width, color=macd_colors, alpha=0.55)
+        ax_macd.plot(xs, macd_line, color='#2f81f7', linewidth=1.1, label='MACD')
+        ax_macd.plot(xs, signal_line, color='#f0883e', linewidth=1.1, label='Signal')
+        ax_macd.axhline(0, color='#8b949e', linewidth=0.6)
+        ax_macd.set_xlim(-2, n + 20)
+        ax_macd.set_ylabel('MACD', color='#8b949e', fontsize=7)
+        ax_macd.legend(loc='upper left', fontsize=6, facecolor='#161b22',
+                      edgecolor='#30363d', labelcolor='#c9d1d9')
+
+        ax_atr.plot(xs, atr, color='#d29922', linewidth=1.0)
+        ax_atr.fill_between(xs, atr, alpha=0.15, color='#d29922')
+        ax_atr.set_xlim(-2, n + 20)
+        ax_atr.set_ylabel('ATR(14)', color='#8b949e', fontsize=7)
+        ax_atr.text(n + 2, atr[-1], f'{atr[-1]:.5g}',
+                   va='center', fontsize=6, color='#d29922', fontweight='bold')
+
+        ohlc_text = (f"O {opens[-1]:.5g}  H {highs[-1]:.5g}  "
+                    f"L {lows[-1]:.5g}  C {last_close:.5g}")
+        change_sign = '+' if is_up else ''
+        change_text = f"{change_sign}{change:.5g} ({change_sign}{change_pct:.2f}%)"
+        header = f"{sym} {tf}   {ohlc_text}   {change_text}"
+
+        fig.text(0.02, 0.98, header, fontsize=9.5, color='#c9d1d9',
+                fontfamily='monospace', fontweight='bold', va='top', ha='left',
+                bbox=dict(boxstyle='round,pad=0.45', facecolor='#161b22',
+                         edgecolor='#30363d', alpha=0.98, linewidth=1.2))
+
+        info_text = f"ATR: {atr[-1]:.5g} | Spread: {avg_spread:.1f} | Range: {swing_low:.5g} - {swing_high:.5g}"
+        fig.text(0.02, 0.95, info_text, fontsize=7.5, color='#8b949e',
+                fontfamily='monospace', va='top', ha='left',
+                bbox=dict(boxstyle='round,pad=0.3', facecolor='#161b22',
+                         edgecolor='#30363d', alpha=0.95, linewidth=0.8))
+
+        ax_price.text(0.5, 0.5, sym, transform=ax_price.transAxes,
+                     fontsize=60, fontweight='bold', color='#21262d',
+                     ha='center', va='center', alpha=0.2, fontfamily='monospace')
+
+        fig.subplots_adjust(left=0.06, right=0.94, top=0.92, bottom=0.05)
+
         buf = io.BytesIO()
-        fig.savefig(buf, format="png")
+        fig.savefig(buf, format='png', facecolor=fig.get_facecolor(),
+                   edgecolor='none', bbox_inches='tight', pad_inches=0.35)
         plt.close(fig)
         buf.seek(0)
         return buf.getvalue()
@@ -1033,6 +1341,233 @@ RULES:
         time.sleep(2)
         return "✅ Watcher restarting with BOOM500 config."
 
+    def cmd_desk(self) -> str:
+        """Trade desk status: positions, daily trades, risk config."""
+        state_path = Path(__file__).resolve().parent / "memory" / "desk_state.json"
+        try:
+            state = json.loads(state_path.read_text(encoding="utf-8")) if state_path.exists() else {}
+        except Exception:
+            state = {}
+
+        lines = ["📊 <b>TRADE DESK</b>"]
+
+        risk_pct = os.getenv("MT5_DESK_RISK_PERCENT", "0.25")
+        risk_fixed = os.getenv("MT5_DESK_RISK_FIXED", "0")
+        mode = os.getenv("MT5_DESK_MODE", "SIM")
+        lines.append(f"Mode: {mode} | Risk: {risk_pct}% (${risk_fixed} fixed)")
+
+        positions = state.get("positions", {})
+        if positions:
+            lines.append(f"\n<b>Positions ({len(positions)}):</b>")
+            for ticket, pos in list(positions.items())[:5]:
+                lines.append(
+                    f"  #{ticket} {pos.get('symbol')} {pos.get('side')} "
+                    f"{pos.get('lots')}lots @ {pos.get('entry')}"
+                )
+        else:
+            lines.append("\nNo desk positions")
+
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        daily = state.get("daily_trades", {}).get(today, [])
+        lines.append(f"\nToday: {len(daily)} trades" + (f" ({', '.join(daily)})" if daily else ""))
+
+        cooldowns = state.get("cooldowns", {})
+        active_cds = {s: v for s, v in cooldowns.items()
+                      if v.get("until", 0) > time.time()}
+        if active_cds:
+            lines.append(f"\nCooldowns: {', '.join(active_cds.keys())}")
+
+        kill_path = Path(__file__).resolve().parent / "memory" / "DESK_KILL"
+        if kill_path.exists():
+            lines.append("\n⚠️ Kill switch ACTIVE")
+
+        return "\n".join(lines)
+
+    def cmd_consensus(self) -> str:
+        """Consensus board: which engines agree on what."""
+        try:
+            from mt5_mcp.consensus import report_text
+            return report_text()
+        except Exception as exc:
+            return f"Consensus unavailable: {exc}"
+
+    def cmd_challenge(self) -> str:
+        """FundingPips challenge progress."""
+        try:
+            from mt5_mcp.challenge_tracker import ChallengeTracker
+            tracker = ChallengeTracker()
+
+            try:
+                for term in ("PROP", "DERIV"):
+                    try:
+                        c = _client(term)
+                        c.ensure_connected()
+                        acct = c.account_info()
+                        bal = acct.get("balance", 0)
+                        if bal > 0:
+                            status = tracker.get_status(live_balance=bal)
+                            break
+                    except Exception:
+                        continue
+                else:
+                    status = tracker.get_status()
+            except Exception:
+                status = tracker.get_status()
+
+            if "error" in status:
+                return f"Challenge not initialized. Use /api/challenge/init?balance=N"
+
+            lines = ["🏆 <b>FUNDINGPIPS CHALLENGE</b>"]
+            lines.append(f"Target: {status.get('target_pct', 8)}% profit")
+            lines.append(f"Progress: {status.get('total_pnl_pct', 0):.2f}% (${status.get('total_pnl', 0):+.2f})")
+
+            bar_len = 20
+            pct = min(status.get("progress_pct", 0) / 100.0, 1.0)
+            filled = int(bar_len * pct)
+            bar = "█" * filled + "░" * (bar_len - filled)
+            lines.append(f"[{bar}] {pct*100:.1f}%")
+
+            lines.append(f"\nDaily loss: {status.get('daily_loss_remaining_pct', 0):.2f}% remaining (max {status.get('max_daily_loss_pct', 4)}%)")
+            lines.append(f"Drawdown: {status.get('current_dd_pct', 0):.2f}% (max {status.get('max_drawdown_pct', 8)}%)")
+            lines.append(f"Trading days: {status.get('trading_days', 0)}/{status.get('min_trading_days', 5)}")
+
+            cons = status.get("consistency_ratio", 0)
+            cons_ok = status.get("consistency_ok", True)
+            lines.append(f"Consistency: {cons:.2f}x {'✅' if cons_ok else '⚠️'}")
+
+            alerts = status.get("risk_alerts", [])
+            if alerts:
+                lines.append(f"\n⚠️ {'; '.join(alerts)}")
+
+            if status.get("challenge_passed"):
+                lines.append("\n🎉 CHALLENGE PASSED!")
+
+            return "\n".join(lines)
+        except Exception as exc:
+            return f"Challenge error: {exc}"
+
+    def cmd_journal(self, limit: int = 10) -> str:
+        """Recent trades from journal."""
+        try:
+            from mt5_mcp.memory.trade_journal import get_journal
+            journal = get_journal()
+            trades = journal.list_trades(limit=limit)
+
+            if not trades:
+                return "No trades in journal."
+
+            lines = [f"📒 <b>RECENT TRADES ({len(trades)})</b>"]
+            total_pnl = 0.0
+            wins = 0
+            for t in trades:
+                pnl = float(t.get("pnl") or 0)
+                total_pnl += pnl
+                outcome = t.get("outcome") or "?"
+                if outcome == "win":
+                    wins += 1
+                sym = (t.get("symbol") or "?")[:10]
+                side = (t.get("side") or "?")
+                setup = (t.get("setup") or "?")[:12]
+                conf = float(t.get("confidence") or 0)
+                sign = "+" if pnl >= 0 else ""
+                lines.append(
+                    f"  {sym:10} {side:4} {setup:12} conf={conf:.0f} "
+                    f"{sign}${pnl:.2f} [{outcome}]"
+                )
+
+            wr = (wins / len(trades) * 100) if trades else 0
+            lines.append(f"\nTotal: ${total_pnl:+.2f} | WR: {wr:.0f}%")
+            return "\n".join(lines)
+        except Exception as exc:
+            return f"Journal error: {exc}"
+
+    def cmd_services(self) -> str:
+        """Health of all running services."""
+        import psutil
+
+        lines = ["🔧 <b>SERVICES</b>"]
+
+        service_checks = [
+            ("Trade Desk", "trade_desk.py"),
+            ("Confirm Exec", "confirm_execute_daemon.py"),
+            ("Forex Breakout", "forex_breakout_watch.py"),
+            ("BTC Trend", "btc_trend_watch.py"),
+            ("Synthetic Watch", "run_synthetic_watcher.py"),
+            ("Telegram Bot", "run_telegram_bot.py"),
+        ]
+
+        for name, script in service_checks:
+            found = False
+            for proc in psutil.process_iter(["pid", "cmdline"]):
+                try:
+                    cmdline = " ".join(proc.info["cmdline"] or [])
+                    if script in cmdline and "python" in cmdline.lower():
+                        age = time.time() - proc.create_time()
+                        uptime = f"{int(age//3600)}h{int((age%3600)//60)}m"
+                        lines.append(f"  ✅ {name}: pid {proc.info['pid']} ({uptime})")
+                        found = True
+                        break
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    continue
+            if not found:
+                lines.append(f"  ❌ {name}: not running")
+
+        log_files = {
+            "Trade Desk": "logs/trade_desk.log",
+            "Forex Breakout": "logs/forex_breakout.log",
+            "BTC Trend": "logs/btc_trend.log",
+        }
+        lines.append("\n<b>Log freshness:</b>")
+        for name, logpath in log_files.items():
+            p = Path(__file__).resolve().parent.parent / logpath
+            if p.exists():
+                age = time.time() - p.stat().st_mtime
+                if age < 300:
+                    lines.append(f"  ✅ {name}: {int(age)}s ago")
+                elif age < 3600:
+                    lines.append(f"  ⚠️ {name}: {int(age//60)}m ago")
+                else:
+                    lines.append(f"  ❌ {name}: {int(age//3600)}h ago")
+            else:
+                lines.append(f"  ❌ {name}: no log")
+
+        return "\n".join(lines)
+
+    def cmd_strategy(self, symbol: str) -> str:
+        """Full strategy evaluation for a symbol."""
+        try:
+            from mt5_mcp.strategy import evaluate_strategy
+            plan = evaluate_strategy(symbol, adaptive=True)
+
+            lines = [f"📈 <b>STRATEGY: {symbol}</b>"]
+            lines.append(f"Action: <b>{plan.action}</b>")
+            lines.append(f"Confidence: {plan.confidence:.1f}%")
+            lines.append(f"Trade score: {plan.trade_score:.1f}")
+            lines.append(f"ML score: {plan.ml_score:.3f}")
+
+            if plan.action != "NONE":
+                lines.append(f"\nEntry: {plan.entry_price}")
+                lines.append(f"SL: {plan.sl} ({plan.sl_pips:.1f} pips)")
+                lines.append(f"TP: {plan.tp} ({plan.tp_pips:.1f} pips)")
+                lines.append(f"RR: {plan.risk_reward:.2f}")
+                lines.append(f"HTF trend: {plan.htf_trend}")
+                lines.append(f"Zone strength: {plan.zone_strength:.1f}")
+                if plan.confirmation:
+                    lines.append(f"Confirmation: {plan.confirmation}")
+
+            if plan.warnings:
+                lines.append(f"\n⚠️ {'; '.join(plan.warnings[:3])}")
+            if plan.errors:
+                lines.append(f"\n❌ {'; '.join(plan.errors[:3])}")
+            if plan.reason and plan.action == "NONE":
+                lines.append(f"\nReason: {plan.reason}")
+
+            valid = "✅ Valid" if plan.valid else "❌ Rejected"
+            lines.append(f"\n{valid}")
+            return "\n".join(lines)
+        except Exception as exc:
+            return f"Strategy error: {exc}"
+
     def _seconds_until_utc_midnight(self) -> float:
         now = datetime.now(timezone.utc)
         nxt = (now + timedelta(days=1)).replace(
@@ -1057,27 +1592,34 @@ RULES:
 
     def handle_command(self, command: str, args: str = "") -> str:
         if command == "/start":
-            return ("Welcome to Trading Intelligence Bot!\n\n"
-                    "Quick Commands:\n"
+            return ("🤖 <b>Trading Intelligence Bot</b>\n\n"
+                    "<b>Account:</b>\n"
                     "/status - Account status (both terminals)\n"
                     "/positions - Open positions\n"
                     "/price SYMBOL - Live quote\n"
-                    "/chart SYMBOL [TF] - Chart photo with EMA50/200\n"
+                    "/chart SYMBOL [TF] - Chart photo with EMA50/200\n\n"
+                    "<b>Trading:</b>\n"
+                    "/strategy SYMBOL - Full strategy evaluation\n"
                     "/scan - Boom/Crash spike scan\n"
-                    "/summary [days] - Performance stats\n"
-                    "/at - Auto trader status\n"
-                    "/atpause - Pause auto trader (kill switch)\n"
-                    "/atresume - Resume auto trader\n"
-                    "/research - Research lab verdicts\n"
-                    "/heatmap - Session P&L money windows\n"
-                    "/close TICKET - Close a position\n"
-                    "/halt - Stop spike watcher\n"
-                    "/resume - Restart watcher\n"
-                    "/alerts - View alerts\n"
-                    "/analyze SYMBOL - Analyze symbol\n"
                     "/buy SYMBOL - Buy symbol\n"
                     "/sell SYMBOL - Sell symbol\n"
-                    "/help - Show help\n\n"
+                    "/close TICKET - Close a position\n\n"
+                    "<b>Analysis:</b>\n"
+                    "/desk - Trade desk status\n"
+                    "/consensus - Engine consensus board\n"
+                    "/challenge - FundingPips progress\n"
+                    "/journal [N] - Recent N trades\n"
+                    "/summary [days] - Performance stats\n"
+                    "/heatmap - Session P&L windows\n"
+                    "/research - Research lab verdicts\n\n"
+                    "<b>System:</b>\n"
+                    "/services - Service health check\n"
+                    "/at - Auto trader status\n"
+                    "/atpause - Pause auto trader\n"
+                    "/atresume - Resume auto trader\n"
+                    "/halt - Stop spike watcher\n"
+                    "/resume - Restart watcher\n"
+                    "/alerts - View price alerts\n\n"
                     "Or just ask me anything about trading!")
 
         elif command == "/status":
@@ -1230,6 +1772,31 @@ RULES:
 
         elif command == "/help":
             return self.handle_command("/start")
+
+        elif command == "/desk":
+            return self.cmd_desk()
+
+        elif command == "/consensus":
+            return self.cmd_consensus()
+
+        elif command == "/challenge":
+            return self.cmd_challenge()
+
+        elif command == "/journal":
+            try:
+                n = int(args) if args and args.strip().isdigit() else 10
+            except ValueError:
+                n = 10
+            return self.cmd_journal(min(n, 30))
+
+        elif command == "/services":
+            return self.cmd_services()
+
+        elif command == "/strategy":
+            symbol = args.upper().strip() if args else ""
+            if not symbol:
+                return "Usage: /strategy EURUSD"
+            return self.cmd_strategy(symbol.split()[0])
 
         return f"Unknown command: {command}"
 

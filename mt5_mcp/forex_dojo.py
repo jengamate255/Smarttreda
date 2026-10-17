@@ -517,9 +517,9 @@ class ForexDojo:
             unrealized_pnl_pct: current unrealized P&L as % of entry (signed).
             stopped_out: True if the position was force-closed by stop-loss.
         """
-        # No position: minimal reward for holding, zero otherwise
+        # No position: penalize inactivity to encourage trading
         if action in (0, 2) and prev_position == 0:
-            return 0.0
+            return -0.01  # penalty for each step not trading — must enter positions to learn
         if action == 1 and prev_position == 0:
             return 0.01  # minimal reward for holding — must trade to learn
 

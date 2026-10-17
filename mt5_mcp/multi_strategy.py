@@ -14,7 +14,7 @@ aggregate helpers evaluate_all_strategies / pick_best_strategy were deleted
 2026-10-02 (B4: zero production call sites; score conflicts are resolved by
 the router via BACKTEST_PF/STRATEGY_ROUTING instead).
 
-Strategy routing (based on 2026-09-27 backtest):
+Strategy routing (based on 2026-09-27 backtest, per-pair samples 0-6 trades):
 - EURJPY, GBPJPY, USDJPY, GBPUSD → mean_reversion (PF 1.52-2.65)
 - USDCAD → momentum_breakout (PF 1.56)
 - EURUSD, USDCHF, ETHUSD, XAUUSD → trend_zone (PF 1.34-3.25)
@@ -22,6 +22,12 @@ Strategy routing (based on 2026-09-27 backtest):
 - SPX500, NDX100 → ema_crossover (PF 1.78-1.92)
 - EURCHF → bb_mr_fade (PF 1.25, PAPER-TRADE only — off the consensus allowlist)
 - AUDUSD → no profitable strategy (skip or use tightest filters)
+
+ROUTING IS EVIDENCE-GATED (2026-10-07): the table above is only a
+candidate list. Production callers use routing_evidence.route(), which
+keeps a symbol-specific strategy only when the research atlas reports it
+walk-forward validated (PROMOTE) and otherwise falls back to the default
+trend_zone — see mt5_mcp/routing_evidence.py.
 
 Usage:
     from mt5_mcp.multi_strategy import mean_reversion_strategy
@@ -40,6 +46,7 @@ from mt5_mcp.client import get_client
 from mt5_mcp.common import TIMEFRAME_MT5, TradePlan, pip_size, pip_value_per_lot
 from mt5_mcp.config import get_settings
 from mt5_mcp.indicators import atr, rsi
+from mt5_mcp.routing_evidence import route as route_strategy
 from mt5_mcp.strategy import evaluate_strategy
 
 logger = logging.getLogger("multi_strategy")
@@ -57,6 +64,8 @@ STRATEGY_ROUTING: dict[str, str] = {
     "BTCUSD": "btc_trend_following",
     "SPX500": "ema_crossover",
     "NDX100": "ema_crossover",
+    "JP225": "ema_crossover",
+    "USOIL": "trend_zone",
     "EURCHF": "bb_mr_fade",
 }
 
@@ -829,5 +838,103 @@ def ema_crossover_strategy(
     plan.zone_strength = zone_strength
     plan.valid = trade_score >= 60 and confidence >= 50
     plan.reason = f"ema_crossover {action} ADX={current_adx:.1f} ATR={current_atr:.2f}"
+    return plan
+
+
+# ---------------------------------------------------------------------------
+# Regime-aware strategy routing
+# ---------------------------------------------------------------------------
+
+
+def get_regime_aware_strategy(
+    symbol: str,
+    candles: pd.DataFrame | None = None,
+    enable_llm_regime: bool = True,
+) -> str:
+    """Get strategy for symbol, optionally adjusted by LLM regime classification.
+
+    If LLM regime detection is enabled and candles are provided, classifies
+    the market regime and may override the static routing:
+    - trending_up/trending_down → prefer trend_zone or momentum_breakout
+    - ranging → prefer mean_reversion
+    - high_volatility → prefer tighter filters
+    - risk_on/risk_off → adjust confidence thresholds
+
+    Falls back to static STRATEGY_ROUTING if LLM is unavailable or fails.
+    """
+    static_strategy = route_strategy(symbol)
+
+    if not enable_llm_regime or candles is None or len(candles) < 50:
+        return static_strategy
+
+    try:
+        from mt5_mcp.groq_llm import classify_regime
+
+        # Build price action summary for LLM
+        recent = candles.tail(50)
+        last_close = float(recent["close"].iloc[-1])
+        first_close = float(recent["close"].iloc[0])
+        change_pct = ((last_close - first_close) / first_close) * 100
+
+        # Calculate ATR for volatility context
+        from mt5_mcp.indicators import atr as calc_atr
+        atr_vals = calc_atr(recent, 14)
+        current_atr = float(atr_vals.iloc[-1]) if len(atr_vals) > 0 else 0
+        avg_atr = float(atr_vals.mean()) if len(atr_vals) > 0 else 1
+
+        # Calculate ADX for trend strength
+        adx_vals = _adx(recent, 14)
+        current_adx = float(adx_vals.iloc[-1]) if len(adx_vals) > 0 else 0
+
+        price_summary = f"""
+Symbol: {symbol}
+50-bar change: {change_pct:+.2f}%
+Current ATR: {current_atr:.5f} (avg: {avg_atr:.5f}, ratio: {current_atr/avg_atr:.2f}x)
+ADX: {current_adx:.1f} (trend strength)
+Last 10 closes: {', '.join(f'{c:.5f}' for c in recent['close'].tail(10).tolist())}
+"""
+
+        regime = classify_regime(
+            symbol=symbol,
+            price_action_summary=price_summary,
+            vix_level=None,  # Could fetch VIX data if available
+            recent_news=None,  # Could fetch news if available
+        )
+
+        logger.info(
+            "LLM regime for %s: %s (confidence %.0f) — hint: %s",
+            symbol, regime.regime, regime.confidence, regime.strategy_hint,
+        )
+
+        # Adjust strategy based on regime
+        if regime.confidence >= 60:
+            if regime.regime in ("trending_up", "trending_down", "risk_on", "risk_off"):
+                # Trending or strong directional regime → prefer trend strategies
+                if static_strategy == "mean_reversion":
+                    logger.info(
+                        "Regime override: %s trending (%s), switching from MR to trend_zone",
+                        symbol, regime.regime,
+                    )
+                    return route_strategy(symbol, candidate="trend_zone")
+            elif regime.regime == "ranging" or regime.regime == "low_volatility":
+                # Ranging/low vol → prefer mean reversion
+                if static_strategy in ("trend_zone", "momentum_breakout"):
+                    logger.info(
+                        "Regime override: %s ranging (%s), switching to mean_reversion",
+                        symbol, regime.regime,
+                    )
+                    return route_strategy(symbol, candidate="mean_reversion")
+            elif regime.regime == "high_volatility":
+                # High vol → tighten filters (handled by caller via confidence adjustment)
+                logger.info(
+                    "High volatility regime for %s — recommend tighter filters",
+                    symbol,
+                )
+
+        return static_strategy
+
+    except Exception as exc:
+        logger.debug("regime-aware routing failed, using static: %s", exc)
+        return static_strategy
 
     return plan

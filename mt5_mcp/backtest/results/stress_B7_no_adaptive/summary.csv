@@ -1,0 +1,2 @@
+symbol,trend_tf,zone_tfs,min_zone_score,min_rr,tp_min,tp_max,trades,win_rate,profit_factor,net_pnl,total_return_pct,max_drawdown_pct,expectancy,avg_rr,start,end
+JP225,H4,H1+H4,40.0,3.0,80.0,100.0,27,40.7,1.646,539.36,5.39,2.36,19.98,3.0,2026-03-05T16:00:00,2026-09-01T21:00:00

@@ -141,12 +141,22 @@ def risk():
 
 
 @router.get("/api/alerts")
-def get_alerts(include_triggered: bool = Query(True)):
-    """Get all configured price/signal alerts."""
+def get_alerts(include_triggered: bool = Query(True), include_prices: bool = Query(True)):
+    """Get all configured price/signal alerts, annotated with the live price."""
     try:
         from mt5_mcp.alerts import list_alerts
 
-        return {"alerts": list_alerts(include_triggered=include_triggered)}
+        alerts = list_alerts(include_triggered=include_triggered)
+        # Annotate each alert with the current top-of-book price so the UI can
+        # show live distance-to-trigger without extra per-symbol quote calls.
+        if include_prices and alerts and _tick_quote_fn:
+            for a in alerts:
+                try:
+                    q = _tick_quote_fn(a["symbol"])
+                    a["current_price"] = float(q["bid"]) if q and q.get("bid") else None
+                except Exception:  # noqa: BLE001 - quote is best-effort
+                    a["current_price"] = None
+        return {"alerts": alerts}
     except Exception as exc:
         logger.warning("get alerts failed: %s", exc)
         return {"error": str(exc)}

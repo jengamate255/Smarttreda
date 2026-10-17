@@ -1,7 +1,7 @@
 {
-  "day_stamp": "2026-08-26",
-  "peak_equity": 9507.4,
-  "mode": "halted",
-  "halt_reason": "maximum drawdown approached",
+  "day_stamp": "2026-10-17",
+  "peak_equity": 10000.0,
+  "mode": "normal",
+  "halt_reason": "",
   "revenge_paused_until": 0.0
 }

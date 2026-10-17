@@ -190,6 +190,10 @@ def _chat_id(update) -> int | None:
 config = TelegramConfig(bot_token=TELEGRAM_TOKEN, enabled=True, mt5_enabled=True)
 trading_bot = TradingTelegramBot(config=config)
 
+# Distinct magic id so manually confirmed Telegram entries are attributed
+# separately from the automated mt5-mcp pipeline (MAGIC 20260601).
+TELEGRAM_MAGIC = int(os.getenv("TELEGRAM_BOT_MAGIC", "20260602"))
+
 
 class MT5LiveConnector:
     """Connects to real MT5 terminal for live data."""
@@ -309,10 +313,24 @@ class MT5LiveConnector:
             "price": price,
             "sl": sl,
             "tp": tp,
-            "comment": comment or "Telegram Bot",
+            "magic": TELEGRAM_MAGIC,
+            "comment": (comment or "tg-manual")[:30],
             "type_time": self._mt5.ORDER_TIME_GTC,
             "type_filling": self._mt5.ORDER_FILLING_IOC,
         }
+
+        # Manual opens go through the same execution gate as the bot:
+        # allowlist + compliance (SL required, risk cap, daily limits,
+        # spread, session/news). Closes are never gated.
+        try:
+            from mt5_mcp import execution_gate
+            from mt5_mcp.client import get_client
+
+            execution_gate.require(
+                request, client=get_client(), source="telegram"
+            )
+        except Exception as exc:  # noqa: BLE001 - fail closed, never bypass
+            return {"success": False, "error": f"execution gate: {exc}"}
 
         result = self._mt5.order_send(request)
         if result is None:

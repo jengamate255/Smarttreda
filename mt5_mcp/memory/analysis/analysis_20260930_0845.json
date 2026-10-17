@@ -1,0 +1,41 @@
+{
+  "at": "2026-09-30T08:45:45.670647+00:00",
+  "cycle": 1168,
+  "compliance_mode": "conservative",
+  "results": [
+    {
+      "symbol": "EURCHF",
+      "bar": "2026-09-30 07:00:00",
+      "health_score": 81.6,
+      "verdict": "tradeable",
+      "regime": "trending_bullish",
+      "plan": {
+        "action": "BUY",
+        "valid": false,
+        "confidence": 87.4,
+        "trade_score": 96.0,
+        "entry": 0.94587,
+        "sl": 0.94387,
+        "tp": 0.95487,
+        "sl_pips": 20.0,
+        "tp_pips": 90.0,
+        "risk_reward": 4.5,
+        "zone_strength": 91.45765789256905,
+        "confirmation": "bullish_engulfing (bullish, conf 0.73)",
+        "reason": "HTF trend bullish (EMA50/200, conf 83%); demand zone 0.94469-0.94624 strength 91/100 touches 31; confirmation: bullish_engulfing (bullish, 73%); RR 4.50 (min 1.6), risk 1.0% = 95.28 USD; MTF confluence: 1/2 timeframes aligned with bullish (+10% bonus)"
+      },
+      "available": false,
+      "reasons": [
+        "HTF trend bullish (EMA50/200, conf 83%); demand zone 0.94469-0.94624 strength 91/100 touches 31; confirmation: bullish_engulfing (bullish, 73%); RR 4.50 (min 1.6), risk 1.0% = 95.28 USD; MTF confluence: 1/2 timeframes aligned with bullish (+10% bonus)"
+      ],
+      "session": {
+        "primary": "london",
+        "active": [
+          "london",
+          "tokyo"
+        ],
+        "hour_utc": 8
+      }
+    }
+  ]
+}

@@ -1,0 +1,107 @@
+[
+  {
+    "filter": "all",
+    "patterns": "all",
+    "trades": 1,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "net_pnl": -91.75,
+    "return_pct": -0.92,
+    "max_drawdown_pct": 0.92,
+    "expectancy": -91.75
+  },
+  {
+    "filter": "top3",
+    "patterns": [
+      "hammer",
+      "morning_star",
+      "bullish_engulfing"
+    ],
+    "trades": 0,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "net_pnl": 0,
+    "return_pct": 0.0,
+    "max_drawdown_pct": 0.0,
+    "expectancy": 0.0
+  },
+  {
+    "filter": "top4",
+    "patterns": [
+      "outside_bar",
+      "hammer",
+      "morning_star",
+      "bullish_engulfing"
+    ],
+    "trades": 0,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "net_pnl": 0,
+    "return_pct": 0.0,
+    "max_drawdown_pct": 0.0,
+    "expectancy": 0.0
+  },
+  {
+    "filter": "top5",
+    "patterns": [
+      "outside_bar",
+      "morning_star",
+      "bullish_engulfing",
+      "hammer",
+      "liquidity_sweep"
+    ],
+    "trades": 0,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "net_pnl": 0,
+    "return_pct": 0.0,
+    "max_drawdown_pct": 0.0,
+    "expectancy": 0.0
+  },
+  {
+    "filter": "no_bos",
+    "patterns": [
+      "outside_bar",
+      "morning_star",
+      "evening_star",
+      "bullish_engulfing",
+      "hammer",
+      "fake_breakout",
+      "CHOCH",
+      "shooting_star",
+      "pin_bar",
+      "bearish_engulfing",
+      "liquidity_sweep"
+    ],
+    "trades": 1,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "net_pnl": -91.75,
+    "return_pct": -0.92,
+    "max_drawdown_pct": 0.92,
+    "expectancy": -91.75
+  },
+  {
+    "filter": "no_pinbar",
+    "patterns": [
+      "outside_bar",
+      "morning_star",
+      "evening_star",
+      "bullish_engulfing",
+      "hammer",
+      "fake_breakout",
+      "CHOCH",
+      "shooting_star",
+      "BOS",
+      "bearish_engulfing",
+      "liquidity_sweep"
+    ],
+    "trades": 1,
+    "win_rate": 0.0,
+    "profit_factor": 0.0,
+    "net_pnl": -91.75,
+    "return_pct": -0.92,
+    "max_drawdown_pct": 0.92,
+    "expectancy": -91.75
+  }
+]

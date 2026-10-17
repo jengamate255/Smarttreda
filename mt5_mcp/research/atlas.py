@@ -366,7 +366,7 @@ def write_reports(results: dict[str, Any], props: list[dict[str, Any]],
         "Gated on **realistic** cost (historical spread with zero-fill, 1pt slip); "
         "canonical PF shown for reference. "
         f"History from {DEEP_FROM.date()}, "
-        f"{HOLDOUT_FRACTION:.0%} chronological holdout, "
+        f"chronological {HOLDOUT_FRACTION:.0%}/{1-HOLDOUT_FRACTION:.0%} train/holdout split, "
         f"{BOOTSTRAP_N}-draw bootstrap, trade-thirds stability.",
         "",
         "| symbol | strategy | n | PF | canon PF | thirds | boot P(PF>1) "
