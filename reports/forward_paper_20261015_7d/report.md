@@ -1,7 +1,7 @@
 # Prospective strategy paper test
 
 UTC window: 2026-10-14T23:00:00.350608+00:00 to 2026-10-21T23:00:00.350608+00:00.
-Status: **running**. Latest run: 2026-10-17T22:07:35.969711+00:00.
+Status: **running**. Latest run: 2026-10-18T12:22:26.478253+00:00.
 Reference balance: 9393.87 USD; fixed risk 0.1% per paper entry.
 
 These are independent research accounts, not additive portfolio returns or predicted earnings. No broker orders are sent.
@@ -15,7 +15,7 @@ A missing tick-history request flags an error; an unobserved outage cannot be gu
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
 | trend_zone | 0 | 0 | +0.00 | 0 | +0.00 | 0 |
 | mean_reversion | 0 | 0 | +0.00 | 0 | +0.00 | 0 |
-| momentum_breakout | 2 | 1 | +13.55 | 2 | +2.91 | 0 |
+| momentum_breakout | 2 | 1 | +13.55 | 2 | -6.33 | 0 |
 | btc_trend_following | 0 | 0 | +0.00 | 0 | +0.00 | 0 |
 | ema_crossover | 1 | 0 | -9.71 | 0 | +0.00 | 0 |
 | bb_mr_fade | 2 | 0 | -20.36 | 0 | +0.00 | 0 |
@@ -28,70 +28,70 @@ At expiry, open paper positions are marked and reported, not recorded as closed 
 
 [
   {
-    "utc": "2026-10-17T22:07:35.969711+00:00",
+    "utc": "2026-10-18T12:22:26.478253+00:00",
     "family": "ema_crossover",
     "symbol": "SPX500",
     "phase": "scan",
     "error": "Stale/invalid quote"
   },
   {
-    "utc": "2026-10-17T22:07:35.969711+00:00",
+    "utc": "2026-10-18T12:22:26.478253+00:00",
     "family": "ema_crossover",
     "symbol": "XAUUSD",
     "phase": "scan",
     "error": "Stale/invalid quote"
   },
   {
-    "utc": "2026-10-17T22:07:35.969711+00:00",
+    "utc": "2026-10-18T12:22:26.478253+00:00",
     "family": "bb_mr_fade",
     "symbol": "USOIL",
     "phase": "scan",
     "error": "Stale/invalid quote"
   },
   {
-    "utc": "2026-10-17T22:07:35.969711+00:00",
+    "utc": "2026-10-18T12:22:26.478253+00:00",
     "family": "bb_mr_fade",
     "symbol": "AUDUSD",
     "phase": "scan",
     "error": "Stale/invalid quote"
   },
   {
-    "utc": "2026-10-17T22:07:35.969711+00:00",
+    "utc": "2026-10-18T12:22:26.478253+00:00",
     "family": "bb_mr_fade",
     "symbol": "SPX500",
     "phase": "scan",
     "error": "Stale/invalid quote"
   },
   {
-    "utc": "2026-10-17T22:07:35.969711+00:00",
+    "utc": "2026-10-18T12:22:26.478253+00:00",
     "family": "bb_mr_fade",
     "symbol": "XAUUSD",
     "phase": "scan",
     "error": "Stale/invalid quote"
   },
   {
-    "utc": "2026-10-17T22:07:35.969711+00:00",
+    "utc": "2026-10-18T12:22:26.478253+00:00",
     "family": "trend_zone",
     "symbol": "USOIL",
     "phase": "scan",
     "error": "Stale/invalid quote"
   },
   {
-    "utc": "2026-10-17T22:07:35.969711+00:00",
+    "utc": "2026-10-18T12:22:26.478253+00:00",
     "family": "trend_zone",
     "symbol": "AUDUSD",
     "phase": "scan",
     "error": "Stale/invalid quote"
   },
   {
-    "utc": "2026-10-17T22:07:35.969711+00:00",
+    "utc": "2026-10-18T12:22:26.478253+00:00",
     "family": "trend_zone",
     "symbol": "SPX500",
     "phase": "scan",
     "error": "Stale/invalid quote"
   },
   {
-    "utc": "2026-10-17T22:07:35.969711+00:00",
+    "utc": "2026-10-18T12:22:26.478253+00:00",
     "family": "trend_zone",
     "symbol": "XAUUSD",
     "phase": "scan",

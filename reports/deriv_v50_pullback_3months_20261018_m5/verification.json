@@ -1,0 +1,7 @@
+{
+  "passed": true,
+  "checked_trade_cases": 2,
+  "checked_history_files": 4,
+  "errors": [],
+  "scope": "Independent saved history hashes/continuity/OHLC, executed signal prefixes, entry/stop/target/exit/cost/size/accounting and daily/nonoverlap checks. Not tick-verified execution or independent exhaustive detection-completeness proof."
+}

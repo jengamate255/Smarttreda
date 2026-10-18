@@ -1,0 +1,20 @@
+{
+  "scope": "Single executed candidate tick sensitivity only; does not validate all rejected three-month candidates, completeness of tick delivery or historical broker commission/swap. Target rederived from first actual ask using same frozen rule.",
+  "rows": 1347,
+  "first_time_msc": 1792282500126,
+  "last_time_msc": 1792285198117,
+  "max_quote_interval_seconds": 4.016,
+  "entry_actual_ask": 82.1453,
+  "sl": 81.9016,
+  "target": 82.6449,
+  "volume": 39.08,
+  "outcome": {
+    "exit_price": 82.6449,
+    "reason": "target",
+    "time_msc": 1792285028126
+  },
+  "net_r": 2.0000615510873727,
+  "modeled_usd_net": 19.04817820000003,
+  "ticks_sha256": "4806bc33f3ade6ed41385d4697914caf4af4bbb147bef05c1a4df365cdd1f88f",
+  "extra_cost_r_assumed": 0.05
+}

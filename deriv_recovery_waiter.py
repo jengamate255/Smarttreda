@@ -42,7 +42,7 @@ OLD_DEMO_LOGIN = 41204968
 WATCHER_ARGS = [
     "-X", "utf8", str(ROOT / "trade_watch.py"),
     "--micro", "--live", "--interval", "15", "--fixed-equity", "500",
-    "--symbols", "BOOM1000,CRASH1000,CRASH500",
+    "--symbols", "BOOM600,BOOM900,CRASH900",
     "--log-file", str(ROOT / "logs" / "trade_watch.log"),
 ]
 SETTINGS_PATH = ROOT / "mt5_mcp" / "settings.json"

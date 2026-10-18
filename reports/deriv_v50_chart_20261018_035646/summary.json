@@ -1,0 +1,80 @@
+{
+  "started_nairobi": "2026-10-18T03:56:46.699726+03:00",
+  "method": "Closed M15/H1/H4, up to 300 bars each. EMA20/50 ordering, Wilder RSI14/ATR14. Descriptive watchlist, no entry-quality gate or profitability validation. Terminal UTC tick agreement required within120s.",
+  "results": [
+    {
+      "name": "Volatility 50 Index",
+      "group": "Volatility Indices",
+      "previously_scanned": true,
+      "tf": {
+        "M15": {
+          "bias": "UP",
+          "rsi": 57.24335250404595,
+          "atr": 0.3403025949117957,
+          "atr_pct": 0.41342358393090267,
+          "ema20": 82.04903790992387,
+          "ema50": 81.86186844169352,
+          "ema_distance_atr": 0.7765503232340182,
+          "low20": 81.1776,
+          "high20": 82.7273,
+          "last_close": 82.3133,
+          "last_open_utc": "2026-10-18T00:30:00+00:00",
+          "bars": 300,
+          "file": "e132c197742e_M15.json",
+          "sha256": "bfd46a1e715e8379b7d4550cf9506428d17e131de34c25adde70207154dd7a08",
+          "spread_atr": 0.06758690748731314
+        },
+        "H1": {
+          "bias": "UP",
+          "rsi": 56.461874343737584,
+          "atr": 0.7105379846530866,
+          "atr_pct": 0.8652034911354402,
+          "ema20": 81.671549183741,
+          "ema50": 81.01613887790982,
+          "ema_distance_atr": 0.6364906958208616,
+          "low20": 80.9249,
+          "high20": 83.2818,
+          "last_close": 82.1238,
+          "last_open_utc": "2026-10-17T23:00:00+00:00",
+          "bars": 300,
+          "file": "e132c197742e_H1.json",
+          "sha256": "3ff88e788a1d5a4179a81fb401b2d882ec9ae08554d2da0dc2ad3a522802f883",
+          "spread_atr": 0.03236983876551746
+        },
+        "H4": {
+          "bias": "UP",
+          "rsi": 62.250284554386425,
+          "atr": 1.290225526584383,
+          "atr_pct": 1.5710738258390173,
+          "ema20": 80.68531109173148,
+          "ema50": 80.53048791007619,
+          "ema_distance_atr": 1.1149127641867695,
+          "low20": 77.1707,
+          "high20": 83.2818,
+          "last_close": 82.1238,
+          "last_open_utc": "2026-10-17T20:00:00+00:00",
+          "bars": 300,
+          "file": "e132c197742e_H4.json",
+          "sha256": "279c3bf221f7f50dc9553415cdeec7aaf2269a2be0befc179362939ce54216bc",
+          "spread_atr": 0.017826340842041846
+        }
+      },
+      "bid": 82.6118,
+      "ask": 82.6348,
+      "tick_epoch": 1792285006,
+      "tick_age": 0.8797214031219482,
+      "alignment": "UP",
+      "extended": false,
+      "live_h1_bias": "UP",
+      "live_m15_range": "INSIDE"
+    }
+  ],
+  "unavailable": [],
+  "disabled": [],
+  "selection_restore_errors": [],
+  "inventory_total": 1,
+  "groups": {
+    "Volatility Indices": 1
+  },
+  "finished_nairobi": "2026-10-18T03:56:46.879721+03:00"
+}

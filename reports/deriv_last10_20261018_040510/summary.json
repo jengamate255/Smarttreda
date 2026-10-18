@@ -1,0 +1,286 @@
+{
+  "as_of_nairobi": "2026-10-18T04:05:10.074000+03:00",
+  "account": {
+    "login": 41204968,
+    "server": "Deriv-Demo",
+    "currency": "USD",
+    "trade_mode": 0
+  },
+  "source": "Broker full available deals history from epoch; completed position aggregates including all entry/exit legs and profit, commission, swap, fee. Open positions excluded.",
+  "history_deals": 231,
+  "complete_closed_positions": 97,
+  "open_positions_count": 1,
+  "excluded": [
+    {
+      "position_id": 4731620015,
+      "reason": "Still open",
+      "last_time_msc": 1789903915427
+    }
+  ],
+  "broker_deals_sha256": "6cb896ddb063f2dfafba4f049df29cb561960ac8e9b53f168e48754b213234ca",
+  "last10": [
+    {
+      "position_id": 4754047593,
+      "symbol": "Boom 50 Index",
+      "side": "BUY",
+      "volume": 1.03,
+      "entry_price": 105634.5349,
+      "exit_price": 105566.431,
+      "opened_nairobi": "2026-10-12T14:24:12+03:00",
+      "closed_nairobi": "2026-10-16T10:54:52+03:00",
+      "closed_time_msc": 1792137292818,
+      "gross_profit": -70.15,
+      "commission": 0.0,
+      "swap": -42.37,
+      "fees": 0.0,
+      "net_profit": -112.52000000000001,
+      "entry_legs": 1,
+      "exit_legs": 1,
+      "exit_reasons": [
+        4
+      ],
+      "deal_tickets": [
+        4726244964,
+        4730172747
+      ]
+    },
+    {
+      "position_id": 4753883193,
+      "symbol": "Crash 99 Index",
+      "side": "BUY",
+      "volume": 1.25,
+      "entry_price": 96349.159,
+      "exit_price": 96269.157,
+      "opened_nairobi": "2026-10-12T11:20:41+03:00",
+      "closed_nairobi": "2026-10-16T10:22:19+03:00",
+      "closed_time_msc": 1792135339819,
+      "gross_profit": -100.0,
+      "commission": 0.0,
+      "swap": -67.04,
+      "fees": 0.0,
+      "net_profit": -167.04000000000002,
+      "entry_legs": 1,
+      "exit_legs": 1,
+      "exit_reasons": [
+        4
+      ],
+      "deal_tickets": [
+        4726110037,
+        4730147964
+      ]
+    },
+    {
+      "position_id": 4730941001,
+      "symbol": "Boom 150 Index",
+      "side": "BUY",
+      "volume": 0.5,
+      "entry_price": 9277.5914,
+      "exit_price": 9645.1765,
+      "opened_nairobi": "2026-09-19T16:48:50+03:00",
+      "closed_nairobi": "2026-10-13T00:36:44+03:00",
+      "closed_time_msc": 1791841004774,
+      "gross_profit": 183.79,
+      "commission": 0.0,
+      "swap": -10.56,
+      "fees": 0.0,
+      "net_profit": 173.23,
+      "entry_legs": 1,
+      "exit_legs": 1,
+      "exit_reasons": [
+        5
+      ],
+      "deal_tickets": [
+        4705877325,
+        4726722045
+      ]
+    },
+    {
+      "position_id": 4754024752,
+      "symbol": "Crash 200 Index",
+      "side": "BUY",
+      "volume": 0.95,
+      "entry_price": 101653.358,
+      "exit_price": 101563.206,
+      "opened_nairobi": "2026-10-12T14:00:54+03:00",
+      "closed_nairobi": "2026-10-12T16:28:38+03:00",
+      "closed_time_msc": 1791811718821,
+      "gross_profit": -85.64,
+      "commission": 0.0,
+      "swap": 0.0,
+      "fees": 0.0,
+      "net_profit": -85.64,
+      "entry_legs": 1,
+      "exit_legs": 1,
+      "exit_reasons": [
+        4
+      ],
+      "deal_tickets": [
+        4726225774,
+        4726359790
+      ]
+    },
+    {
+      "position_id": 4754011544,
+      "symbol": "Boom 100 Index",
+      "side": "SELL",
+      "volume": 1.05,
+      "entry_price": 95646.114,
+      "exit_price": 95708.634,
+      "opened_nairobi": "2026-10-12T13:45:48+03:00",
+      "closed_nairobi": "2026-10-12T16:20:45+03:00",
+      "closed_time_msc": 1791811245803,
+      "gross_profit": -65.65,
+      "commission": 0.0,
+      "swap": 0.0,
+      "fees": 0.0,
+      "net_profit": -65.65,
+      "entry_legs": 1,
+      "exit_legs": 1,
+      "exit_reasons": [
+        4
+      ],
+      "deal_tickets": [
+        4726214852,
+        4726353095
+      ]
+    },
+    {
+      "position_id": 4754087166,
+      "symbol": "Boom 500 Index",
+      "side": "SELL",
+      "volume": 6.22,
+      "entry_price": 5802.057,
+      "exit_price": 5809.662,
+      "opened_nairobi": "2026-10-12T15:05:43+03:00",
+      "closed_nairobi": "2026-10-12T15:55:46+03:00",
+      "closed_time_msc": 1791809746821,
+      "gross_profit": -47.3,
+      "commission": 0.0,
+      "swap": 0.0,
+      "fees": 0.0,
+      "net_profit": -47.3,
+      "entry_legs": 1,
+      "exit_legs": 1,
+      "exit_reasons": [
+        4
+      ],
+      "deal_tickets": [
+        4726278235,
+        4726330268
+      ]
+    },
+    {
+      "position_id": 4753949501,
+      "symbol": "Crash 150 Index",
+      "side": "BUY",
+      "volume": 11.48,
+      "entry_price": 9549.4101,
+      "exit_price": 9557.443150000001,
+      "opened_nairobi": "2026-10-12T12:36:20+03:00",
+      "closed_nairobi": "2026-10-12T15:04:47+03:00",
+      "closed_time_msc": 1791806687198,
+      "gross_profit": 92.22,
+      "commission": 0.0,
+      "swap": 0.0,
+      "fees": 0.0,
+      "net_profit": 92.22,
+      "entry_legs": 1,
+      "exit_legs": 2,
+      "exit_reasons": [
+        3
+      ],
+      "deal_tickets": [
+        4726163791,
+        4726277336,
+        4726277503
+      ]
+    },
+    {
+      "position_id": 4754066575,
+      "symbol": "Crash 300 Index",
+      "side": "BUY",
+      "volume": 4.42,
+      "entry_price": 2460.03,
+      "exit_price": 2466.0715,
+      "opened_nairobi": "2026-10-12T14:45:13+03:00",
+      "closed_nairobi": "2026-10-12T14:51:07+03:00",
+      "closed_time_msc": 1791805867471,
+      "gross_profit": 26.700000000000003,
+      "commission": 0.0,
+      "swap": 0.0,
+      "fees": 0.0,
+      "net_profit": 26.700000000000003,
+      "entry_legs": 1,
+      "exit_legs": 2,
+      "exit_reasons": [
+        3
+      ],
+      "deal_tickets": [
+        4726260750,
+        4726264672,
+        4726264674
+      ]
+    },
+    {
+      "position_id": 4754050006,
+      "symbol": "Crash 500 Index",
+      "side": "BUY",
+      "volume": 9.65,
+      "entry_price": 2947.424,
+      "exit_price": 2941.599,
+      "opened_nairobi": "2026-10-12T14:27:20+03:00",
+      "closed_nairobi": "2026-10-12T14:49:10+03:00",
+      "closed_time_msc": 1791805750847,
+      "gross_profit": -56.21,
+      "commission": 0.0,
+      "swap": 0.0,
+      "fees": 0.0,
+      "net_profit": -56.21,
+      "entry_legs": 1,
+      "exit_legs": 1,
+      "exit_reasons": [
+        4
+      ],
+      "deal_tickets": [
+        4726246885,
+        4726263584
+      ]
+    },
+    {
+      "position_id": 4754049425,
+      "symbol": "Boom 200 Index",
+      "side": "BUY",
+      "volume": 1.37,
+      "entry_price": 99756.154,
+      "exit_price": 99814.9898540146,
+      "opened_nairobi": "2026-10-12T14:26:32+03:00",
+      "closed_nairobi": "2026-10-12T14:42:57+03:00",
+      "closed_time_msc": 1791805377296,
+      "gross_profit": 80.6,
+      "commission": 0.0,
+      "swap": 0.0,
+      "fees": 0.0,
+      "net_profit": 80.6,
+      "entry_legs": 1,
+      "exit_legs": 2,
+      "exit_reasons": [
+        3
+      ],
+      "deal_tickets": [
+        4726246415,
+        4726255936,
+        4726259105
+      ]
+    }
+  ],
+  "totals": {
+    "count": 10,
+    "wins": 4,
+    "losses": 6,
+    "breakeven": 0,
+    "net": -161.61000000000013,
+    "gross_profit": -41.64000000000004,
+    "costs": -119.97,
+    "profit_factor": 0.6975634403772737
+  }
+}

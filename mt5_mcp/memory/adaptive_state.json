@@ -1,12 +1,12 @@
 {
-  "timestamp": "2026-10-17T19:38:29.986772+00:00",
+  "timestamp": "2026-10-18T12:24:25.613811+00:00",
   "performance": {
-    "total_trades": 72,
-    "win_rate": 41.7,
+    "total_trades": 63,
+    "win_rate": 41.3,
     "consecutive_losses": 4,
-    "hours_since_last_trade": 105.3,
-    "avg_pnl": -12.12,
-    "profit_factor": 0.72
+    "hours_since_last_trade": 122.1,
+    "avg_pnl": -10.28,
+    "profit_factor": 0.76
   },
   "adjustments": {
     "zone_score": 1.0,

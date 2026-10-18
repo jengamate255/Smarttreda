@@ -6,7 +6,7 @@ import urllib.request
 from datetime import datetime
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-AUTH = "REDACTED_DASHBOARD_TOKEN"
+AUTH = os.environ.get("WEB_AUTH_TOKEN", "")
 
 SERVICES = [
     ("Prop Dashboard", 8055),

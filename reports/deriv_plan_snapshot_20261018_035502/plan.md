@@ -1,0 +1,14 @@
+# Proposed Deriv paper trading plan — 18 October 2026, 03:55 Nairobi
+
+Fresh four-candidate snapshot: summary.json in this directory. H4/H1/M15 ordering remains bullish for standard Volatility50, standard Volatility15 and High Frequency Vol75; bearish for Jump75. These are chart observations, not validated entry setups or return forecasts.
+
+1. Primary research candidate: standard Volatility50 BUY on a confirmed pullback, not an immediate market buy. Snapshot bid/ask82.5331/82.5561; M15 EMA20 reference82.0490. Look for a completed M15 pullback followed by bullish rejection/reclaim, with H1/H4 still aligned and separate confirmed pattern/zone evidence. First overhead reference82.7273; next83.2818. These are recent extrema, not validated structural supply levels.
+2. Secondary: High Frequency Vol75 BUY watch. Snapshot bid/ask45390.85/45399.15 is near M15 EMA20 reference45393.30. Wait for completed bullish price confirmation; nearby overhead reference45768.64, then46285.27. An EMA touch alone is not admission.
+3. Standard Volatility15 backup. M15 EMA20 reference101962.25; overhead102370.90 then102473.44. Avoid a breakout chase with little room to the next overhead reference.
+4. Jump75 SELL watch only: current bid5489.39 is close to recent low5469.33. Do not chase into that low. Reassess after a confirmed breakdown/retest or a new rebound/rejection with sufficient measured room. Jump risk can exceed a nominal stop.
+
+For any candidate, entry/stop remain unspecified until a new confirmation and structural invalidation exist. Buy at executable ask; stop below the confirmed retest/swing low with a measured volatility buffer. Never tighten a structurally necessary stop just to manufacture reward/risk. Require at least2R net of spread and modeled costs before the nearest meaningful opposing structure; otherwise skip. Do not assume a farther target makes nearby resistance disappear. Obtain fresh contract sizing/minimum volume evidence before defining paper lots.
+
+Proposed research limits:0.1% of paper equity at stop per idea, one open idea at a time, maximum two attempts /0.2% planned stop-risk per day. Actual modeled losses can exceed nominal risk on adverse gaps. No averaging down, martingale or widening stops. Track net R, actual spread, assumed costs and adverse gap fills. Reassess at the next completed M15 candle and before any paper fill.
+
+Paper-only proposal: no orders, automated paper runner, service/task changes, Telegram sends, live configuration/allowlist edits or quarantine changes. Existing live policy has no synthetic admission; this scan does not override it. The prior seven-day experiment remains untouched. This is a research hypothesis, not established profitability. Deriv cautions that indicators may not suit most synthetic products: https://deriv.com/markets/derived-indices/synthetic-indices?tab=cfds

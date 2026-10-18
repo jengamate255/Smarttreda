@@ -1,0 +1,702 @@
+[
+  {
+    "name": "Step Index",
+    "group": "Step Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": true
+  },
+  {
+    "name": "Range Break 100 Index",
+    "group": "Range Break",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Range Break 200 Index",
+    "group": "Range Break",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Boom 1000 Index",
+    "group": "Crash Boom Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": true
+  },
+  {
+    "name": "Crash 1000 Index",
+    "group": "Crash Boom Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": true
+  },
+  {
+    "name": "Boom 500 Index",
+    "group": "Crash Boom Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": true
+  },
+  {
+    "name": "Crash 500 Index",
+    "group": "Crash Boom Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": true
+  },
+  {
+    "name": "Boom 300 Index",
+    "group": "Crash Boom Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Crash 300 Index",
+    "group": "Crash Boom Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Volatility 10 Index",
+    "group": "Volatility Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": true
+  },
+  {
+    "name": "Volatility 25 Index",
+    "group": "Volatility Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": true
+  },
+  {
+    "name": "Volatility 50 Index",
+    "group": "Volatility Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": true
+  },
+  {
+    "name": "Volatility 75 Index",
+    "group": "Volatility Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": true
+  },
+  {
+    "name": "Volatility 100 Index",
+    "group": "Volatility Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": true
+  },
+  {
+    "name": "Volatility 10 (1s) Index",
+    "group": "Volatility Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": true
+  },
+  {
+    "name": "Volatility 25 (1s) Index",
+    "group": "Volatility Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": true
+  },
+  {
+    "name": "Volatility 50 (1s) Index",
+    "group": "Volatility Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": true
+  },
+  {
+    "name": "Volatility 75 (1s) Index",
+    "group": "Volatility Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": true
+  },
+  {
+    "name": "Volatility 100 (1s) Index",
+    "group": "Volatility Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": true
+  },
+  {
+    "name": "Volatility 150 (1s) Index",
+    "group": "Volatility Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Volatility 250 (1s) Index",
+    "group": "Volatility Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Jump 10 Index",
+    "group": "Jump Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Jump 25 Index",
+    "group": "Jump Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Jump 50 Index",
+    "group": "Jump Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Jump 75 Index",
+    "group": "Jump Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Jump 100 Index",
+    "group": "Jump Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "DEX 900 DOWN Index",
+    "group": "DEX Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "DEX 900 UP Index",
+    "group": "DEX Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "DEX 600 DOWN Index",
+    "group": "DEX Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "DEX 600 UP Index",
+    "group": "DEX Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "DEX 1500 DOWN Index",
+    "group": "DEX Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "DEX 1500 UP Index",
+    "group": "DEX Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Drift Switch Index 10",
+    "group": "Drift Switching Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Drift Switch Index 20",
+    "group": "Drift Switching Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Drift Switch Index 30",
+    "group": "Drift Switching Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Step Index 200",
+    "group": "Step Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Step Index 500",
+    "group": "Step Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Multi Step 2 Index",
+    "group": "Multi Step Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Multi Step 4 Index",
+    "group": "Multi Step Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Vol over Boom 400",
+    "group": "Hybrid Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Vol over Boom 750",
+    "group": "Hybrid Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Vol over Crash 400",
+    "group": "Hybrid Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Vol over Crash 750",
+    "group": "Hybrid Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Skew Step Index 5 Up",
+    "group": "Skewed Step",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Skew Step Index 4 Down",
+    "group": "Skewed Step",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Skew Step Index 4 Up",
+    "group": "Skewed Step",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Skew Step Index 5 Down",
+    "group": "Skewed Step",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Boom 900 Index",
+    "group": "Crash Boom Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Crash 900 Index",
+    "group": "Crash Boom Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Boom 600 Index",
+    "group": "Crash Boom Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Crash 600 Index",
+    "group": "Crash Boom Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Vol over Boom 550",
+    "group": "Hybrid Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Vol over Crash 550",
+    "group": "Hybrid Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Step Index 300",
+    "group": "Step Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Step Index 400",
+    "group": "Step Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Volatility 15 (1s) Index",
+    "group": "Volatility Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Volatility 30 (1s) Index",
+    "group": "Volatility Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Volatility 90 (1s) Index",
+    "group": "Volatility Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Multi Step 3 Index",
+    "group": "Multi Step Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Trek Up Index",
+    "group": "Trek Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Trek Down Index",
+    "group": "Trek Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "VolSwitch Low Vol Index",
+    "group": "Volatility Switch Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "VolSwitch Medium Vol Index",
+    "group": "Volatility Switch Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "VolSwitch High Vol Index",
+    "group": "Volatility Switch Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Spot Up - Volatility Up Index",
+    "group": "Spot Volatility Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Spot Up - Volatility Down Index",
+    "group": "Spot Volatility Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Crash 150 Index",
+    "group": "Crash Boom Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Boom 150 Index",
+    "group": "Crash Boom Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Exponential Growth Index 1",
+    "group": "Exponential Growth Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Exponential Growth Index 2",
+    "group": "Exponential Growth Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Boom 50 Index",
+    "group": "Crash Boom Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Crash 50 Index",
+    "group": "Crash Boom Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Volatility 5 Index",
+    "group": "Volatility Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Volatility 5 (1s) Index",
+    "group": "Volatility Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Volatility 15 Index",
+    "group": "Volatility Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Volatility 30 Index",
+    "group": "Volatility Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Volatility 90 Index",
+    "group": "Volatility Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "High Frequency Vol 100 Index",
+    "group": "Volatility Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "High Frequency Vol 75 Index",
+    "group": "Volatility Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "High Frequency Vol 50 Index",
+    "group": "Volatility Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "High Frequency Vol 25 Index",
+    "group": "Volatility Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "High Frequency Vol 10 Index",
+    "group": "Volatility Indices",
+    "trade_mode": 4,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Crash 99 Index",
+    "group": "Crash Boom Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Crash 100 Index",
+    "group": "Crash Boom Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Crash 200 Index",
+    "group": "Crash Boom Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Boom 99 Index",
+    "group": "Crash Boom Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Boom 100 Index",
+    "group": "Crash Boom Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Boom 200 Index",
+    "group": "Crash Boom Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Crash Boom Flip 1000 Index",
+    "group": "Crash Boom Flip Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Crash Boom Flip 500 Index",
+    "group": "Crash Boom Flip Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Crash Boom Flip 300 Index",
+    "group": "Crash Boom Flip Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Crash Boom Flip 150 Index",
+    "group": "Crash Boom Flip Indices",
+    "trade_mode": 4,
+    "selected": true,
+    "previously_scanned": false
+  },
+  {
+    "name": "Volatility Crash 400 Index",
+    "group": "Volatility Crash/Boom Indices",
+    "trade_mode": 0,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Volatility Crash 750 Index",
+    "group": "Volatility Crash/Boom Indices",
+    "trade_mode": 0,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Volatility Boom 400 Index",
+    "group": "Volatility Crash/Boom Indices",
+    "trade_mode": 0,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Volatility Boom 750 Index",
+    "group": "Volatility Crash/Boom Indices",
+    "trade_mode": 0,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Volatility Boom 550 Index",
+    "group": "Volatility Crash/Boom Indices",
+    "trade_mode": 0,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Volatility Crash 550 Index",
+    "group": "Volatility Crash/Boom Indices",
+    "trade_mode": 0,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Ladder Volatility Up Index",
+    "group": "Laddered Volatility Indices",
+    "trade_mode": 0,
+    "selected": false,
+    "previously_scanned": false
+  },
+  {
+    "name": "Ladder Volatility Down Index",
+    "group": "Laddered Volatility Indices",
+    "trade_mode": 0,
+    "selected": false,
+    "previously_scanned": false
+  }
+]

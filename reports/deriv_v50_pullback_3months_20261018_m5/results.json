@@ -1,0 +1,299 @@
+{
+  "rules": {
+    "version": 2,
+    "symbol": "Volatility 50 Index",
+    "side": "BUY",
+    "start_nairobi": "2026-07-18T00:00:00+03:00",
+    "end_nairobi": "2026-10-18T04:00:00+03:00",
+    "warmup_days": 45,
+    "ema_fast": 20,
+    "ema_slow": 50,
+    "atr_period": 14,
+    "trend": "Latest fully closed H1 and H4: close>EMA20>EMA50; M15 EMA20>EMA50 and close>EMA20.",
+    "rejection": "M15 candle bullish, closes in top third, lower wick >= body; low touches previous-bar EMA20 within +0.10 previous ATR and high reaches that EMA.",
+    "structure": "Last two M15 2-left/2-right confirmed swing lows (last40 bars) must rise. Signal low >= latest swing low -0.25 previous ATR.",
+    "stop": "min(signal low, latest confirmed swing low)-0.25 previous M15 ATR, rounded down to current tick size.",
+    "ceiling": "Nearest above entry among prior20 closed-bar highs on M15/H1/H4; cap at one current tick below. If any ceiling equals/below entry, only ceilings above entry are relevant; no new-high extrapolated target.",
+    "entry": "First M5 open at M15 close plus most recent strictly earlier positive M5 historical spread; spread is causal recorded-bar proxy, not tick-verified executable ask.",
+    "net_target_r": 2.0,
+    "extra_cost_r": 0.05,
+    "risk_percent": 0.1,
+    "reference_balance": 10000.0,
+    "sizing": "Current broker tick value, minimum/maximum and downward volume step rounding. Fixed10USD budget including0.05R reserve. Reject minimum volume above budget.",
+    "max_entries_per_nairobi_day": 2,
+    "max_open_positions": 1,
+    "horizon_m5_bars": 288,
+    "exit": "M5 bid OHLC: stops before targets when ambiguous; adverse stop gap at opening bid; target fills capped at target. Exit at 24h, segment end or unavailable data; unavailable data is unresolved, not an invented close.",
+    "split_fraction": 0.7,
+    "split": "Chronological elapsed-time70/30; independent flat train/holdout books, force close at split and end. No parameter tuning. Market selection used current scan, so holdout is retrospective temporal evaluation, not genuinely unseen selection evidence.",
+    "cost_stress": "Repeat same rules with1.5x recorded spread; do not choose best variant.",
+    "limitations": "Mechanical interpretation of discretionary chart idea, NOT exact full desk pattern/zone/quality gate or an execution-approved strategy. Fees/slippage/swap use an assumed0.05R reserve, not reconstructed broker charges. Current contract metadata may differ historically. Closed drawdown excludes intratrade floating risk."
+  },
+  "replay_source_sha256": "fa10c7dfc67303694af979eb4fd7350e46dcf36ab5fb91348b4ccc2f52b0c1f1",
+  "split_nairobi": "2026-09-20T12:15:00+03:00",
+  "cases": {
+    "base": {
+      "train": {
+        "stats": {
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_percent": null,
+          "net_r": 0.0,
+          "mean_r": null,
+          "profit_factor": null,
+          "max_closed_drawdown_r": 0.0,
+          "modeled_net_usd": 0,
+          "reference_return_percent": 0.0,
+          "ambiguous_stop_first": 0
+        },
+        "funnel": {
+          "closed_m15_decisions": 6193,
+          "h1_h4_trend": 5221,
+          "m15_trend": 307,
+          "rejection": 647,
+          "structure_broken": 6,
+          "higher_low": 5,
+          "candidate": 7,
+          "insufficient_net_rr": 7
+        },
+        "trades": []
+      },
+      "holdout": {
+        "stats": {
+          "trades": 1,
+          "wins": 1,
+          "losses": 0,
+          "win_rate_percent": 100.0,
+          "net_r": 2.0000615510875503,
+          "mean_r": 2.0000615510875503,
+          "profit_factor": null,
+          "max_closed_drawdown_r": 0.0,
+          "modeled_net_usd": 19.04817820000061,
+          "reference_return_percent": 0.1904817820000061,
+          "ambiguous_stop_first": 0
+        },
+        "funnel": {
+          "closed_m15_decisions": 2655,
+          "h1_h4_trend": 2631,
+          "rejection": 13,
+          "m15_trend": 8,
+          "candidate": 1,
+          "rr_pass": 1,
+          "position_open": 2
+        },
+        "trades": [
+          {
+            "side": "BUY",
+            "decision_time": 1792282500,
+            "entry_time": 1792282500,
+            "entry_nairobi": "2026-10-18T03:15:00+03:00",
+            "exit_nairobi": "2026-10-18T04:00:00+03:00",
+            "sl": 81.9016,
+            "ceilings": [
+              82.7273,
+              83.2818,
+              83.2818
+            ],
+            "atr": 0.33250278582215403,
+            "signal_low": 81.9848,
+            "swing_low": 82.0002,
+            "swing_index": 13160,
+            "m15_last_open": 1792281600,
+            "h1_last_close": 1792281600,
+            "h4_last_close": 1792281600,
+            "entry": 82.14529999999999,
+            "tp": 82.6449,
+            "price_risk": 0.2436999999999898,
+            "ceiling": 82.7272,
+            "exit_time": 1792285200,
+            "exit_price": 82.6449,
+            "net_r": 2.0000615510875503,
+            "exit_reason": "target",
+            "ambiguous": false,
+            "held_minutes": 45,
+            "spread": 0.023,
+            "spread_source_time": 1792282200,
+            "volume": 39.08,
+            "price_risk_usd": 9.523795999999601,
+            "planned_risk_with_reserve_usd": 9.999985799999582,
+            "modeled_usd_net": 19.04817820000061,
+            "modeled_extra_cost_r": 0.05
+          }
+        ]
+      },
+      "combined_stats": {
+        "trades": 1,
+        "wins": 1,
+        "losses": 0,
+        "win_rate_percent": 100.0,
+        "net_r": 2.0000615510875503,
+        "mean_r": 2.0000615510875503,
+        "profit_factor": null,
+        "max_closed_drawdown_r": 0.0,
+        "modeled_net_usd": 19.04817820000061,
+        "reference_return_percent": 0.1904817820000061,
+        "ambiguous_stop_first": 0
+      }
+    },
+    "spread_stress_1_5x": {
+      "train": {
+        "stats": {
+          "trades": 0,
+          "wins": 0,
+          "losses": 0,
+          "win_rate_percent": null,
+          "net_r": 0.0,
+          "mean_r": null,
+          "profit_factor": null,
+          "max_closed_drawdown_r": 0.0,
+          "modeled_net_usd": 0,
+          "reference_return_percent": 0.0,
+          "ambiguous_stop_first": 0
+        },
+        "funnel": {
+          "closed_m15_decisions": 6193,
+          "h1_h4_trend": 5221,
+          "m15_trend": 307,
+          "rejection": 647,
+          "structure_broken": 6,
+          "higher_low": 5,
+          "candidate": 7,
+          "insufficient_net_rr": 7
+        },
+        "trades": []
+      },
+      "holdout": {
+        "stats": {
+          "trades": 1,
+          "wins": 1,
+          "losses": 0,
+          "win_rate_percent": 100.0,
+          "net_r": 1.6666927899687558,
+          "mean_r": 1.6666927899687558,
+          "profit_factor": null,
+          "max_closed_drawdown_r": 0.0,
+          "modeled_net_usd": 15.869435400000235,
+          "reference_return_percent": 0.15869435400000234,
+          "ambiguous_stop_first": 0
+        },
+        "funnel": {
+          "closed_m15_decisions": 2655,
+          "h1_h4_trend": 2631,
+          "rejection": 13,
+          "m15_trend": 8,
+          "candidate": 1,
+          "rr_pass": 1,
+          "position_open": 2
+        },
+        "trades": [
+          {
+            "side": "BUY",
+            "decision_time": 1792282500,
+            "entry_time": 1792282500,
+            "entry_nairobi": "2026-10-18T03:15:00+03:00",
+            "exit_nairobi": "2026-10-18T04:00:00+03:00",
+            "sl": 81.9016,
+            "ceilings": [
+              82.7273,
+              83.2818,
+              83.2818
+            ],
+            "atr": 0.33250278582215403,
+            "signal_low": 81.9848,
+            "swing_low": 82.0002,
+            "swing_index": 13160,
+            "m15_last_open": 1792281600,
+            "h1_last_close": 1792281600,
+            "h4_last_close": 1792281600,
+            "entry": 82.15679999999999,
+            "tp": 82.68,
+            "price_risk": 0.2551999999999879,
+            "ceiling": 82.7272,
+            "exit_time": 1792285200,
+            "exit_price": 82.5949,
+            "net_r": 1.6666927899687558,
+            "exit_reason": "time_or_boundary",
+            "ambiguous": false,
+            "held_minutes": 45,
+            "spread": 0.0345,
+            "spread_source_time": 1792282200,
+            "volume": 37.31,
+            "price_risk_usd": 9.521511999999548,
+            "planned_risk_with_reserve_usd": 9.997587599999527,
+            "modeled_usd_net": 15.869435400000235,
+            "modeled_extra_cost_r": 0.05
+          }
+        ]
+      },
+      "combined_stats": {
+        "trades": 1,
+        "wins": 1,
+        "losses": 0,
+        "win_rate_percent": 100.0,
+        "net_r": 1.6666927899687558,
+        "mean_r": 1.6666927899687558,
+        "profit_factor": null,
+        "max_closed_drawdown_r": 0.0,
+        "modeled_net_usd": 15.869435400000235,
+        "reference_return_percent": 0.15869435400000234,
+        "ambiguous_stop_first": 0
+      }
+    }
+  },
+  "manifest": {
+    "rules_sha256": "5cf4822186a3991a6dd96946365d5d6f92f9a8ac30dc30b59a0fb0bdfe84c9cd",
+    "source_sha256": "c277cc681306140e5e1eebb65e42d8b2ef32713faeeb5355dffcdf0ca69fa760",
+    "frames": {
+      "M15": {
+        "sha256": "8817a0f285766e995111337701099245ca2a4f567631c4880bf6fabc0c11e450",
+        "rows": 13168,
+        "expected_start": 1780434000,
+        "first": 1780434000,
+        "last": 1792284300,
+        "gap_count": 0,
+        "missing_bars": 0,
+        "zero_spread_bars": 0,
+        "duration_seconds": 900,
+        "expected_rows": 13168
+      },
+      "H1": {
+        "sha256": "fdfca83d0584e96c9242bc2f170c6562cd2e16663127f1298fa11c02dd00c49b",
+        "rows": 3292,
+        "expected_start": 1780434000,
+        "first": 1780434000,
+        "last": 1792281600,
+        "gap_count": 0,
+        "missing_bars": 0,
+        "zero_spread_bars": 0,
+        "duration_seconds": 3600,
+        "expected_rows": 3292
+      },
+      "H4": {
+        "sha256": "b65a6c00299cf1485ccbf0aca42faff00b2f7dab0bf66c9fc4ada7958783834a",
+        "rows": 822,
+        "expected_start": 1780434000,
+        "first": 1780444800,
+        "last": 1792267200,
+        "gap_count": 0,
+        "missing_bars": 0,
+        "zero_spread_bars": 0,
+        "duration_seconds": 14400,
+        "expected_rows": 822
+      },
+      "M5": {
+        "sha256": "e7a6691a5176fb537a2c725a2d7b6178d4119080638327eac92a00cfa93cd233",
+        "rows": 26556,
+        "expected_start": 1784318400,
+        "first": 1784318400,
+        "last": 1792284900,
+        "gap_count": 0,
+        "missing_bars": 0,
+        "zero_spread_bars": 0,
+        "duration_seconds": 300,
+        "expected_rows": 26556
+      }
+    },
+    "capture_errors": []
+  }
+}

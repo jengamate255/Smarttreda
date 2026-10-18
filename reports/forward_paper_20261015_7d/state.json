@@ -1,6 +1,6 @@
 {
   "status": "running",
-  "last_run": 1792274855.9697108,
+  "last_run": 1792326146.4782531,
   "books": {
     "trend_zone": {
       "positions": [],
@@ -8,8 +8,8 @@
       "seen": {
         "USOIL": 1792188000,
         "AUDUSD": 1792188000,
-        "BTCUSD": 1792281600,
-        "ETHUSD": 1792281600,
+        "BTCUSD": 1792332000,
+        "ETHUSD": 1792332000,
         "SPX500": 1792137600,
         "XAUUSD": 1792188000
       },
@@ -19,7 +19,8 @@
         "2026-10-14": 9393.87,
         "2026-10-15": 9393.87,
         "2026-10-16": 9393.87,
-        "2026-10-17": 9393.87
+        "2026-10-17": 9393.87,
+        "2026-10-18": 9393.87
       }
     },
     "mean_reversion": {
@@ -28,8 +29,8 @@
       "seen": {
         "USOIL": 1792188000,
         "AUDUSD": 1792188000,
-        "BTCUSD": 1792281600,
-        "ETHUSD": 1792281600,
+        "BTCUSD": 1792332000,
+        "ETHUSD": 1792332000,
         "SPX500": 1792137600,
         "XAUUSD": 1792188000
       },
@@ -39,7 +40,8 @@
         "2026-10-14": 9393.87,
         "2026-10-15": 9393.87,
         "2026-10-16": 9393.87,
-        "2026-10-17": 9393.87
+        "2026-10-17": 9393.87,
+        "2026-10-18": 9393.87
       }
     },
     "momentum_breakout": {
@@ -73,7 +75,7 @@
           "risk_amount": 9.3,
           "entry_time": 1792256558.486626,
           "entry_tick_msc": 1792267358620,
-          "last_tick_msc": 1792285654909,
+          "last_tick_msc": 1792336944720,
           "signal_bar_broker": 1792263600,
           "actual_rr": 2.6666666666666665,
           "static_screen_pass": false,
@@ -139,7 +141,7 @@
       "seen": {
         "USOIL": 1792188000,
         "AUDUSD": 1792054800,
-        "BTCUSD": 1792281600,
+        "BTCUSD": 1792332000,
         "ETHUSD": 1792263600,
         "SPX500": 1792137600,
         "XAUUSD": 1792188000
@@ -149,12 +151,13 @@
         "2026-10-16": 1,
         "2026-10-17": 1
       },
-      "floating": 2.9135,
+      "floating": -6.3265,
       "day_equity": {
         "2026-10-14": 9393.87,
         "2026-10-15": 9393.87,
         "2026-10-16": 9389.5935,
-        "2026-10-17": 9405.9135
+        "2026-10-17": 9405.9135,
+        "2026-10-18": 9406.558500000001
       }
     },
     "btc_trend_following": {
@@ -163,8 +166,8 @@
       "seen": {
         "USOIL": 1792166400,
         "AUDUSD": 1792166400,
-        "BTCUSD": 1792267200,
-        "ETHUSD": 1792267200,
+        "BTCUSD": 1792310400,
+        "ETHUSD": 1792310400,
         "SPX500": 1792166400,
         "XAUUSD": 1792166400
       },
@@ -174,7 +177,8 @@
         "2026-10-14": 9393.87,
         "2026-10-15": 9393.87,
         "2026-10-16": 9393.87,
-        "2026-10-17": 9393.87
+        "2026-10-17": 9393.87,
+        "2026-10-18": 9393.87
       }
     },
     "ema_crossover": {
@@ -211,8 +215,8 @@
       "seen": {
         "USOIL": 1792188000,
         "AUDUSD": 1792188000,
-        "BTCUSD": 1792281600,
-        "ETHUSD": 1792281600,
+        "BTCUSD": 1792332000,
+        "ETHUSD": 1792332000,
         "SPX500": 1792137600,
         "XAUUSD": 1792188000
       },
@@ -224,7 +228,8 @@
         "2026-10-14": 9393.87,
         "2026-10-15": 9393.87,
         "2026-10-16": 9393.87,
-        "2026-10-17": 9384.162250000001
+        "2026-10-17": 9384.162250000001,
+        "2026-10-18": 9384.162250000001
       }
     },
     "bb_mr_fade": {
@@ -287,8 +292,8 @@
       "seen": {
         "USOIL": 1792188000,
         "AUDUSD": 1792188000,
-        "BTCUSD": 1792281600,
-        "ETHUSD": 1792281600,
+        "BTCUSD": 1792332000,
+        "ETHUSD": 1792332000,
         "SPX500": 1792137600,
         "XAUUSD": 1792188000
       },
@@ -300,706 +305,707 @@
         "2026-10-14": 9393.87,
         "2026-10-15": 9393.87,
         "2026-10-16": 9373.509,
-        "2026-10-17": 9373.509
+        "2026-10-17": 9373.509,
+        "2026-10-18": 9373.509
       }
     }
   },
   "errors": [
     {
-      "utc": "2026-10-17T18:58:21.668467+00:00",
+      "utc": "2026-10-18T12:02:25.191917+00:00",
       "family": "bb_mr_fade",
       "symbol": "USOIL",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T18:58:21.668467+00:00",
+      "utc": "2026-10-18T12:02:25.191917+00:00",
       "family": "bb_mr_fade",
       "symbol": "AUDUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T18:58:21.668467+00:00",
+      "utc": "2026-10-18T12:02:25.191917+00:00",
       "family": "bb_mr_fade",
       "symbol": "SPX500",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T18:58:21.668467+00:00",
+      "utc": "2026-10-18T12:02:25.191917+00:00",
       "family": "bb_mr_fade",
       "symbol": "XAUUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T18:58:21.668467+00:00",
+      "utc": "2026-10-18T12:02:25.191917+00:00",
       "family": "trend_zone",
       "symbol": "USOIL",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T18:58:21.668467+00:00",
+      "utc": "2026-10-18T12:02:25.191917+00:00",
       "family": "trend_zone",
       "symbol": "AUDUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T18:58:21.668467+00:00",
+      "utc": "2026-10-18T12:02:25.191917+00:00",
       "family": "trend_zone",
       "symbol": "SPX500",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T18:58:21.668467+00:00",
+      "utc": "2026-10-18T12:02:25.191917+00:00",
       "family": "trend_zone",
       "symbol": "XAUUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:12:28.620636+00:00",
+      "utc": "2026-10-18T12:07:25.976661+00:00",
       "family": "mean_reversion",
       "symbol": "USOIL",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:12:28.620636+00:00",
+      "utc": "2026-10-18T12:07:25.976661+00:00",
       "family": "mean_reversion",
       "symbol": "AUDUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:12:28.620636+00:00",
+      "utc": "2026-10-18T12:07:25.976661+00:00",
       "family": "mean_reversion",
       "symbol": "SPX500",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:12:28.620636+00:00",
+      "utc": "2026-10-18T12:07:25.976661+00:00",
       "family": "mean_reversion",
       "symbol": "XAUUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:12:28.620636+00:00",
+      "utc": "2026-10-18T12:07:25.976661+00:00",
       "family": "momentum_breakout",
       "symbol": "USOIL",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:12:28.620636+00:00",
+      "utc": "2026-10-18T12:07:25.976661+00:00",
       "family": "momentum_breakout",
       "symbol": "SPX500",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:12:28.620636+00:00",
+      "utc": "2026-10-18T12:07:25.976661+00:00",
       "family": "momentum_breakout",
       "symbol": "XAUUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:12:28.620636+00:00",
+      "utc": "2026-10-18T12:07:25.976661+00:00",
       "family": "btc_trend_following",
       "symbol": "USOIL",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:12:28.620636+00:00",
+      "utc": "2026-10-18T12:07:25.976661+00:00",
       "family": "btc_trend_following",
       "symbol": "AUDUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:12:28.620636+00:00",
+      "utc": "2026-10-18T12:07:25.976661+00:00",
       "family": "btc_trend_following",
       "symbol": "SPX500",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:12:28.620636+00:00",
+      "utc": "2026-10-18T12:07:25.976661+00:00",
       "family": "btc_trend_following",
       "symbol": "XAUUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:12:28.620636+00:00",
+      "utc": "2026-10-18T12:07:25.976661+00:00",
       "family": "ema_crossover",
       "symbol": "USOIL",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:12:28.620636+00:00",
+      "utc": "2026-10-18T12:07:25.976661+00:00",
       "family": "ema_crossover",
       "symbol": "AUDUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:12:28.620636+00:00",
+      "utc": "2026-10-18T12:07:25.976661+00:00",
       "family": "ema_crossover",
       "symbol": "SPX500",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:12:28.620636+00:00",
+      "utc": "2026-10-18T12:07:25.976661+00:00",
       "family": "ema_crossover",
       "symbol": "XAUUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:12:28.620636+00:00",
+      "utc": "2026-10-18T12:07:25.976661+00:00",
       "family": "bb_mr_fade",
       "symbol": "USOIL",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:12:28.620636+00:00",
+      "utc": "2026-10-18T12:07:25.976661+00:00",
       "family": "bb_mr_fade",
       "symbol": "AUDUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:12:28.620636+00:00",
+      "utc": "2026-10-18T12:07:25.976661+00:00",
       "family": "bb_mr_fade",
       "symbol": "SPX500",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:12:28.620636+00:00",
+      "utc": "2026-10-18T12:07:25.976661+00:00",
       "family": "bb_mr_fade",
       "symbol": "XAUUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:12:28.620636+00:00",
+      "utc": "2026-10-18T12:07:25.976661+00:00",
       "family": "trend_zone",
       "symbol": "USOIL",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:12:28.620636+00:00",
+      "utc": "2026-10-18T12:07:25.976661+00:00",
       "family": "trend_zone",
       "symbol": "AUDUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:12:28.620636+00:00",
+      "utc": "2026-10-18T12:07:25.976661+00:00",
       "family": "trend_zone",
       "symbol": "SPX500",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:12:28.620636+00:00",
+      "utc": "2026-10-18T12:07:25.976661+00:00",
       "family": "trend_zone",
       "symbol": "XAUUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:17:27.791137+00:00",
+      "utc": "2026-10-18T12:12:25.413455+00:00",
       "family": "mean_reversion",
       "symbol": "USOIL",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:17:27.791137+00:00",
+      "utc": "2026-10-18T12:12:25.413455+00:00",
       "family": "mean_reversion",
       "symbol": "AUDUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:17:27.791137+00:00",
+      "utc": "2026-10-18T12:12:25.413455+00:00",
       "family": "mean_reversion",
       "symbol": "SPX500",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:17:27.791137+00:00",
+      "utc": "2026-10-18T12:12:25.413455+00:00",
       "family": "mean_reversion",
       "symbol": "XAUUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:17:27.791137+00:00",
+      "utc": "2026-10-18T12:12:25.413455+00:00",
       "family": "momentum_breakout",
       "symbol": "USOIL",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:17:27.791137+00:00",
+      "utc": "2026-10-18T12:12:25.413455+00:00",
       "family": "momentum_breakout",
       "symbol": "SPX500",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:17:27.791137+00:00",
+      "utc": "2026-10-18T12:12:25.413455+00:00",
       "family": "momentum_breakout",
       "symbol": "XAUUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:17:27.791137+00:00",
+      "utc": "2026-10-18T12:12:25.413455+00:00",
       "family": "btc_trend_following",
       "symbol": "USOIL",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:17:27.791137+00:00",
+      "utc": "2026-10-18T12:12:25.413455+00:00",
       "family": "btc_trend_following",
       "symbol": "AUDUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:17:27.791137+00:00",
+      "utc": "2026-10-18T12:12:25.413455+00:00",
       "family": "btc_trend_following",
       "symbol": "SPX500",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:17:27.791137+00:00",
+      "utc": "2026-10-18T12:12:25.413455+00:00",
       "family": "btc_trend_following",
       "symbol": "XAUUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:17:27.791137+00:00",
+      "utc": "2026-10-18T12:12:25.413455+00:00",
       "family": "ema_crossover",
       "symbol": "USOIL",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:17:27.791137+00:00",
+      "utc": "2026-10-18T12:12:25.413455+00:00",
       "family": "ema_crossover",
       "symbol": "AUDUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:17:27.791137+00:00",
+      "utc": "2026-10-18T12:12:25.413455+00:00",
       "family": "ema_crossover",
       "symbol": "SPX500",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:17:27.791137+00:00",
+      "utc": "2026-10-18T12:12:25.413455+00:00",
       "family": "ema_crossover",
       "symbol": "XAUUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:17:27.791137+00:00",
+      "utc": "2026-10-18T12:12:25.413455+00:00",
       "family": "bb_mr_fade",
       "symbol": "USOIL",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:17:27.791137+00:00",
+      "utc": "2026-10-18T12:12:25.413455+00:00",
       "family": "bb_mr_fade",
       "symbol": "AUDUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:17:27.791137+00:00",
+      "utc": "2026-10-18T12:12:25.413455+00:00",
       "family": "bb_mr_fade",
       "symbol": "SPX500",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:17:27.791137+00:00",
+      "utc": "2026-10-18T12:12:25.413455+00:00",
       "family": "bb_mr_fade",
       "symbol": "XAUUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:17:27.791137+00:00",
+      "utc": "2026-10-18T12:12:25.413455+00:00",
       "family": "trend_zone",
       "symbol": "USOIL",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:17:27.791137+00:00",
+      "utc": "2026-10-18T12:12:25.413455+00:00",
       "family": "trend_zone",
       "symbol": "AUDUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:17:27.791137+00:00",
+      "utc": "2026-10-18T12:12:25.413455+00:00",
       "family": "trend_zone",
       "symbol": "SPX500",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T19:17:27.791137+00:00",
+      "utc": "2026-10-18T12:12:25.413455+00:00",
       "family": "trend_zone",
       "symbol": "XAUUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T21:57:26.237259+00:00",
+      "utc": "2026-10-18T12:17:26.716125+00:00",
       "family": "mean_reversion",
       "symbol": "USOIL",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T21:57:26.237259+00:00",
+      "utc": "2026-10-18T12:17:26.716125+00:00",
       "family": "mean_reversion",
       "symbol": "AUDUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T21:57:26.237259+00:00",
+      "utc": "2026-10-18T12:17:26.716125+00:00",
       "family": "mean_reversion",
       "symbol": "SPX500",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T21:57:26.237259+00:00",
+      "utc": "2026-10-18T12:17:26.716125+00:00",
       "family": "mean_reversion",
       "symbol": "XAUUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T21:57:26.237259+00:00",
+      "utc": "2026-10-18T12:17:26.716125+00:00",
       "family": "momentum_breakout",
       "symbol": "USOIL",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T21:57:26.237259+00:00",
+      "utc": "2026-10-18T12:17:26.716125+00:00",
       "family": "momentum_breakout",
       "symbol": "SPX500",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T21:57:26.237259+00:00",
+      "utc": "2026-10-18T12:17:26.716125+00:00",
       "family": "momentum_breakout",
       "symbol": "XAUUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T21:57:26.237259+00:00",
+      "utc": "2026-10-18T12:17:26.716125+00:00",
       "family": "btc_trend_following",
       "symbol": "USOIL",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T21:57:26.237259+00:00",
+      "utc": "2026-10-18T12:17:26.716125+00:00",
       "family": "btc_trend_following",
       "symbol": "AUDUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T21:57:26.237259+00:00",
+      "utc": "2026-10-18T12:17:26.716125+00:00",
       "family": "btc_trend_following",
       "symbol": "SPX500",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T21:57:26.237259+00:00",
+      "utc": "2026-10-18T12:17:26.716125+00:00",
       "family": "btc_trend_following",
       "symbol": "XAUUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T21:57:26.237259+00:00",
+      "utc": "2026-10-18T12:17:26.716125+00:00",
       "family": "ema_crossover",
       "symbol": "USOIL",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T21:57:26.237259+00:00",
+      "utc": "2026-10-18T12:17:26.716125+00:00",
       "family": "ema_crossover",
       "symbol": "AUDUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T21:57:26.237259+00:00",
+      "utc": "2026-10-18T12:17:26.716125+00:00",
       "family": "ema_crossover",
       "symbol": "SPX500",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T21:57:26.237259+00:00",
+      "utc": "2026-10-18T12:17:26.716125+00:00",
       "family": "ema_crossover",
       "symbol": "XAUUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T21:57:26.237259+00:00",
+      "utc": "2026-10-18T12:17:26.716125+00:00",
       "family": "bb_mr_fade",
       "symbol": "USOIL",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T21:57:26.237259+00:00",
+      "utc": "2026-10-18T12:17:26.716125+00:00",
       "family": "bb_mr_fade",
       "symbol": "AUDUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T21:57:26.237259+00:00",
+      "utc": "2026-10-18T12:17:26.716125+00:00",
       "family": "bb_mr_fade",
       "symbol": "SPX500",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T21:57:26.237259+00:00",
+      "utc": "2026-10-18T12:17:26.716125+00:00",
       "family": "bb_mr_fade",
       "symbol": "XAUUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T21:57:26.237259+00:00",
+      "utc": "2026-10-18T12:17:26.716125+00:00",
       "family": "trend_zone",
       "symbol": "USOIL",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T21:57:26.237259+00:00",
+      "utc": "2026-10-18T12:17:26.716125+00:00",
       "family": "trend_zone",
       "symbol": "AUDUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T21:57:26.237259+00:00",
+      "utc": "2026-10-18T12:17:26.716125+00:00",
       "family": "trend_zone",
       "symbol": "SPX500",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T21:57:26.237259+00:00",
+      "utc": "2026-10-18T12:17:26.716125+00:00",
       "family": "trend_zone",
       "symbol": "XAUUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T22:07:35.969711+00:00",
+      "utc": "2026-10-18T12:22:26.478253+00:00",
       "family": "mean_reversion",
       "symbol": "USOIL",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T22:07:35.969711+00:00",
+      "utc": "2026-10-18T12:22:26.478253+00:00",
       "family": "mean_reversion",
       "symbol": "AUDUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T22:07:35.969711+00:00",
+      "utc": "2026-10-18T12:22:26.478253+00:00",
       "family": "mean_reversion",
       "symbol": "SPX500",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T22:07:35.969711+00:00",
+      "utc": "2026-10-18T12:22:26.478253+00:00",
       "family": "mean_reversion",
       "symbol": "XAUUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T22:07:35.969711+00:00",
+      "utc": "2026-10-18T12:22:26.478253+00:00",
       "family": "momentum_breakout",
       "symbol": "USOIL",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T22:07:35.969711+00:00",
+      "utc": "2026-10-18T12:22:26.478253+00:00",
       "family": "momentum_breakout",
       "symbol": "SPX500",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T22:07:35.969711+00:00",
+      "utc": "2026-10-18T12:22:26.478253+00:00",
       "family": "momentum_breakout",
       "symbol": "XAUUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T22:07:35.969711+00:00",
+      "utc": "2026-10-18T12:22:26.478253+00:00",
       "family": "btc_trend_following",
       "symbol": "USOIL",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T22:07:35.969711+00:00",
+      "utc": "2026-10-18T12:22:26.478253+00:00",
       "family": "btc_trend_following",
       "symbol": "AUDUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T22:07:35.969711+00:00",
+      "utc": "2026-10-18T12:22:26.478253+00:00",
       "family": "btc_trend_following",
       "symbol": "SPX500",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T22:07:35.969711+00:00",
+      "utc": "2026-10-18T12:22:26.478253+00:00",
       "family": "btc_trend_following",
       "symbol": "XAUUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T22:07:35.969711+00:00",
+      "utc": "2026-10-18T12:22:26.478253+00:00",
       "family": "ema_crossover",
       "symbol": "USOIL",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T22:07:35.969711+00:00",
+      "utc": "2026-10-18T12:22:26.478253+00:00",
       "family": "ema_crossover",
       "symbol": "AUDUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T22:07:35.969711+00:00",
+      "utc": "2026-10-18T12:22:26.478253+00:00",
       "family": "ema_crossover",
       "symbol": "SPX500",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T22:07:35.969711+00:00",
+      "utc": "2026-10-18T12:22:26.478253+00:00",
       "family": "ema_crossover",
       "symbol": "XAUUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T22:07:35.969711+00:00",
+      "utc": "2026-10-18T12:22:26.478253+00:00",
       "family": "bb_mr_fade",
       "symbol": "USOIL",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T22:07:35.969711+00:00",
+      "utc": "2026-10-18T12:22:26.478253+00:00",
       "family": "bb_mr_fade",
       "symbol": "AUDUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T22:07:35.969711+00:00",
+      "utc": "2026-10-18T12:22:26.478253+00:00",
       "family": "bb_mr_fade",
       "symbol": "SPX500",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T22:07:35.969711+00:00",
+      "utc": "2026-10-18T12:22:26.478253+00:00",
       "family": "bb_mr_fade",
       "symbol": "XAUUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T22:07:35.969711+00:00",
+      "utc": "2026-10-18T12:22:26.478253+00:00",
       "family": "trend_zone",
       "symbol": "USOIL",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T22:07:35.969711+00:00",
+      "utc": "2026-10-18T12:22:26.478253+00:00",
       "family": "trend_zone",
       "symbol": "AUDUSD",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T22:07:35.969711+00:00",
+      "utc": "2026-10-18T12:22:26.478253+00:00",
       "family": "trend_zone",
       "symbol": "SPX500",
       "phase": "scan",
       "error": "Stale/invalid quote"
     },
     {
-      "utc": "2026-10-17T22:07:35.969711+00:00",
+      "utc": "2026-10-18T12:22:26.478253+00:00",
       "family": "trend_zone",
       "symbol": "XAUUSD",
       "phase": "scan",

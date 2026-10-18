@@ -1,0 +1,19 @@
+{
+  "name": "Volatility 50 Index",
+  "point": 0.0001,
+  "digits": 4,
+  "trade_tick_size": 0.0001,
+  "trade_tick_value": 0.0001,
+  "trade_contract_size": 1.0,
+  "volume_min": 4.0,
+  "volume_max": 3700.0,
+  "volume_step": 0.01,
+  "trade_stops_level": 1350,
+  "swap_mode": 5,
+  "swap_long": -5.0,
+  "swap_short": -5.0,
+  "swap_rollover3days": 7,
+  "currency": "USD",
+  "captured_nairobi": "2026-10-18T04:10:30.093206+03:00",
+  "terminal_maxbars": 100000
+}

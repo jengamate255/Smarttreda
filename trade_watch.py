@@ -30,6 +30,15 @@ from mt5_mcp.common import TRADE_ACTION_DEAL, ORDER_TYPE_BUY, ORDER_TYPE_SELL, O
 from mt5_mcp.watcher_base import BaseWatcher
 
 
+# Symbol allowlist based on 30-trade performance analysis (2026-10-12).
+# Winners: 100% win rate. Losers (BOOM500, CRASH50/100/200/500) blocked.
+# Symbols with insufficient data default to blocked (conservative).
+SYMBOL_ALLOWLIST = {
+    "BOOM600", "BOOM900", "BOOM150", "BOOM100", "BOOM99",
+    "CRASH150", "CRASH900",
+}
+
+
 def _parse_args() -> argparse.Namespace:
     parser = BaseWatcher.base_arg_parser("Boom/Crash spike-drift watcher")
     parser.add_argument("--confidence-floor", type=float, default=60.0,
@@ -51,19 +60,40 @@ def _parse_args() -> argparse.Namespace:
         "--fixed-equity", type=float, default=None,
         help="override equity for lot sizing (e.g. 500 to simulate a $500 account)",
     )
+    parser.add_argument(
+        "--allow-all-symbols", action="store_true",
+        help="bypass the performance-based symbol allowlist (trade all Boom/Crash)",
+    )
     parser.set_defaults(log_file=str(ROOT / "logs" / "trade_watch.log"))
     parser.set_defaults(interval=15.0)
     return parser.parse_args()
 
 
 def _resolve_symbols(args: argparse.Namespace) -> list[str]:
+    # If user explicitly passed --symbols, respect their choice (no filter)
     if args.symbols:
         return [s.strip() for s in args.symbols.split(",") if s.strip()]
+    
+    # Default case: apply performance-based allowlist
     settings = get_settings()
     watchlist = getattr(settings, "boom_crash", None)
     if watchlist and hasattr(watchlist, "watchlist") and watchlist.watchlist:
-        return list(watchlist.watchlist)
-    return list(BOOM_CRASH_SYMBOLS)
+        symbols = list(watchlist.watchlist)
+    else:
+        symbols = list(BOOM_CRASH_SYMBOLS)
+    
+    if not getattr(args, "allow_all_symbols", False):
+        filtered = [s for s in symbols if s in SYMBOL_ALLOWLIST]
+        if len(filtered) < len(symbols):
+            blocked = set(symbols) - set(filtered)
+            import logging
+            logging.getLogger("boom_crash_watcher").info(
+                "symbol filter: blocked %d losers %s (use --allow-all-symbols to bypass)",
+                len(blocked), sorted(blocked)
+            )
+        symbols = filtered
+    
+    return symbols
 
 
 def _get_exposure_by_type(client) -> dict[str, list[str]]:
