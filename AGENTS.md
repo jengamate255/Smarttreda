@@ -24,6 +24,78 @@
   forward-paper report/state) keep changing with services — leave dirty or commit
   separately; not part of this upload decision.
 
+## Full push + secret purge to GitHub (2026-10-19/20)
+
+- **Both repos are PUBLIC**: `jengamate255/Superbot-` and `jengamate255/Smarttreda`.
+  The 2026-10-17 Superbot push had actually published live keys (GH013 push protection
+  only named GCP/OpenRouter/Telegram formats; the Deriv PATs, MT5 password and dashboard
+  token were never auto-blocked). `archive/ai_vision_daemon.py` carried them at HEAD.
+- **All 61 commits now on both remotes at `c33447f`**, after two `git filter-branch
+  --index-filter` rewrites (blob-map based, `scrub_map.json`): first fixed
+  `archive/ai_vision_daemon.py`, second purged 36 secret blobs across 32 paths
+  (`accounts.json`, `settings.good.json`, both `telegram_bot.py`, `start_services.*`,
+  `service_status.py`, `supervisor.conf`, `start_dashboards.bat`, archive/debug scripts).
+  Verified: 0 mapped secret blobs reachable from `master`, 0 secret literals in any
+  version of the daemon file, tree clean, `py_compile` OK, JSON files parse.
+- **Remediation on the public repo**: force-with-lease replaced `master` (old leaked tip
+  `43f0757`), deleted branch `codex/prevent-credential-leaks` (`2fc173f`, still held the
+  un-scrubbed history) and closed PR #1. `refs/pull/1/head` still lingers — delete the PR
+  in the UI, and ask GitHub support for a object purge. Local rescue branches
+  `master-before-scrub` / `master-before-scrub2` (which held the un-scrubbed history) were
+  deleted 2026-10-21: refs + reflog expired, then `git gc --prune=now`; verified with
+  `git fsck` and the scrub-blob map that no pre-scrub secret blob survives locally.
+- **KEYS MUST BE ROTATED by the user** (exposed publicly, rewrite does not un-leak): 6 Deriv
+  PATs, the Deriv MT5 password, the dashboard auth token, the Telegram bot token, plus the
+  Gemini/GCP key and OpenRouter key removed from the daemon. Prefixes are deliberately not
+  recorded here — this file is committed to repositories whose remotes are public.
+- Code now reads env only (`AUTH_TOKEN = os.getenv("MT5_DASHBOARD_AUTH_TOKEN", "REDACTED…")`,
+  `WEB_AUTH_TOKEN` default empty). `.env` carries **both** `WEB_AUTH_TOKEN` and the new
+  `MT5_DASHBOARD_AUTH_TOKEN` so the dashboard stays authenticated; `load_dotenv()` runs at
+  import. Long-running services must restart to pick up scrubbed defaults.
+- **Push recipe (this shell)**: `GCM_INTERACTIVE=never GIT_TERMINAL_PROMPT=0` is mandatory —
+  Git Credential Manager stalls on an invisible prompt and GitHub answers HTTP 408, which
+  looks like a pack-size failure. Push commit-by-commit (`git rev-list --reverse master` →
+  `git push <remote> "$sha:refs/heads/master"`, first chunk needs `--force`), heavy commits
+  upload silently. No `gh` CLI here; use the API with a `git credential fill` token.
+- `Smarttreda` default branch switched to `master` (GitHub refuses to delete the default
+  branch — that blocked removing the temporary `zz_connectivity_test` ref, since removed).
+
+## Runtime rebuilt on a reset machine (2026-10-21)
+
+- **The machine had been reset/wiped of the trading runtime**: no `MT5R_*` or VBS
+  scheduled tasks exist, no `terminal64.exe` anywhere (no `AppData\Roaming\MetaQuotes`
+  either), `.venv` orphaned (`pyvenv.cfg` → deleted uv 3.11 + hermes venv, only stray
+  `cp311` `.pyd` fragments left), `uv` uninstalled. Only Python **3.14.2** exists at
+  `C:\Users\Dave\AppData\Local\Programs\Python\Python314`. C: now 78 GB free, E: 5.3 GB.
+- **New venv `.venv314`** (E:, user-approved install): numpy 2.5.4, pandas 3.0.6,
+  python-dateutil, requests, MetaTrader5 5.0.6231, matplotlib, pillow, fastapi, uvicorn,
+  python-dotenv, pydantic, httpx, pyyaml, websockets. Nothing installed into system
+  Python; the broken `.venv` was left alone. `import web_dashboard` succeeds.
+- **Dashboard re-registered as task `MT5 Prop Dashboard`** via `schtasks /Create /XML`
+  (`Register-ScheduledTask` → **Access denied** in this shell; `schtasks` works).
+  Definition `C:\Users\Dave\mt5_prop_dashboard_task.xml`, launcher
+  `C:\Users\Dave\run_dashboard_venv314.bat` (no-space path, runs `.venv314` python in the
+  **foreground** so the task instance stays active and `IgnoreNew` blocks overlap;
+  log `logs/dashboard_task.log`). Triggers: Logon + Time repetition PT1M (duration
+  open), `StartWhenAvailable`, `ExecutionTimeLimit PT0S`, `RestartOnFailure 3×PT1M`,
+  Run As `Dave` / **InteractiveToken** / LeastPrivilege.
+  - **Survives reboot only after an interactive logon** — a BootTrigger (pre-logon)
+    start needs elevation, which this shell cannot get. Re-create:
+    `schtasks /Create /TN "MT5 Prop Dashboard" /XML "C:\Users\Dave\mt5_prop_dashboard_task.xml" /F`
+  - Respawning proven: killed all `python` → task run at 01:16 restored the listener.
+  - Verified: `GET /` 200, `/api/account` 401 without/wrong token, **503 with the rotated
+    token** (authenticated; broker data unavailable until an MT5 terminal is installed).
+- **Trading executors deliberately NOT started** (user choice: dashboard first, executors
+  later). Starting them resumes order submission — needs the terminal installed, logged
+  in, and the remaining credentials rotated into `.env` first.
+- Dashboard auth token **rotated** 2026-10-21: `WEB_AUTH_TOKEN` +
+  `MT5_DASHBOARD_AUTH_TOKEN` replaced with a fresh `token_urlsafe(24)`; pre-change `.env`
+  backup `C:\Users\Dave\AppData\Local\Temp\opencode\dotenv_before_rotation_20261020.bak`.
+  Provider keys still to rotate by the user: Telegram bot, 6 Deriv PATs, MT5 password
+  (also fill the `REDACTED` `password` slot in `accounts.json` for Deriv-Demo),
+  OpenRouter, Gemini/GCP, Groq. Scripted Deriv PAT rotation is blocked: Cloudflare
+  returns **HTTP 520** to Python's TLS fingerprint on `ws.derivws.com`.
+
 ## Read-only interim paper coverage report (2026-10-17)
 
 - Added standalone `scripts/report_forward_paper_interim.py`. It reads only saved
