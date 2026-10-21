@@ -94,7 +94,43 @@
   Provider keys still to rotate by the user: Telegram bot, 6 Deriv PATs, MT5 password
   (also fill the `REDACTED` `password` slot in `accounts.json` for Deriv-Demo),
   OpenRouter, Gemini/GCP, Groq. Scripted Deriv PAT rotation is blocked: Cloudflare
-  returns **HTTP 520** to Python's TLS fingerprint on `ws.derivws.com`.
+  returns **HTTP 520** to Python's TLS fingerprint on `derivws.com`.
+
+## Third scrub + repo visibility (2026-10-21)
+
+- **A whole-history blob scan found a live credential the 2026-10-20 scrub missed: the
+  FundingPips2-SIM password (login 11911448)** was sitting in `accounts.json`,
+  `supervisor.conf`, `start_services.ps1`, `archive/telegram_bot.py`,
+  `archive/start_dual_live.ps1`, `archive/gold_ndx_scalp.py`,
+  `archive/backtest_gold_ndx_scalp.py` and `archive/forward_test_gold_ndx.py`. The old
+  scrub map only covered the Deriv password/token, so these blobs were never candidates.
+  Also removed a dead 12-char fragment of the rotated dashboard token from
+  `TELEGRAM_PRODUCTION.md`.
+- **Role of the scan**: `node_modules` is tracked (180 files, 18.5 MB) and vendored
+  Playwright strings dominate the noisy findings — they are not secrets. Findings also
+  included opencode session ids (`ses_…`) and placeholders (`REDACTED…`), all benign.
+  Scanner and purge map live in `.qoder/tmp/…` (not committed).
+- **Rewrite**: `git filter-branch --index-filter` over 9 blobs / 9 paths, 62 commits,
+  new tip **`fa24c76`** (old `5ea8c72`). `filter-branch` **hard-resets the working tree**
+  to the rewritten commit — commit or expect to lose uncommitted work first. Sanitized
+  values: `accounts.json` password → `""`, md fragment → `REDACTED_DASHBOARD_TOKEN`;
+  legacy `archive/*` files and configs → `""` (they were already dead code).
+- **Proof**: 0 old blobs reachable from the new `master`; a content scan of all 5,604
+  blobs reachable from `master` finds **0** occurrences of either literal; JSON parses,
+  `py_compile` passes on the four rewritten `.py` files.
+- **Visibility changed under us**: `Superbot-` and `Smarttreda` are now **private**
+  (authenticated API `private=true`, anonymous API 404, anonymous `ls-remote` demands
+  auth). All three repos including `Smarttrader` are private. **But `refs/pull/1/head`
+  (`2fc173f`) on `Superbot-` still serves the pre-rewrite lineage** — 84 pre-scrub blob
+  servings across 61 ancestors were re-confirmed via the contents API, and commit
+  `43f0757` is still fetchable. Only GitHub support can purge it; request text is in
+  [reports/github_support_purge_20261021.md](reports/github_support_purge_20261021.md).
+- **Rotate the FundingPips password too** — it was public for the 2026-10-17 → private
+  window. `accounts.json` now holds no password at all, so MT5 login for that account
+  must come from the rotated secret, not the repo.
+- Local credential helper is the **portable** one under `.qoder/bin/git`
+  (`credential.helper` in its `etc/gitconfig`), which is why registry lookups find
+  nothing while `git credential fill` still works.
 
 ## Read-only interim paper coverage report (2026-10-17)
 
