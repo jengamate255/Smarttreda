@@ -11,7 +11,7 @@
     "login": null,
     "password": "",
     "server": "",
-    "connect_timeout_seconds": 30,
+    "connect_timeout_seconds": 30000,
     "reconnect_attempts": 5,
     "reconnect_delay_seconds": 5,
     "health_check_interval_seconds": 30
@@ -158,7 +158,7 @@
     "login": 41204968,
     "password": "",
     "server": "Deriv-Demo",
-    "connect_timeout_seconds": 30,
+    "connect_timeout_seconds": 30000,
     "reconnect_attempts": 5,
     "reconnect_delay_seconds": 5,
     "health_check_interval_seconds": 30
